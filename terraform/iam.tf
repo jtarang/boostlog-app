@@ -10,7 +10,7 @@ data "aws_iam_policy_document" "ec2_assume_role" {
 }
 
 resource "aws_iam_role" "ec2_role" {
-  name               = "datalog-ec2-role-${var.environment}"
+  name               = "boostlog-ec2-role-${var.environment}"
   assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
 }
 
@@ -20,7 +20,7 @@ data "aws_iam_policy_document" "secrets_access" {
       "secretsmanager:GetSecretValue"
     ]
     resources = [
-      aws_secretsmanager_secret.datalog_secrets.arn
+      aws_secretsmanager_secret.boostlog_secrets.arn
     ]
   }
 
@@ -30,18 +30,23 @@ data "aws_iam_policy_document" "secrets_access" {
       "kms:GenerateDataKey"
     ]
     resources = [
-      aws_kms_key.datalog_key.arn
+      aws_kms_key.boostlog_key.arn
     ]
   }
 }
 
 resource "aws_iam_role_policy" "secrets_access_policy" {
-  name   = "datalog-secrets-access-${var.environment}"
+  name   = "boostlog-secrets-access-${var.environment}"
   role   = aws_iam_role.ec2_role.id
   policy = data.aws_iam_policy_document.secrets_access.json
 }
 
+resource "aws_iam_role_policy_attachment" "ssm_core" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 resource "aws_iam_instance_profile" "ec2_profile" {
-  name = "datalog-ec2-profile-${var.environment}"
+  name = "boostlog-ec2-profile-${var.environment}"
   role = aws_iam_role.ec2_role.name
 }

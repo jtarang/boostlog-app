@@ -8,5 +8,5 @@ output "route53_name_servers" {
 }
 
 output "aws_secretsmanager_secret_arn" {
-  value = aws_secretsmanager_secret.datalog_secrets.arn
+  value = aws_secretsmanager_secret.boostlog_secrets.arn
 }

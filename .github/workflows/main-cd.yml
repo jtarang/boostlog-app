@@ -6,8 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  # github.repository returns username/repo automatically
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: jtarang/boostlog-app
 
 jobs:
   build-and-push-image:
@@ -60,3 +59,27 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Configure AWS Credentials for SSM
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Trigger EC2 Deployment via SSM
+        run: |
+          # Get SHA from github context
+          SHA_TAG="sha-${GITHUB_SHA::7}"
+          
+          # Send SSM command to EC2 target
+          aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=tag:Name,Values=boostlog-web-prd" \
+            --parameters 'commands=[
+              "cd /app",
+              "wget -q --header=\"Authorization: token ${{ secrets.GITHUB_TOKEN }}\" -O docker-compose.yml https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/docker-compose.yml",
+              "docker pull ghcr.io/jtarang/boostlog-app:'$SHA_TAG'",
+              "IMAGE_TAG='$SHA_TAG' docker-compose up -d"
+            ]' \
+            --comment "Deploying ghcr.io/jtarang/boostlog-app:$SHA_TAG to production"
+

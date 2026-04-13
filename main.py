@@ -36,7 +36,7 @@ def get_secret(secret_name):
         print(f"Boto3 Error getting secret {secret_name} (bypassing due to local environment): {e}")
     return None
 
-aws_secrets_str = get_secret(os.getenv("AWS_SECRET_NAME", "datalog/prod/secrets"))
+aws_secrets_str = get_secret(os.getenv("AWS_SECRET_NAME", "boostlog/prd/secrets"))
 if aws_secrets_str:
     aws_secrets = json.loads(aws_secrets_str)
 else:
@@ -44,7 +44,7 @@ else:
 
 # --- DB SETUP ---
 os.makedirs("data", exist_ok=True)
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/datalog.db")
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/boostlog.db")
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -104,7 +104,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     return user
 
 # --- APP SETUP ---
-app = FastAPI(title="Datalog Web App")
+app = FastAPI(title="Boostlog Web App")
 UPLOAD_DIR = "data/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -205,7 +205,7 @@ async def github_callback(code: str, db: Session = Depends(get_db)):
         html_content = f'''
         <html>
             <script>
-                localStorage.setItem('datalog_token', '{local_token}');
+                localStorage.setItem('boostlog_token', '{local_token}');
                 window.location.href = '/';
             </script>
             <body>Oauth Flow Complete. Linking Datastore...</body>
@@ -270,7 +270,7 @@ async def analyze_log(filename: str, current_user: User = Depends(get_current_us
     model_name = os.getenv("LLM_MODEL", "ollama/llama3")
     api_base = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
     
-    prompt = f"""You are a master automotive tuner. Analyze this aggregated datalog summary from a high-performance engine:
+    prompt = f"""You are a master automotive tuner. Analyze this aggregated boostlog summary from a high-performance engine:
     {summary}
     
     Output a 3-paragraph markdown report addressing:
