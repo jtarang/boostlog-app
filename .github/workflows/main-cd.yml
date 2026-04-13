@@ -74,7 +74,7 @@ jobs:
           # Send SSM command to EC2 target
           aws ssm send-command \
             --document-name "AWS-RunShellScript" \
-            --targets "Key=tag:Name,Values=boostlog-web-prod" \
+            --targets "Key=tag:Name,Values=boostlog-web-prd" \
             --parameters 'commands=[
               "cd /app",
               "wget -q --header=\"Authorization: token ${{ secrets.GITHUB_TOKEN }}\" -O docker-compose.yml https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/docker-compose.yml",

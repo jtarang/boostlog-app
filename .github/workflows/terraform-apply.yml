@@ -14,7 +14,6 @@ permissions:
 jobs:
   apply:
     runs-on: ubuntu-latest
-    environment: production
     defaults:
       run:
         working-directory: ./terraform
@@ -37,5 +36,10 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      - name: Inject GitHub Secrets into tfvars
+        run: |
+          echo "github_client_id = \"${{ secrets.GITHUB_CLIENT_ID }}\"" >> environments/prd.tfvars
+          echo "github_client_secret = \"${{ secrets.GITHUB_CLIENT_SECRET }}\"" >> environments/prd.tfvars
+
       - name: Terraform Apply (Prod)
-        run: terraform apply -var-file="environments/prod.tfvars" -auto-approve
+        run: terraform apply -var-file="environments/prd.tfvars" -auto-approve
