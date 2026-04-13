@@ -17,8 +17,11 @@ FROM python:3.14.4-slim AS runner
 
 WORKDIR /app
 
-# Create a non-root user
-RUN useradd -m appuser && chown -R appuser:appuser /app
+# Create a non-root user and ensure data directory exists with correct permissions
+RUN useradd -m appuser && \
+    mkdir -p /app/data && \
+    chown -R appuser:appuser /app && \
+    chmod 755 /app/data
 USER appuser
 
 # Copy only the installed python packages from the builder stage
