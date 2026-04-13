@@ -51,16 +51,19 @@ variable "github_client_id" {
   description = "GitHub OAuth Client ID"
   type        = string
   sensitive   = true
+  default     = ""
 }
 
 variable "github_client_secret" {
   description = "GitHub OAuth Client Secret"
   type        = string
   sensitive   = true
+  default     = ""
 }
 
-variable "app_secret_key" {
-  description = "App SECRET_KEY for JWT"
+variable "github_client_key" {
+  description = "App SECRET_KEY for JWT (deprecated/unused as it's now auto-generated)"
   type        = string
   sensitive   = true
+  default     = ""
 }

@@ -15,11 +15,16 @@ resource "aws_secretsmanager_secret" "boostlog_secrets" {
   kms_key_id  = aws_kms_key.boostlog_key.id
 }
 
+resource "random_password" "app_secret_key" {
+  length  = 32
+  special = true
+}
+
 resource "aws_secretsmanager_secret_version" "boostlog_secrets_version" {
   secret_id     = aws_secretsmanager_secret.boostlog_secrets.id
   secret_string = jsonencode({
     GITHUB_CLIENT_ID     = var.github_client_id
     GITHUB_CLIENT_SECRET = var.github_client_secret
-    SECRET_KEY           = var.app_secret_key
+    SECRET_KEY           = random_password.app_secret_key.result
   })
 }
