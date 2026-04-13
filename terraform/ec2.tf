@@ -18,7 +18,18 @@ resource "aws_instance" "web" {
 
   user_data = <<-EOF
               #!/bin/bash
-              apt-get update -y
+              # Wait for any background apt processes to finish (prevents lock errors)
+              while fuser /var/lib/dpkg/lock >/dev/null 2>&1 ; do
+                  echo "Waiting for other software managers to finish..."
+                  sleep 5
+              done
+
+              # Retry apt-get update if it fails (handles temporary repo issues)
+              for i in {1..5}; do
+                  apt-get update -y && break || sleep 10
+              done
+
+              # Install essential tools
               apt-get install -y ca-certificates curl gnupg lsb-release wget unzip jq
               
               # Install AWS CLI
