@@ -3,6 +3,15 @@ name: CD
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'main.py'
+      - 'static/**'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'requirements.txt'
+      - 'tests/**'
+      - '.dockerignore'
+      - '.github/workflows/main-cd.yml'
 
 env:
   REGISTRY: ghcr.io
