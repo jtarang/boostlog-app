@@ -19,7 +19,7 @@ resource "aws_instance" "web" {
   user_data = <<-EOF
               #!/bin/bash
               apt-get update -y
-              apt-get install -y ca-certificates curl gnupg lsb-release wget unzip
+              apt-get install -y ca-certificates curl gnupg lsb-release wget unzip jq
               
               # Install AWS CLI
               curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
