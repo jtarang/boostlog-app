@@ -11,6 +11,7 @@ on:
       - 'requirements.txt'
       - 'tests/**'
       - '.dockerignore'
+      - '.github/workflows/main-cd.yml'
 
 env:
   REGISTRY: ghcr.io
