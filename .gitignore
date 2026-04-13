@@ -1,0 +1,12 @@
+# Ignore python cache
+__pycache__/
+*.pyc
+
+# Ignore python env
+venv/
+
+# Ignore local datasets and sqlite db
+data/
+
+# Ignore env file since it might contain localized keys
+.env

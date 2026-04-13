@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the local data directory so uploads and sqlite DB are preserved
+      - ./data:/app/data
+    environment:
+      - OLLAMA_API_BASE=http://ollama:11434
+      - LLM_MODEL=ollama/llama3
+    env_file:
+      - .env
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    # Uncomment the below section if deploying to an EC2 instance with an NVIDIA GPU setup to enable hardware acceleration.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+volumes:
+  ollama_data:
