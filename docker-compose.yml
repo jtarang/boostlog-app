@@ -43,8 +43,8 @@ services:
     container_name: boostlog-tunnel
     restart: unless-stopped
     command: tunnel run
-    environment:
-      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    env_file:
+      - production.env
     depends_on:
       - web
 
