@@ -49,9 +49,10 @@ resource "aws_instance" "web" {
               curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
               chmod +x /usr/local/bin/docker-compose
               
-              # Create app directory
-              mkdir -p /app
+              # Create app directory and set persistence folder permissions
+              mkdir -p /app/data
               chown -R admin:admin /app
+              chmod 755 /app/data
               EOF
 
   tags = {
