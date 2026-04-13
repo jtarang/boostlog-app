@@ -1,4 +1,4 @@
-let authToken = localStorage.getItem('datalog_token') || null;
+let authToken = localStorage.getItem('boostlog_token') || null;
 let authMode = 'login';
 let currentServerFile = null;
 
@@ -86,7 +86,7 @@ async function performLogin(username, password) {
     if (!res.ok) throw new Error(data.detail || 'Login failed');
     
     authToken = data.access_token;
-    localStorage.setItem('datalog_token', authToken);
+    localStorage.setItem('boostlog_token', authToken);
     initAuth();
 }
 
@@ -95,7 +95,7 @@ function getAuthHeaders() {
 }
 
 function logout() {
-    localStorage.removeItem('datalog_token');
+    localStorage.removeItem('boostlog_token');
     window.location.reload();
 }
 
@@ -257,7 +257,7 @@ function calculateMetrics() {
     const speedCol = currentHeaders.find(h => h.toLowerCase().includes('speed') && !h.toLowerCase().includes('engine'));
 
     currentData.forEach(row => {
-        // We parse and cap the values to prevent insane garbage values (like 16777216) from the ECU datalogger
+        // We parse and cap the values to prevent insane garbage values (like 16777216) from the ECU boostlogger
         if (boostCol) {
             let v = parseFloat(row[boostCol]);
             if (!isNaN(v) && v < 200 && (maxB === null || v > maxB)) maxB = v;

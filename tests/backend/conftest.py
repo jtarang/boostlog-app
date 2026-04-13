@@ -18,7 +18,7 @@ _mock.start()
 # Pre-seed our mock secret
 _client = boto3.client('secretsmanager', region_name='us-east-1')
 _client.create_secret(
-    Name="datalog/prod/secrets",
+    Name="boostlog/prod/secrets",
     SecretString='{"SECRET_KEY": "mocked_secret_key_from_moto", "GITHUB_CLIENT_ID": "mock_id", "GITHUB_CLIENT_SECRET": "mock_secret"}'
 )
 

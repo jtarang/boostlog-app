@@ -3,7 +3,7 @@ terraform {
 
   backend "s3" {
     bucket         = "INSERT_YOUR_BUCKET_NAME_HERE"
-    key            = "datalog/terraform.tfstate"
+    key            = "boostlog/terraform.tfstate"
     region         = "us-east-1"
     # dynamodb_table = "terraform-locks" # Uncomment to enable state locking
     encrypt        = true
@@ -23,7 +23,7 @@ provider "aws" {
   default_tags {
     tags = {
       Environment = var.environment
-      Project     = "Datalog"
+      Project     = "Boostlog"
       ManagedBy   = "Terraform"
     }
   }

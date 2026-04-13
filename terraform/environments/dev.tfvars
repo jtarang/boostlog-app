@@ -3,7 +3,7 @@ aws_region           = "us-east-1"
 instance_type        = "t3.small"
 key_name             = "my-dev-key"
 domain_name          = "dev.mydomain.com"
-secret_name          = "datalog/dev/secrets"
+secret_name          = "boostlog/dev/secrets"
 
 # Ensure to provide actual secure strings instead of these defaults when deploying
 github_client_id     = "REPLACE_ME_DEV"

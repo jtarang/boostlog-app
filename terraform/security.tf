@@ -1,6 +1,6 @@
 resource "aws_security_group" "web" {
-  name        = "datalog-web-sg-${var.environment}"
-  description = "Security group for Datalog web server"
+  name        = "boostlog-web-sg-${var.environment}"
+  description = "Security group for Boostlog web server"
   vpc_id      = aws_vpc.main.id
 
   ingress {
@@ -43,6 +43,6 @@ resource "aws_security_group" "web" {
   }
 
   tags = {
-    Name = "datalog-web-sg-${var.environment}"
+    Name = "boostlog-web-sg-${var.environment}"
   }
 }

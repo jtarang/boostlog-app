@@ -38,7 +38,7 @@ resource "aws_instance" "web" {
               EOF
 
   tags = {
-    Name = "datalog-web-${var.environment}"
+    Name = "boostlog-web-${var.environment}"
   }
 }
 
@@ -47,6 +47,6 @@ resource "aws_eip" "web_eip" {
   domain   = "vpc"
 
   tags = {
-    Name = "datalog-eip-${var.environment}"
+    Name = "boostlog-eip-${var.environment}"
   }
 }

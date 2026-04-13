@@ -4,7 +4,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = "datalog-vpc-${var.environment}"
+    Name = "boostlog-vpc-${var.environment}"
   }
 }
 
@@ -12,7 +12,7 @@ resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "datalog-igw-${var.environment}"
+    Name = "boostlog-igw-${var.environment}"
   }
 }
 
@@ -23,7 +23,7 @@ resource "aws_subnet" "public" {
   availability_zone       = "${var.aws_region}a"
 
   tags = {
-    Name = "datalog-public-subnet-${var.environment}"
+    Name = "boostlog-public-subnet-${var.environment}"
   }
 }
 
@@ -36,7 +36,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "datalog-public-rt-${var.environment}"
+    Name = "boostlog-public-rt-${var.environment}"
   }
 }
 
