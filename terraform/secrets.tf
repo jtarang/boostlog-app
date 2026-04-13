@@ -26,5 +26,6 @@ resource "aws_secretsmanager_secret_version" "boostlog_secrets_version" {
     GITHUB_CLIENT_ID     = var.github_client_id
     GITHUB_CLIENT_SECRET = var.github_client_secret
     SECRET_KEY           = random_password.app_secret_key.result
+    CLOUDFLARE_TUNNEL_TOKEN = var.cloudflare_tunnel_token
   })
 }

@@ -67,3 +67,10 @@ variable "github_client_key" {
   sensitive   = true
   default     = ""
 }
+
+variable "cloudflare_tunnel_token" {
+  description = "Cloudflare Tunnel Token for secure access"
+  type        = string
+  sensitive   = true
+  default     = ""
+}

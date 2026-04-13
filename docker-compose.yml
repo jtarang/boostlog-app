@@ -38,5 +38,15 @@ services:
     depends_on:
       - ollama
 
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: boostlog-tunnel
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    depends_on:
+      - web
+
 volumes:
   ollama_data:
