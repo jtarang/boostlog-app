@@ -63,7 +63,7 @@ jobs:
       - name: Configure AWS Credentials for SSM
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PROD }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-1
 
       - name: Trigger EC2 Deployment via SSM
