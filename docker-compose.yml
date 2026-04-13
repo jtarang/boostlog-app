@@ -10,8 +10,6 @@ services:
     environment:
       - OLLAMA_API_BASE=http://ollama:11434
       - LLM_MODEL=ollama/llama3
-    env_file:
-      - .env
     depends_on:
       - ollama
     restart: unless-stopped
