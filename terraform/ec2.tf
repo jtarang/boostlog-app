@@ -38,6 +38,13 @@ resource "aws_instance" "web" {
 
               # Install essential tools
               apt-get install -y ca-certificates curl gnupg lsb-release wget unzip jq
+
+              # Setup 8GB Swap File to support large LLM models in memory
+              fallocate -l 8G /swapfile
+              chmod 600 /swapfile
+              mkswap /swapfile
+              swapon /swapfile
+              echo "/swapfile swap swap defaults 0 0" >> /etc/fstab
               
               # Install AWS CLI
               curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
