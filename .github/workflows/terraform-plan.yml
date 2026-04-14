@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'terraform/**'
+      - 'terraform-trigger'
 
 permissions:
   id-token: write      # Required for AWS OIDC
