@@ -1,3 +1,4 @@
+
 # Fetch the latest Debian AMI ID from SSM Parameter Store
 data "aws_ssm_parameter" "selected_ami" {
   name = var.ec2_ami_ssm_parameter
