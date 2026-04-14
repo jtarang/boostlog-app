@@ -74,3 +74,10 @@ variable "cloudflare_tunnel_token" {
   sensitive   = true
   default     = ""
 }
+
+variable "db_password" {
+  description = "Postgres database password — set this in GitHub Secrets (DB_PASSWORD) and edit directly in AWS Secrets Manager to rotate"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
