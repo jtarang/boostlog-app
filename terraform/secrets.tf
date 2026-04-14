@@ -37,7 +37,7 @@ resource "aws_secretsmanager_secret_version" "boostlog_secrets_version" {
     POSTGRES_DB             = "boostlog_prod"
     DATABASE_URL            = "postgresql://boostlog_admin:${random_password.db_password.result}@db:5432/boostlog_prod"
     OLLAMA_API_BASE         = "http://ollama:11434"
-    LLM_MODEL               = "ollama/llama3"
+    OLLAMA_MODEL            = "llama3"
     OLLAMA_HOST             = "ollama:11434"
   })
 }
