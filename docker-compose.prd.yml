@@ -51,8 +51,8 @@ services:
     container_name: boostlog-tunnel
     restart: unless-stopped
     command: tunnel run
-    env_file:
-      - .env.production
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
     depends_on:
       - web
 
