@@ -12,6 +12,7 @@ on:
       - 'tests/**'
       - '.dockerignore'
       - '.github/workflows/main-cd.yml'
+      - 'release-trigger'
 
 env:
   REGISTRY: ghcr.io
