@@ -10,3 +10,4 @@ data/
 
 # Ignore env file since it might contain localized keys
 .env
+.env.*

@@ -42,25 +42,20 @@ if aws_secrets_str:
 else:
     aws_secrets = {}
 
-# --- PERMISSION DIAGNOSTICS ---
-import getpass
-print(f"DEBUG: Running as user: {getpass.getuser()}")
-print(f"DEBUG: Current UID: {os.getuid()}")
-print(f"DEBUG: Current GID: {os.getgid()}")
-try:
-    os.makedirs("data", exist_ok=True)
-    print(f"DEBUG: Data directory permissions: {oct(os.stat('data').st_mode)}")
-    with open("data/test_write.txt", "w") as f:
-        f.write("test")
-    os.remove("data/test_write.txt")
-    print("DEBUG: Data directory is writable.")
-except Exception as e:
-    print(f"DEBUG: ERROR: Permission check failed: {e}")
-
 # --- DB SETUP ---
-# os.makedirs("data", exist_ok=True) # Now handled above with logging
+os.makedirs("data", exist_ok=True)
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/boostlog.db")
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+
+# Fix for SQLAlchemy 1.4+ which requires 'postgresql://' instead of 'postgres://'
+if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# Build engine with conditional arguments
+connect_args = {}
+if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
