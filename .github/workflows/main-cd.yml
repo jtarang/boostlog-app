@@ -35,11 +35,22 @@ jobs:
           python-version: "3.14.4"
           cache: "pip"
       
+      - name: Cache Playwright Browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}
+
       - name: Run Tests
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt pytest httpx playwright
-          python -m playwright install --with-deps
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" != "true" ]; then
+            python -m playwright install chromium --with-deps
+          else
+            python -m playwright install-deps chromium
+          fi
           echo "AWS_REGION=us-east-1" > .env
           echo "SKIP_AWS_FETCH=true" >> .env
           echo "SECRET_KEY=secure_testing_key_123" >> .env
@@ -97,7 +108,7 @@ jobs:
               \"docker-compose down\",
               \"aws secretsmanager get-secret-value --secret-id boostlog/prd/secrets --query SecretString --output text | jq -r 'to_entries[] | .key + \\\"=\\\" + (.value|tostring)' > .env.production\",
               \"echo IMAGE_TAG=$SHA_TAG >> .env.production\",
-              \"docker-compose up -d --force-recreate\"
+              \"docker-compose --env-file .env.production up -d --force-recreate\"
             ]" \
             --comment "Deploying ghcr.io/jtarang/boostlog-app:$SHA_TAG to production"
 
