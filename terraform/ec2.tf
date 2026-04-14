@@ -14,9 +14,11 @@ resource "aws_instance" "web" {
   instance_market_options {
     market_type = "spot"
     spot_options {
-      spot_instance_type = "one-time"
+      spot_instance_type = "persistent"
     }
   }
+
+  user_data_replace_on_change = true
 
   root_block_device {
     volume_size = 30
