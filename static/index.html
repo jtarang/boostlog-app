@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>boostlog.app - Boostlog Visualizer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="/static/styles.css">
     <!-- Chart.js for beautiful graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -14,15 +17,22 @@
     <!-- marked.js for Markdown parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
+
 <body>
     <!-- Auth Overlay -->
     <div id="authOverlay" class="auth-overlay">
         <div class="auth-card">
-            <div class="brand" style="justify-content: center; margin-bottom: 24px; width: 100%;">
-                <img src="/static/brand_lockup_transparent.png" style="width: 100%; max-width: 320px; height: auto; object-fit: contain; filter: drop-shadow(0 0 10px rgba(58,134,255,0.2));" alt="boostLog">
+            <div class="brand"
+                style="justify-content: center; margin-bottom: 24px; width: 100%; display: flex; align-items: center;">
+                <h1 class="brand-text"
+                    style="font-size: 40px; margin-right: 0; margin-bottom: 0; font-weight: 800; background: linear-gradient(to right, #3A86FF, #d400ff, #FF006E); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 8px rgba(212,0,255,0.4)); position: relative; z-index: 2;">
+                    boostLog</h1>
+                <img src="/static/turbo_logo_clean.png" class="brand-logo"
+                    style="width: 64px; height: auto; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255,0,110,0.5)); flex-shrink: 0; position: relative; z-index: 1; margin-left: -38px;"
+                    alt="Turbo Logo">
             </div>
             <p style="text-align: center; color: var(--text-secondary); margin-bottom: 24px;">Secure Telemetry Vault</p>
-            
+
             <div class="auth-tabs">
                 <button type="button" class="tab active" onclick="switchAuthTab('login')">Login</button>
                 <button type="button" class="tab" onclick="switchAuthTab('register')">Register</button>
@@ -35,13 +45,20 @@
                 <p id="authError" class="auth-error"></p>
             </form>
 
-            <div class="auth-divider" style="text-align: center; margin: 16px 0; color: var(--text-secondary); font-size: 12px; display: flex; align-items: center;">
-                <hr style="flex: 1; border: none; border-top: 1px solid var(--border-color);"><span style="padding: 0 10px;">OR</span><hr style="flex: 1; border: none; border-top: 1px solid var(--border-color);">
+            <div class="auth-divider"
+                style="text-align: center; margin: 16px 0; color: var(--text-secondary); font-size: 12px; display: flex; align-items: center;">
+                <hr style="flex: 1; border: none; border-top: 1px solid var(--border-color);"><span
+                    style="padding: 0 10px;">OR</span>
+                <hr style="flex: 1; border: none; border-top: 1px solid var(--border-color);">
             </div>
-            
-            <a href="/api/auth/github/login" class="btn-primary btn-github" style="background-color: #2b3137; text-align: center; text-decoration: none; display: block; border: 1px solid #444d56;">
-                <svg height="20" aria-hidden="true" viewBox="0 0 16 16" version="1.1" width="20" data-view-component="true" style="fill: white; vertical-align: middle; margin-right: 8px;">
-                    <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path>
+
+            <a href="/api/auth/github/login" class="btn-primary btn-github"
+                style="background-color: #2b3137; text-align: center; text-decoration: none; display: block; border: 1px solid #444d56;">
+                <svg height="20" aria-hidden="true" viewBox="0 0 16 16" version="1.1" width="20"
+                    data-view-component="true" style="fill: white; vertical-align: middle; margin-right: 8px;">
+                    <path
+                        d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z">
+                    </path>
                 </svg>
                 Continue with GitHub
             </a>
@@ -51,15 +68,25 @@
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <div class="brand" style="width: 100%;">
-                <img src="/static/brand_lockup_transparent.png" style="width: 100%; max-width: 240px; height: auto; margin-left: -12px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(58,134,255,0.2));" alt="boostLog">
+            <div class="brand" style="width: 100%; display: flex; align-items: center; margin-left: -4px;">
+                <h1 class="brand-text"
+                    style="font-size: 28px; margin-right: 0; margin-bottom: 0; font-weight: 800; background: linear-gradient(to right, #3A86FF, #d400ff, #FF006E); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 6px rgba(212,0,255,0.4)); position: relative; z-index: 2;">
+                    boostLog</h1>
+                <img src="/static/turbo_logo_clean.png" class="brand-logo"
+                    style="width: 44px; height: auto; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255,0,110,0.5)); flex-shrink: 0; position: relative; z-index: 1; margin-left: -26px;"
+                    alt="Turbo Logo">
             </div>
-            
+
             <div class="upload-section">
                 <h3>Upload Boostlog</h3>
                 <div class="drop-zone" id="dropZone">
                     <input type="file" id="fileInput" accept=".csv" />
-                    <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="upload-icon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="2" fill="none"
+                        stroke-linecap="round" stroke-linejoin="round" class="upload-icon">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
                     <p>Drop CSV or click to browse</p>
                 </div>
             </div>
@@ -71,12 +98,8 @@
                     <li class="empty-state">No logs uploaded yet</li>
                 </ul>
             </div>
-            
-            <div class="agent-panel">
-                <h3>AI Tuning Agent</h3>
-                <p class="agent-desc">Connect FastMCP Agent to let AI find timing drops, fuel crashes, and generate horsepower metrics.</p>
-                <button class="btn-primary" id="btnAnalyze" disabled onclick="triggerAnalysis()">Run AI Analysis</button>
-            </div>
+
+
         </aside>
 
         <!-- Main Content Area -->
@@ -84,11 +107,14 @@
             <header class="top-nav">
                 <h2>Telemetry Dashboard</h2>
                 <div style="display: flex; gap: 16px; align-items: center;">
-                    <a id="btnDownload" href="#" class="btn-primary" style="display: none; padding: 6px 16px; font-size: 12px; text-decoration: none; width: auto; border-radius: 20px;">📥 Download</a>
-                    
+                    <a id="btnDownload" href="#" class="btn-primary"
+                        style="display: none; padding: 6px 16px; font-size: 12px; text-decoration: none; width: auto; border-radius: 20px;">📥
+                        Download</a>
+
                     <div class="user-profile">
                         <div class="user-avatar">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                 <circle cx="12" cy="7" r="4"></circle>
                             </svg>
@@ -97,20 +123,21 @@
                     </div>
 
                     <button type="button" class="logout-btn" onclick="logout()" title="Logout">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                             <polyline points="16 17 21 12 16 7"></polyline>
                             <line x1="21" y1="12" x2="9" y2="12"></line>
                         </svg>
                         Logout
                     </button>
-                    
+
                     <div class="status-badge">Agent: Standby</div>
                 </div>
             </header>
 
             <div class="dashboard-grid">
-                
+
                 <div class="graph-card col-span-2">
                     <div class="card-header">
                         <h3>Interactive Boostlog</h3>
@@ -156,9 +183,15 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="agent-chat-card">
-                    <h3>Agent Insights</h3>
+                    <div class="card-header"
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                        <h3 style="margin: 0;">AI Tuning Agent Insights</h3>
+                        <button class="btn-primary" id="btnAnalyze" disabled onclick="triggerAnalysis()"
+                            style="margin-top: 0; padding: 6px 16px; font-size: 12px; width: auto; border-radius: 20px;">Start
+                            Analysis</button>
+                    </div>
                     <div class="chat-box" id="chatBox">
                         <div class="msg system">Awaiting log data for analysis...</div>
                     </div>
@@ -170,4 +203,5 @@
 
     <script src="/static/app.js"></script>
 </body>
+
 </html>
