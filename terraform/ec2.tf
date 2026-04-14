@@ -11,6 +11,13 @@ resource "aws_instance" "web" {
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
   key_name               = var.key_name
 
+  instance_market_options {
+    market_type = "spot"
+    spot_options {
+      spot_instance_type = "one-time"
+    }
+  }
+
   root_block_device {
     volume_size = 30
     volume_type = "gp3"
@@ -60,9 +67,30 @@ resource "aws_instance" "web" {
               curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
               chmod +x /usr/local/bin/docker-compose
               
-              # Create app directory and set persistence folder permissions
+              # Wait for the persistent EBS Volume to be attached by Terraform
+              echo "Waiting for EBS volume to attach..."
+              while [ ! -b /dev/nvme1n1 ] && [ ! -b /dev/sdf ] && [ ! -b /dev/xvdf ]; do
+                  sleep 2
+              done
+
+              # Identify the device name (NVMe or standard)
+              DEVICE=$(ls /dev/nvme1n1 2>/dev/null || ls /dev/sdf 2>/dev/null || ls /dev/xvdf 2>/dev/null)
+
+              # Format the volume with ext4 if it doesn't already have a filesystem
+              if ! blkid $DEVICE | grep -q "ext4"; then
+                  echo "Formatting new EBS volume..."
+                  mkfs.ext4 $DEVICE
+              fi
+
+              # Mount the persistent volume to our targeted data directory
               mkdir -p /app/data
-              chown -R admin:admin /app
+              mount $DEVICE /app/data
+
+              # Ensure it mounts automatically on future reboots
+              echo "$DEVICE /app/data ext4 defaults,nofail 0 2" >> /etc/fstab
+
+              # Set ownership to appuser (UID 1000) for Docker configuration
+              chown -R 1000:1000 /app/data
               chmod 755 /app/data
               EOF
 
@@ -78,4 +106,20 @@ resource "aws_eip" "web_eip" {
   tags = {
     Name = "boostlog-eip-${var.environment}"
   }
+}
+
+resource "aws_ebs_volume" "data_volume" {
+  availability_zone = aws_instance.web.availability_zone
+  size              = 10 # 10GB for Postgres and uploads
+  type              = "gp3"
+
+  tags = {
+    Name = "boostlog-data-${var.environment}"
+  }
+}
+
+resource "aws_volume_attachment" "ebs_att" {
+  device_name = "/dev/sdf"
+  volume_id   = aws_ebs_volume.data_volume.id
+  instance_id = aws_instance.web.id
 }
