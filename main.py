@@ -277,9 +277,10 @@ async def analyze_log(filename: str, current_user: User = Depends(get_current_us
         
     from litellm import completion
     
-    model_name = os.getenv("LLM_MODEL", "ollama/llama3")
-    if "/" not in model_name:
-        model_name = f"ollama/{model_name}"
+    # OLLAMA_MODEL holds the bare model name (e.g. llama3.2:1b)
+    # litellm requires the 'ollama/' prefix to route correctly
+    ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
+    model_name = f"ollama/{ollama_model}"
     api_base = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
     
     prompt = f"""You are a master automotive tuner. Analyze this aggregated boostlog summary from a high-performance engine:
