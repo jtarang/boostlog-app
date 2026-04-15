@@ -403,6 +403,31 @@ async def get_cached_analysis(filename: str, current_user: User = Depends(get_cu
         return {"analysis": None}
     return {"analysis": latest.result_markdown, "model": latest.model_used, "created_at": latest.created_at.isoformat()}
 
+@app.get("/api/analyses/{filename}")
+async def list_analyses(filename: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Return all saved analyses for a log, newest first."""
+    filename = os.path.basename(filename)
+    datalog = db.query(Datalog).filter(
+        Datalog.stored_filename == filename,
+        Datalog.user_id == current_user.id
+    ).first()
+    if not datalog:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    analyses = db.query(Analysis).filter(
+        Analysis.datalog_id == datalog.id
+    ).order_by(Analysis.created_at.desc()).all()
+
+    return {"analyses": [
+        {
+            "id": a.id,
+            "model_used": a.model_used,
+            "created_at": a.created_at.isoformat(),
+            "result_markdown": a.result_markdown
+        }
+        for a in analyses
+    ]}
+
 @app.post("/api/upload")
 async def upload_log(file: UploadFile = File(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not file.filename.lower().endswith(".csv"):

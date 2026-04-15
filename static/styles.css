@@ -207,6 +207,12 @@ h1, h2, h3, h4 {
     transform: translateX(4px);
 }
 
+.log-list li.active-log {
+    border-color: var(--accent);
+    background: rgba(58, 134, 255, 0.08);
+}
+
+
 .log-timestamp {
     font-size: 11px;
     color: var(--text-secondary);
@@ -294,36 +300,6 @@ h1, h2, h3, h4 {
     font-weight: 600;
 }
 
-.status-badge {
-    background: rgba(139, 148, 165, 0.1);
-    border: 1px solid var(--border-color);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.status-badge::before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--text-secondary);
-}
-
-.status-badge.active {
-    color: var(--accent);
-    background: rgba(58, 134, 255, 0.1);
-    border-color: var(--accent);
-}
-.status-badge.active::before {
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent);
-}
 
 .dashboard-grid {
     display: grid;
@@ -757,6 +733,17 @@ h1, h2, h3, h4 {
     background: rgba(255, 255, 255, 0.08);
 }
 
+/* Sidebar User Footer */
+.sidebar-user {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
 /* User Profile & Navigation */
 .user-profile {
     display: flex;
@@ -985,6 +972,66 @@ h1, h2, h3, h4 {
     border-radius: 20px;
 }
 
+/* === Analysis History Pills === */
+#analysisHistory {
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.history-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.history-count {
+    background: rgba(58, 134, 255, 0.15);
+    color: #3A86FF;
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+#historyPills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.history-pill {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.history-pill:hover {
+    border-color: #3A86FF;
+    color: var(--text-primary);
+}
+
+.history-pill.active {
+    background: rgba(58, 134, 255, 0.15);
+    border-color: #3A86FF;
+    color: #3A86FF;
+    font-weight: 600;
+}
+
 /* === Mobile Hamburger === */
 .mobile-header {
     display: none;
@@ -1122,7 +1169,4 @@ h1, h2, h3, h4 {
         display: none;
     }
 
-    .status-badge {
-        display: none;
-    }
 }

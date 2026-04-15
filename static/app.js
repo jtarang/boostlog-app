@@ -2,6 +2,15 @@ let authToken = localStorage.getItem('boostlog_token') || null;
 let authMode = 'login';
 let currentServerFile = null;
 
+function setActiveLog(name, listItem = null) {
+    // Update page title
+    const title = document.getElementById('pageTitle');
+    if (title) title.textContent = name || 'Telemetry Dashboard';
+    // Highlight the sidebar item
+    document.querySelectorAll('#logItems li').forEach(li => li.classList.remove('active-log'));
+    if (listItem) listItem.classList.add('active-log');
+}
+
 // === Sidebar Toggle (Mobile) ===
 function toggleSidebar() {
     document.querySelector('.sidebar').classList.toggle('open');
@@ -216,6 +225,7 @@ function handleFile(file) {
 
     // Upload to backend silently to archive, which refreshes the recent logs list
     uploadToBackend(file);
+    setActiveLog(file.name);
 
     // Parse CSV locally in the browser for instant visualization
     Papa.parse(file, {
@@ -297,8 +307,6 @@ function processDataForGraph() {
     calculateMetrics();
     renderChart();
     
-    document.querySelector('.status-badge').classList.add('active');
-    document.querySelector('.status-badge').innerHTML = 'Data Loaded - Agent Ready';
     document.getElementById('btnAnalyze').disabled = false;
 }
 
@@ -458,45 +466,83 @@ function setDownloadLink(url, filename) {
     const fabAi = document.getElementById('fabAi');
     const chatBox = document.getElementById('chatBox');
 
-    // Reset to loading state while we check for cached analysis
+    // Reset to loading state while we fetch analysis history
     if (btnAnalyze) { btnAnalyze.disabled = true; btnAnalyze.innerHTML = 'Loading...'; }
     if (fabAi) fabAi.disabled = true;
     if (chatBox) chatBox.innerHTML = '<div class="msg system">Checking for prior analysis...</div>';
 
-    // Task 1: Try to load a cached analysis for this log
     if (currentServerFile) {
-        fetch(`/api/analyze/${currentServerFile}`, { headers: getAuthHeaders() })
-            .then(res => res.json())
-            .then(data => {
-                if (data.analysis) {
-                    // Task 1 + 3: Cached result found — display it and show Re-run
-                    if (chatBox) {
-                        const when = data.created_at ? new Date(data.created_at).toLocaleString() : '';
-                        chatBox.innerHTML = `
-                            <div class="msg system" style="margin-bottom:8px;">📋 Cached analysis from ${when}</div>
-                            <div class="markdown-body" style="padding: 10px; font-size: 14px; text-align: left; color: var(--text-primary);">${marked.parse(data.analysis)}</div>
-                        `;
-                    }
-                    if (btnAnalyze) { btnAnalyze.disabled = false; btnAnalyze.innerHTML = '🔄 Re-run Analysis'; }
-                    if (fabAi) fabAi.disabled = false;
-                    // Auto-open drawer to show the cached result
-                    if (!document.getElementById('aiDrawer').classList.contains('open')) {
-                        toggleAiDrawer();
-                    }
-                } else {
-                    // No cached analysis — ready for first run
-                    if (chatBox) chatBox.innerHTML = '<div class="msg system">Ready for AI Analysis. Click the turbo button to begin.</div>';
-                    if (btnAnalyze) { btnAnalyze.disabled = false; btnAnalyze.innerHTML = 'Start Analysis'; }
-                    if (fabAi) fabAi.disabled = false;
-                }
-            })
-            .catch(() => {
-                // On error just default to ready state
-                if (chatBox) chatBox.innerHTML = '<div class="msg system">Ready for AI Analysis. Click the turbo button to begin.</div>';
+        loadAnalysisHistory(currentServerFile);
+    }
+}
+
+function loadAnalysisHistory(filename) {
+    const btnAnalyze = document.getElementById('btnAnalyze');
+    const fabAi = document.getElementById('fabAi');
+    const chatBox = document.getElementById('chatBox');
+    const historySection = document.getElementById('analysisHistory');
+    const historyPills = document.getElementById('historyPills');
+    const historyCount = document.getElementById('historyCount');
+
+    fetch(`/api/analyses/${filename}`, { headers: getAuthHeaders() })
+        .then(res => res.json())
+        .then(data => {
+            const analyses = data.analyses || [];
+
+            if (analyses.length === 0) {
+                // No prior analyses
+                historySection.style.display = 'none';
+                chatBox.innerHTML = '<div class="msg system">Ready for AI Analysis. Click the turbo button to begin.</div>';
                 if (btnAnalyze) { btnAnalyze.disabled = false; btnAnalyze.innerHTML = 'Start Analysis'; }
                 if (fabAi) fabAi.disabled = false;
+                return;
+            }
+
+            // Build history pills
+            historySection.style.display = 'block';
+            historyCount.textContent = `${analyses.length} run${analyses.length > 1 ? 's' : ''}`;
+            historyPills.innerHTML = '';
+
+            analyses.forEach((a, i) => {
+                const pill = document.createElement('button');
+                pill.className = 'history-pill' + (i === 0 ? ' active' : '');
+                const d = new Date(a.created_at);
+                pill.textContent = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                    + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                pill.title = `Model: ${a.model_used}`;
+                pill.onclick = () => {
+                    document.querySelectorAll('.history-pill').forEach(p => p.classList.remove('active'));
+                    pill.classList.add('active');
+                    renderAnalysisContent(a);
+                };
+                historyPills.appendChild(pill);
             });
-    }
+
+            // Show most recent analysis by default
+            renderAnalysisContent(analyses[0]);
+            if (btnAnalyze) { btnAnalyze.disabled = false; btnAnalyze.innerHTML = '🔄 Re-run Analysis'; }
+            if (fabAi) fabAi.disabled = false;
+
+            // Auto-open drawer to show cached result
+            if (!document.getElementById('aiDrawer').classList.contains('open')) {
+                toggleAiDrawer();
+            }
+        })
+        .catch(() => {
+            historySection.style.display = 'none';
+            chatBox.innerHTML = '<div class="msg system">Ready for AI Analysis. Click the turbo button to begin.</div>';
+            if (btnAnalyze) { btnAnalyze.disabled = false; btnAnalyze.innerHTML = 'Start Analysis'; }
+            if (fabAi) fabAi.disabled = false;
+        });
+}
+
+function renderAnalysisContent(analysis) {
+    const chatBox = document.getElementById('chatBox');
+    const when = new Date(analysis.created_at).toLocaleString();
+    chatBox.innerHTML = `
+        <div class="msg system" style="margin-bottom: 8px; font-size: 11px;">📋 Analysis from ${when} &nbsp;·&nbsp; <span style="opacity:0.6;">${analysis.model_used}</span></div>
+        <div class="markdown-body" style="padding: 10px; font-size: 14px; text-align: left; color: var(--text-primary);">${marked.parse(analysis.result_markdown)}</div>
+    `;
 }
 
 async function triggerAnalysis() {
@@ -518,9 +564,8 @@ async function triggerAnalysis() {
         
         if (!res.ok) throw new Error(data.detail || 'Analysis failed');
         
-        chatBox.innerHTML = `<div class="markdown-body" style="padding: 10px; font-size: 14px; text-align: left; color: var(--text-primary);">${marked.parse(data.analysis)}</div>`;
-        btn.disabled = true;
-        btn.innerHTML = '✓ Analysis Complete';
+        // Reload full history so the new run appears as a pill
+        loadAnalysisHistory(currentServerFile);
         // Auto-open the drawer to show results
         if (!document.getElementById('aiDrawer').classList.contains('open')) {
             toggleAiDrawer();
@@ -568,15 +613,15 @@ function refreshLogList() {
                     </div>
                     ${timeLabel ? `<div class="log-timestamp">${timeLabel}</div>` : ''}
                 `;
-                li.onclick = () => loadServerLog(log);
+                li.onclick = () => loadServerLog(log, li);
                 logItems.appendChild(li);
             }
         })
         .catch(err => console.error('Error fetching logs:', err));
 }
 
-function loadServerLog(log) {
-    document.querySelector('.status-badge').innerHTML = 'Fetching Historic Data...';
+function loadServerLog(log, listItem = null) {
+    setActiveLog(log.name, listItem);
     
     fetch(log.url, { headers: getAuthHeaders() })
         .then(res => res.text())
