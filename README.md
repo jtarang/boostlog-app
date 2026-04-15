@@ -1,13 +1,11 @@
-# 🏎️ boostLog - High Performance Datalog Visualizer
+# <img src="static/turbo_logo_clean.png" alt="boostLog" height="30"/> boostLog - High Performance Datalog Visualizer
 
 **boostLog** is a premium, AI-augmented telemetry platform designed for automotive enthusiasts and tuners. It transforms raw CSV datalogs into interactive, high-fidelity visualizations and provides automated "Master Tuner" insights using local LLM processing.
-
-![Dashboard Preview](static/brand_lockup_transparent.png)
+![Dashboard Preview](screenshots/dashboard-example.png)
 
 ## 🌟 Key Features
 - **Instant Visualization:** Drag-and-drop CSV uploads with interactive Chart.js graphs.
 - **AI Tuning Agent:** Automated log analysis via local **Ollama** integration (Llama 3).
-- **Secure Silos:** Private user accounts with **GitHub SSO** and JWT authentication.
 - **Enterprise Ready:** Infrastructure managed via **Terraform** and deployed to AWS with **Cloudflare Tunnels**.
 - **High Performance:** Backend powered by **FastAPI** and **Polars** for memory-speed data processing.
 
@@ -74,8 +72,3 @@ The platform is designed for a modern CI/CD flow:
 - **Frontend:** Vanilla JS, Tailwind-lite CSS, Chart.js, Marked.js
 - **Database:** PostgreSQL (Migration in progress)
 - **DevOps:** Docker, Terraform, GitHub Actions, AWS SSM
-
----
-
-## 🛡️ License
-MIT License. Created by jtarang.
