@@ -12,14 +12,6 @@ resource "aws_instance" "web" {
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
   key_name               = var.key_name
 
-  instance_market_options {
-    market_type = "spot"
-    spot_options {
-      spot_instance_type             = "one-time"
-      instance_interruption_behavior = "terminate"
-    }
-  }
-
   user_data_replace_on_change = true
 
   root_block_device {
