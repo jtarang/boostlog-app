@@ -2,6 +2,63 @@ let authToken = localStorage.getItem('boostlog_token') || null;
 let authMode = 'login';
 let currentServerFile = null;
 
+// === Sidebar Toggle (Mobile) ===
+function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+
+// === AI Drawer Toggle ===
+function toggleAiDrawer() {
+    document.getElementById('aiDrawer').classList.toggle('open');
+    document.getElementById('aiDrawerOverlay').classList.toggle('open');
+}
+
+// === Sidebar Collapse (Desktop) ===
+function collapseSidebar() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+// === Collapsible Metrics ===
+function toggleMetrics() {
+    const body = document.getElementById('metricsBody');
+    const chevron = document.getElementById('metricsChevron');
+    body.classList.toggle('collapsed');
+    chevron.classList.toggle('rotated');
+}
+
+// === Filter Parameter Toggles ===
+function filterToggles(query) {
+    const q = query.toLowerCase().trim();
+    const toggles = document.querySelectorAll('#paramToggles .toggle-label');
+    toggles.forEach(lbl => {
+        const text = lbl.textContent.toLowerCase();
+        lbl.style.display = text.includes(q) ? '' : 'none';
+    });
+}
+
+// === Toast Notifications ===
+function showToast(message, type = 'success', duration = 4000) {
+    // Remove any existing toast
+    const existing = document.querySelector('.toast-notification');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+
+    const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+    toast.innerHTML = `
+        <span class="toast-icon">${icon}</span>
+        <span class="toast-msg">${message}</span>
+        <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
+    `;
+
+    document.body.appendChild(toast);
+
+    // Trigger entrance animation
+    requestAnimationFrame(() => toast.classList.add('toast-visible'));
+}
+
 function parseJwt(token) {
     try {
         const base64Url = token.split('.')[1];
@@ -199,6 +256,8 @@ function processDataForGraph() {
 
     // Build parameter toggles
     paramToggles.innerHTML = '';
+    const searchInput = document.getElementById('toggleSearch');
+    if (searchInput) searchInput.value = '';
     
     // Auto-select some common interesting metrics
     const interestingCols = currentHeaders.filter(h => {
@@ -396,10 +455,16 @@ function setDownloadLink(url, filename) {
     }
     
     const btnAnalyze = document.getElementById('btnAnalyze');
-    if (btnAnalyze) btnAnalyze.disabled = false;
+    if (btnAnalyze) {
+        btnAnalyze.disabled = false;
+        btnAnalyze.innerHTML = 'Start Analysis';
+    }
+    
+    const fabAi = document.getElementById('fabAi');
+    if (fabAi) fabAi.disabled = false;
     
     const chatBox = document.getElementById('chatBox');
-    if (chatBox) chatBox.innerHTML = '<div class="msg system">Ready for AI Analysis. Click the sidebar button to scan.</div>';
+    if (chatBox) chatBox.innerHTML = '<div class="msg system">Ready for AI Analysis. Click the turbo button to begin.</div>';
 }
 
 async function triggerAnalysis() {
@@ -422,11 +487,16 @@ async function triggerAnalysis() {
         if (!res.ok) throw new Error(data.detail || 'Analysis failed');
         
         chatBox.innerHTML = `<div class="markdown-body" style="padding: 10px; font-size: 14px; text-align: left; color: var(--text-primary);">${marked.parse(data.analysis)}</div>`;
+        btn.disabled = true;
+        btn.innerHTML = '✓ Analysis Complete';
+        // Auto-open the drawer to show results
+        if (!document.getElementById('aiDrawer').classList.contains('open')) {
+            toggleAiDrawer();
+        }
     } catch(err) {
         chatBox.innerHTML = `<div class="msg" style="color: var(--danger);">Error: ${err.message}</div>`;
-    } finally {
         btn.disabled = false;
-        btn.innerHTML = 'Run AI Analysis';
+        btn.innerHTML = 'Retry Analysis';
     }
 }
 
