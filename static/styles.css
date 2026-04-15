@@ -207,6 +207,26 @@ h1, h2, h3, h4 {
     transform: translateX(4px);
 }
 
+.log-timestamp {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    opacity: 0.75;
+}
+
+.analysis-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(58,134,255,0.15), rgba(212,0,255,0.15));
+    border: 1px solid rgba(212,0,255,0.35);
+    color: #d400ff;
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.3px;
+}
+
 .empty-state {
     text-align: center;
     color: var(--text-secondary) !important;
