@@ -31,8 +31,8 @@ def test_upload_and_list_logs(client):
     assert logs[0]["name"] == "test_log.csv"
     
     # Fetch log content
-    file_id = logs[0]["id"]
-    res = client.get(f"/api/logs/{file_id}", headers=headers)
+    log_url = logs[0]["url"]
+    res = client.get(log_url, headers=headers)
     assert res.status_code == 200
     assert b"Time,RPM,Boost" in res.content
 
