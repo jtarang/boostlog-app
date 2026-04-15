@@ -8,7 +8,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="/static/styles.css?v=2.0">
+    <link rel="stylesheet" href="/static/styles.css?v=2.2">
     <!-- Chart.js for beautiful graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
@@ -126,41 +126,46 @@
                 </ul>
             </div>
 
+            <div class="sidebar-user">
+                <div class="user-profile sidebar-expanded-only">
+                    <div class="user-avatar">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <span id="navUsername">Guest</span>
+                </div>
+                <button type="button" class="logout-btn sidebar-expanded-only" onclick="logout()" title="Logout">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Logout
+                </button>
+                <!-- Collapsed: icon-only logout -->
+                <button type="button" class="logout-btn sidebar-collapsed-only" onclick="logout()" title="Logout" style="display: none; padding: 8px; width: 36px; justify-content: center;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
 
         </aside>
 
         <!-- Main Content Area -->
         <main class="main-content">
             <header class="top-nav">
-                <h2>Telemetry Dashboard</h2>
-                <div style="display: flex; gap: 16px; align-items: center;">
-                    <a id="btnDownload" href="#" class="btn-primary"
-                        style="display: none; padding: 6px 16px; font-size: 12px; text-decoration: none; width: auto; border-radius: 20px;">📥
-                        Download</a>
-
-                    <div class="user-profile">
-                        <div class="user-avatar">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                        </div>
-                        <span id="navUsername">Guest</span>
-                    </div>
-
-                    <button type="button" class="logout-btn" onclick="logout()" title="Logout">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                            <polyline points="16 17 21 12 16 7"></polyline>
-                            <line x1="21" y1="12" x2="9" y2="12"></line>
-                        </svg>
-                        Logout
-                    </button>
-
-                    <div class="status-badge">Agent: Standby</div>
-                </div>
+                <h2 id="pageTitle">Telemetry Dashboard</h2>
+                <a id="btnDownload" href="#" class="btn-primary"
+                    style="display: none; padding: 6px 16px; font-size: 12px; text-decoration: none; width: auto; border-radius: 20px;">📥
+                    Download</a>
             </header>
 
             <div class="dashboard-grid">
@@ -245,6 +250,13 @@
             <button class="ai-drawer-close" onclick="toggleAiDrawer()">✕</button>
         </div>
         <div class="ai-drawer-body">
+            <div id="analysisHistory" style="display: none;">
+                <div class="history-header">
+                    <span>Run History</span>
+                    <span id="historyCount" class="history-count"></span>
+                </div>
+                <div id="historyPills"></div>
+            </div>
             <div class="chat-box" id="chatBox" style="margin-top: 0; background: transparent; padding: 0;">
                 <div class="msg system">Awaiting log data for analysis...</div>
             </div>
@@ -254,7 +266,7 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=2.0"></script>
+    <script src="/static/app.js?v=2.2"></script>
 </body>
 
 </html>

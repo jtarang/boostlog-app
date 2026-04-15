@@ -2,8 +2,8 @@ from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy import create_engine, Column, Integer, String
-from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
@@ -65,6 +65,26 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String, nullable=True)
     github_id = Column(String, unique=True, index=True, nullable=True)
+    datalogs = relationship("Datalog", back_populates="owner", cascade="all, delete-orphan")
+
+class Datalog(Base):
+    __tablename__ = "datalogs"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    stored_filename = Column(String, unique=True, nullable=False)  # e.g. 2_uuid_original.csv
+    original_name = Column(String, nullable=False)
+    uploaded_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    owner = relationship("User", back_populates="datalogs")
+    analyses = relationship("Analysis", back_populates="datalog", cascade="all, delete-orphan")
+
+class Analysis(Base):
+    __tablename__ = "analyses"
+    id = Column(Integer, primary_key=True, index=True)
+    datalog_id = Column(Integer, ForeignKey("datalogs.id"), nullable=False)
+    model_used = Column(String, nullable=False)
+    result_markdown = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    datalog = relationship("Datalog", back_populates="analyses")
 
 Base.metadata.create_all(bind=engine)
 
@@ -224,11 +244,15 @@ async def github_callback(code: str, db: Session = Depends(get_db)):
         return HTMLResponse(content=html_content)
 
 @app.post("/api/analyze/{filename}")
-async def analyze_log(filename: str, current_user: User = Depends(get_current_user)):
+async def analyze_log(filename: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     filename = os.path.basename(filename)
-    if not filename.startswith(f"{current_user.id}_"):
+    datalog = db.query(Datalog).filter(
+        Datalog.stored_filename == filename,
+        Datalog.user_id == current_user.id
+    ).first()
+    if not datalog:
         raise HTTPException(status_code=403, detail="Not authorized to access this log")
-        
+
     file_path = os.path.join(UPLOAD_DIR, filename)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Log file not found")
@@ -349,55 +373,114 @@ Provide a **prioritized checklist** of specific actions the tuner or owner must 
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3
         )
-        return {"analysis": response.choices[0].message.content}
+        result_text = response.choices[0].message.content
+
+        # Persist the analysis result
+        analysis = Analysis(datalog_id=datalog.id, model_used=model_name, result_markdown=result_text)
+        db.add(analysis)
+        db.commit()
+
+        return {"analysis": result_text}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")
 
+@app.get("/api/analyze/{filename}")
+async def get_cached_analysis(filename: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Return the most recent saved analysis for a log, if it exists."""
+    filename = os.path.basename(filename)
+    datalog = db.query(Datalog).filter(
+        Datalog.stored_filename == filename,
+        Datalog.user_id == current_user.id
+    ).first()
+    if not datalog:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    latest = db.query(Analysis).filter(
+        Analysis.datalog_id == datalog.id
+    ).order_by(Analysis.created_at.desc()).first()
+
+    if not latest:
+        return {"analysis": None}
+    return {"analysis": latest.result_markdown, "model": latest.model_used, "created_at": latest.created_at.isoformat()}
+
+@app.get("/api/analyses/{filename}")
+async def list_analyses(filename: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Return all saved analyses for a log, newest first."""
+    filename = os.path.basename(filename)
+    datalog = db.query(Datalog).filter(
+        Datalog.stored_filename == filename,
+        Datalog.user_id == current_user.id
+    ).first()
+    if not datalog:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    analyses = db.query(Analysis).filter(
+        Analysis.datalog_id == datalog.id
+    ).order_by(Analysis.created_at.desc()).all()
+
+    return {"analyses": [
+        {
+            "id": a.id,
+            "model_used": a.model_used,
+            "created_at": a.created_at.isoformat(),
+            "result_markdown": a.result_markdown
+        }
+        for a in analyses
+    ]}
+
 @app.post("/api/upload")
-async def upload_log(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
+async def upload_log(file: UploadFile = File(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not file.filename.lower().endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are allowed")
 
     file_id = str(uuid.uuid4())
     safe_filename = os.path.basename(file.filename)
-    filename = f"{current_user.id}_{file_id}_{safe_filename}"
-    file_path = os.path.join(UPLOAD_DIR, filename)
-    
+    stored_filename = f"{current_user.id}_{file_id}_{safe_filename}"
+    file_path = os.path.join(UPLOAD_DIR, stored_filename)
+
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-        
+
+    # Persist metadata to DB
+    datalog = Datalog(user_id=current_user.id, stored_filename=stored_filename, original_name=safe_filename)
+    db.add(datalog)
+    db.commit()
+    db.refresh(datalog)
+
     return {
-        "message": "Upload successful", 
-        "file_id": file_id,
-        "filename": file.filename,
-        "url": f"/api/logs/{filename}"
+        "message": "Upload successful",
+        "datalog_id": datalog.id,
+        "filename": safe_filename,
+        "url": f"/api/logs/{stored_filename}"
     }
 
 @app.get("/api/logs/{filename}")
-async def get_log(filename: str, current_user: User = Depends(get_current_user)):
+async def get_log(filename: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     filename = os.path.basename(filename)
-    if not filename.startswith(f"{current_user.id}_"):
+    datalog = db.query(Datalog).filter(
+        Datalog.stored_filename == filename,
+        Datalog.user_id == current_user.id
+    ).first()
+    if not datalog:
         raise HTTPException(status_code=403, detail="Not authorized to access this log")
-        
+
     file_path = os.path.join(UPLOAD_DIR, filename)
     if os.path.exists(file_path):
-        return FileResponse(file_path, filename=filename, content_disposition_type="attachment")
-    return {"error": "File not found"}
+        return FileResponse(file_path, filename=datalog.original_name, content_disposition_type="attachment")
+    raise HTTPException(status_code=404, detail="File not found")
 
 @app.get("/api/logs")
-async def list_logs(current_user: User = Depends(get_current_user)):
-    files = []
-    if os.path.exists(UPLOAD_DIR):
-        all_files = [os.path.join(UPLOAD_DIR, f) for f in os.listdir(UPLOAD_DIR) if f.endswith('.csv') and f.startswith(f"{current_user.id}_")]
-        all_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
-        
-        for file_path in all_files:
-            f = os.path.basename(file_path)
-            parts = f.split('_', 2)
-            original_name = parts[2] if len(parts) > 2 else f
-            files.append({
-                "id": f,
-                "name": original_name,
-                "url": f"/api/logs/{f}"
-            })
-    return {"logs": files}
+async def list_logs(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    datalogs = db.query(Datalog).filter(
+        Datalog.user_id == current_user.id
+    ).order_by(Datalog.uploaded_at.desc()).all()
+
+    return {"logs": [
+        {
+            "id": d.id,
+            "name": d.original_name,
+            "url": f"/api/logs/{d.stored_filename}",
+            "uploaded_at": d.uploaded_at.isoformat()
+        }
+        for d in datalogs
+    ]}
