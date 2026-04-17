@@ -233,6 +233,30 @@ h1, h2, h3, h4 {
     letter-spacing: 0.3px;
 }
 
+.rename-log-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    opacity: 0.4;
+}
+
+.rename-log-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--accent);
+    opacity: 1;
+}
+
+.log-list li:hover .rename-log-btn {
+    opacity: 1;
+}
+
 .empty-state {
     text-align: center;
     color: var(--text-secondary) !important;

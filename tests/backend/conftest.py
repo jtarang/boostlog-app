@@ -28,8 +28,17 @@ from main import app, get_db, Base
 @pytest.fixture(scope="session", autouse=True)
 def configure_upload_dir():
     with tempfile.TemporaryDirectory() as tmpdirname:
+        import main
         main.UPLOAD_DIR = tmpdirname
         yield
+
+@pytest.fixture(scope="function", autouse=True)
+def mock_litellm(monkeypatch):
+    from unittest.mock import MagicMock
+    mock_res = MagicMock()
+    mock_res.choices[0].message.content = "## AI Analysis\n\n**Verdict**: ✅ Tuning looks good.\n\nEverything is within safe limits."
+    monkeypatch.setattr("litellm.completion", lambda **kwargs: mock_res)
+    return mock_res
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 

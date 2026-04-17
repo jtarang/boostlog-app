@@ -151,6 +151,9 @@ class UserCreate(BaseModel):
     username: str
     password: str
 
+class LogRename(BaseModel):
+    new_name: str
+
 @app.post("/register")
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.username == user.username).first()
@@ -366,23 +369,28 @@ Provide a **prioritized checklist** of specific actions the tuner or owner must 
 - If the data summary is sparse or missing key channels, state exactly what additional logging is needed.
 """
     
-    try:
-        response = completion(
-            model=model_name,
-            api_base=api_base,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3
-        )
-        result_text = response.choices[0].message.content
+    mock_response = os.getenv("MOCK_AI_RESPONSE")
+    if mock_response:
+        result_text = "## AI Analysis\n\n**Verdict**: ✅ Tuning looks good.\n\nEverything is within safe limits."
+        model_name = "mock/turbo-tuner"
+    else:
+        try:
+            response = completion(
+                model=model_name,
+                api_base=api_base,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3
+            )
+            result_text = response.choices[0].message.content
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")
 
-        # Persist the analysis result
-        analysis = Analysis(datalog_id=datalog.id, model_used=model_name, result_markdown=result_text)
-        db.add(analysis)
-        db.commit()
+    # Persist the analysis result
+    analysis = Analysis(datalog_id=datalog.id, model_used=model_name, result_markdown=result_text)
+    db.add(analysis)
+    db.commit()
 
-        return {"analysis": result_text}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")
+    return {"analysis": result_text}
 
 @app.get("/api/analyze/{filename}")
 async def get_cached_analysis(filename: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -484,3 +492,18 @@ async def list_logs(current_user: User = Depends(get_current_user), db: Session 
         }
         for d in datalogs
     ]}
+
+@app.put("/api/logs/{log_id}/rename")
+async def rename_log(log_id: int, rename_data: LogRename, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    datalog = db.query(Datalog).filter(
+        Datalog.id == log_id,
+        Datalog.user_id == current_user.id
+    ).first()
+    
+    if not datalog:
+        raise HTTPException(status_code=404, detail="Log not found")
+        
+    datalog.original_name = rename_data.new_name
+    db.commit()
+    
+    return {"id": datalog.id, "name": datalog.original_name}

@@ -605,14 +605,28 @@ function refreshLogList() {
                 const li = document.createElement('li');
                 li.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-                        <span style="display:flex; align-items:center; gap:6px; overflow:hidden;">
+                        <span style="display:flex; align-items:center; gap:6px; overflow:hidden; flex: 1;">
                             <span>📊</span>
                             <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${log.name}</span>
                         </span>
-                        ${hasAnalysis ? '<span class="analysis-badge" title="Has prior analysis">✦ AI</span>' : ''}
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <button class="rename-log-btn" title="Rename Log">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
+                            ${hasAnalysis ? '<span class="analysis-badge" title="Has prior analysis">✦ AI</span>' : ''}
+                        </div>
                     </div>
                     ${timeLabel ? `<div class="log-timestamp">${timeLabel}</div>` : ''}
                 `;
+                
+                const renameBtn = li.querySelector('.rename-log-btn');
+                renameBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    renameLog(log.id, log.name);
+                };
                 li.onclick = () => loadServerLog(log, li);
                 logItems.appendChild(li);
             }
@@ -639,4 +653,28 @@ function loadServerLog(log, listItem = null) {
             });
         })
         .catch(err => console.error('Error loading historic log:', err));
+}async function renameLog(logId, currentName) {
+    const newName = prompt('Enter new name for the log:', currentName);
+    if (!newName || newName === currentName) return;
+    
+    try {
+        const res = await fetch(`/api/logs/${logId}/rename`, {
+            method: 'PUT',
+            headers: {
+                ...getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ new_name: newName })
+        });
+        
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.detail || 'Failed to rename log');
+        }
+        
+        showToast('Log renamed successfully');
+        refreshLogList();
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
 }
