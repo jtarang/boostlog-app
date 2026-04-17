@@ -72,7 +72,8 @@ class Datalog(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     stored_filename = Column(String, unique=True, nullable=False)  # e.g. 2_uuid_original.csv
-    original_name = Column(String, nullable=False)
+    display_name = Column(String, nullable=False)
+    source_filename = Column(String, nullable=False) # Original filename from user's disk
     uploaded_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     owner = relationship("User", back_populates="datalogs")
     analyses = relationship("Analysis", back_populates="datalog", cascade="all, delete-orphan")
@@ -450,7 +451,7 @@ async def upload_log(file: UploadFile = File(...), current_user: User = Depends(
         shutil.copyfileobj(file.file, buffer)
 
     # Persist metadata to DB
-    datalog = Datalog(user_id=current_user.id, stored_filename=stored_filename, original_name=safe_filename)
+    datalog = Datalog(user_id=current_user.id, stored_filename=stored_filename, display_name=safe_filename, source_filename=safe_filename)
     db.add(datalog)
     db.commit()
     db.refresh(datalog)
@@ -474,7 +475,7 @@ async def get_log(filename: str, current_user: User = Depends(get_current_user),
 
     file_path = os.path.join(UPLOAD_DIR, filename)
     if os.path.exists(file_path):
-        return FileResponse(file_path, filename=datalog.original_name, content_disposition_type="attachment")
+        return FileResponse(file_path, filename=datalog.display_name, content_disposition_type="attachment")
     raise HTTPException(status_code=404, detail="File not found")
 
 @app.get("/api/logs")
@@ -486,7 +487,7 @@ async def list_logs(current_user: User = Depends(get_current_user), db: Session 
     return {"logs": [
         {
             "id": d.id,
-            "name": d.original_name,
+            "name": d.display_name,
             "url": f"/api/logs/{d.stored_filename}",
             "uploaded_at": d.uploaded_at.isoformat()
         }
@@ -503,7 +504,7 @@ async def rename_log(log_id: int, rename_data: LogRename, current_user: User = D
     if not datalog:
         raise HTTPException(status_code=404, detail="Log not found")
         
-    datalog.original_name = rename_data.new_name
+    datalog.display_name = rename_data.new_name
     db.commit()
     
-    return {"id": datalog.id, "name": datalog.original_name}
+    return {"id": datalog.id, "name": datalog.display_name}
