@@ -1,11 +1,20 @@
 let authToken = localStorage.getItem('boostlog_token') || null;
 let authMode = 'login';
 let currentServerFile = null;
+let currentLogId = null;
 
-function setActiveLog(name, listItem = null) {
+function setActiveLog(id, name, listItem = null) {
+    currentLogId = id;
     // Update page title
     const title = document.getElementById('pageTitle');
-    if (title) title.textContent = name || 'Telemetry Dashboard';
+    if (title) {
+        title.textContent = name || 'Telemetry Dashboard';
+        if (id) {
+            title.classList.add('editable');
+        } else {
+            title.classList.remove('editable');
+        }
+    }
     // Highlight the sidebar item
     document.querySelectorAll('#logItems li').forEach(li => li.classList.remove('active-log'));
     if (listItem) listItem.classList.add('active-log');
@@ -214,8 +223,19 @@ fileInput.addEventListener('change', (e) => {
     }
 });
 
-// Load logs on startup
+// === Initialization and Events ===
 initAuth();
+
+document.addEventListener('DOMContentLoaded', () => {
+    const pageTitle = document.getElementById('pageTitle');
+    if (pageTitle) {
+        pageTitle.onclick = () => {
+            if (currentLogId) {
+                renameLog(currentLogId, pageTitle.textContent);
+            }
+        };
+    }
+});
 
 function handleFile(file) {
     if (!file.name.endsWith('.csv')) {
@@ -635,7 +655,7 @@ function refreshLogList() {
 }
 
 function loadServerLog(log, listItem = null) {
-    setActiveLog(log.name, listItem);
+    setActiveLog(log.id, log.name, listItem);
     
     fetch(log.url, { headers: getAuthHeaders() })
         .then(res => res.text())
@@ -672,8 +692,14 @@ function loadServerLog(log, listItem = null) {
             throw new Error(data.detail || 'Failed to rename log');
         }
         
+        // Optimistic / Immediate UI update for "Syncing Divs"
+        if (currentLogId === logId) {
+            const title = document.getElementById('pageTitle');
+            if (title) title.textContent = newName;
+        }
+        
         showToast('Log renamed successfully');
-        refreshLogList();
+        refreshLogList(); // This will sync the sidebar and any other views
     } catch (err) {
         showToast(err.message, 'error');
     }

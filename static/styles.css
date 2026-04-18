@@ -322,6 +322,33 @@ h1, h2, h3, h4 {
 .top-nav h2 {
     font-size: 24px;
     font-weight: 600;
+    transition: var(--transition);
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+}
+
+.top-nav h2.editable {
+    cursor: pointer;
+}
+
+.top-nav h2.editable:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--border-color);
+    color: var(--accent);
+}
+
+/* Add an edit icon via pseudo-element for discoverability */
+.top-nav h2.editable::after {
+    content: ' ✎';
+    font-size: 14px;
+    opacity: 0;
+    transition: var(--transition);
+    vertical-align: middle;
+}
+
+.top-nav h2.editable:hover::after {
+    opacity: 0.6;
 }
 
 
