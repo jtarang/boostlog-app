@@ -247,6 +247,13 @@ fileInputOverlay.addEventListener('change', (e) => {
     if (e.target.files.length) handleFile(e.target.files[0]);
 });
 
+// Legacy file input — kept for e2e test compat
+if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) handleFile(e.target.files[0]);
+    });
+}
+
 // Modal drop zone (id=dropZone is now inside the upload modal)
 document.addEventListener('DOMContentLoaded', () => {
     const dropZone = document.getElementById('dropZone');

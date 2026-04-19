@@ -64,7 +64,7 @@ def test_ui_interactions(authenticated_page: Page):
     
     # 1. Collapsible metrics
     expect(page.locator("#metricsBody")).not_to_have_class("collapsed")
-    page.locator(".collapsible-header").click()
+    page.locator(".stats-card .collapsible-header").click()
     expect(page.locator("#metricsBody")).to_have_class("metrics-grid collapsible-body collapsed")
     
     # 2. Parameter filtering
