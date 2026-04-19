@@ -72,7 +72,8 @@ class Datalog(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     stored_filename = Column(String, unique=True, nullable=False)  # e.g. 2_uuid_original.csv
-    original_name = Column(String, nullable=False)
+    display_name = Column(String, nullable=False)
+    source_filename = Column(String, nullable=False) # Original filename from user's disk
     uploaded_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     owner = relationship("User", back_populates="datalogs")
     analyses = relationship("Analysis", back_populates="datalog", cascade="all, delete-orphan")
@@ -140,6 +141,9 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Global flag — only one analysis can run at a time across the whole server
+_analysis_in_progress: bool = False
+
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
     with open("static/index.html", "r") as f:
@@ -150,6 +154,9 @@ async def serve_frontend():
 class UserCreate(BaseModel):
     username: str
     password: str
+
+class LogRename(BaseModel):
+    new_name: str
 
 @app.post("/register")
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -253,9 +260,15 @@ async def analyze_log(filename: str, current_user: User = Depends(get_current_us
     if not datalog:
         raise HTTPException(status_code=403, detail="Not authorized to access this log")
 
+    global _analysis_in_progress
+    if _analysis_in_progress:
+        raise HTTPException(status_code=429, detail="An analysis is already running. Please wait for it to finish.")
+
     file_path = os.path.join(UPLOAD_DIR, filename)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Log file not found")
+
+    _analysis_in_progress = True
         
     try:
         df = pl.read_csv(file_path, ignore_errors=True)
@@ -366,23 +379,34 @@ Provide a **prioritized checklist** of specific actions the tuner or owner must 
 - If the data summary is sparse or missing key channels, state exactly what additional logging is needed.
 """
     
-    try:
-        response = completion(
-            model=model_name,
-            api_base=api_base,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3
-        )
-        result_text = response.choices[0].message.content
+    mock_response = os.getenv("MOCK_AI_RESPONSE")
+    if mock_response:
+        result_text = "## AI Analysis\n\n**Verdict**: ✅ Tuning looks good.\n\nEverything is within safe limits."
+        model_name = "mock/turbo-tuner"
+    else:
+        import asyncio
+        def _run_llm():
+            return completion(
+                model=model_name,
+                api_base=api_base,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3
+            )
+        try:
+            response = await asyncio.to_thread(_run_llm)
+            result_text = response.choices[0].message.content
+        except Exception as e:
+            _analysis_in_progress = False
+            raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")
 
-        # Persist the analysis result
-        analysis = Analysis(datalog_id=datalog.id, model_used=model_name, result_markdown=result_text)
-        db.add(analysis)
-        db.commit()
+    _analysis_in_progress = False
 
-        return {"analysis": result_text}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")
+    # Persist the analysis result
+    analysis = Analysis(datalog_id=datalog.id, model_used=model_name, result_markdown=result_text)
+    db.add(analysis)
+    db.commit()
+
+    return {"analysis": result_text}
 
 @app.get("/api/analyze/{filename}")
 async def get_cached_analysis(filename: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -433,16 +457,31 @@ async def upload_log(file: UploadFile = File(...), current_user: User = Depends(
     if not file.filename.lower().endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are allowed")
 
-    file_id = str(uuid.uuid4())
     safe_filename = os.path.basename(file.filename)
+
+    # Return existing record if this user already uploaded a file with the same name
+    existing = db.query(Datalog).filter(
+        Datalog.user_id == current_user.id,
+        Datalog.source_filename == safe_filename
+    ).first()
+    if existing:
+        return {
+            "message": "Already uploaded",
+            "datalog_id": existing.id,
+            "id": existing.id,
+            "filename": existing.display_name,
+            "url": f"/api/logs/{existing.stored_filename}",
+            "duplicate": True
+        }
+
+    file_id = str(uuid.uuid4())
     stored_filename = f"{current_user.id}_{file_id}_{safe_filename}"
     file_path = os.path.join(UPLOAD_DIR, stored_filename)
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # Persist metadata to DB
-    datalog = Datalog(user_id=current_user.id, stored_filename=stored_filename, original_name=safe_filename)
+    datalog = Datalog(user_id=current_user.id, stored_filename=stored_filename, display_name=safe_filename, source_filename=safe_filename)
     db.add(datalog)
     db.commit()
     db.refresh(datalog)
@@ -450,9 +489,38 @@ async def upload_log(file: UploadFile = File(...), current_user: User = Depends(
     return {
         "message": "Upload successful",
         "datalog_id": datalog.id,
+        "id": datalog.id,
         "filename": safe_filename,
-        "url": f"/api/logs/{stored_filename}"
+        "url": f"/api/logs/{stored_filename}",
+        "duplicate": False
     }
+
+@app.get("/api/proxy-csv")
+async def proxy_csv(url: str, _current_user: User = Depends(get_current_user)):
+    # Only allow bootmod3 dlog URLs to prevent open-proxy abuse
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    if parsed.netloc not in ("bootmod3.net", "www.bootmod3.net"):
+        raise HTTPException(status_code=400, detail="Only bootmod3.net URLs are supported")
+    if not parsed.path.startswith("/dlog"):
+        raise HTTPException(status_code=400, detail="Only /dlog paths are supported")
+
+    async with httpx.AsyncClient(follow_redirects=True, timeout=30) as client:
+        try:
+            r = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
+            r.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(status_code=502, detail=f"bootmod3 returned {e.response.status_code}")
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=str(e))
+
+    content_type = r.headers.get("content-type", "")
+    if "html" in content_type:
+        raise HTTPException(status_code=502, detail="bootmod3 returned HTML — the log ID may be invalid or private")
+
+    from fastapi.responses import Response
+    return Response(content=r.content, media_type="text/csv")
+
 
 @app.get("/api/logs/{filename}")
 async def get_log(filename: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -466,7 +534,7 @@ async def get_log(filename: str, current_user: User = Depends(get_current_user),
 
     file_path = os.path.join(UPLOAD_DIR, filename)
     if os.path.exists(file_path):
-        return FileResponse(file_path, filename=datalog.original_name, content_disposition_type="attachment")
+        return FileResponse(file_path, filename=datalog.display_name, content_disposition_type="attachment")
     raise HTTPException(status_code=404, detail="File not found")
 
 @app.get("/api/logs")
@@ -478,9 +546,24 @@ async def list_logs(current_user: User = Depends(get_current_user), db: Session 
     return {"logs": [
         {
             "id": d.id,
-            "name": d.original_name,
+            "name": d.display_name,
             "url": f"/api/logs/{d.stored_filename}",
             "uploaded_at": d.uploaded_at.isoformat()
         }
         for d in datalogs
     ]}
+
+@app.put("/api/logs/{log_id}/rename")
+async def rename_log(log_id: int, rename_data: LogRename, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    datalog = db.query(Datalog).filter(
+        Datalog.id == log_id,
+        Datalog.user_id == current_user.id
+    ).first()
+    
+    if not datalog:
+        raise HTTPException(status_code=404, detail="Log not found")
+        
+    datalog.display_name = rename_data.new_name
+    db.commit()
+    
+    return {"id": datalog.id, "name": datalog.display_name}
