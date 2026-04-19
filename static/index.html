@@ -8,7 +8,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="/static/styles.css?v=2.2">
+    <link rel="stylesheet" href="/static/styles.css?v=2.4">
     <!-- Chart.js for beautiful graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
@@ -108,18 +108,17 @@
             </div>
 
             <div class="upload-section">
-                <h3>Upload Boostlog</h3>
-                <div class="drop-zone" id="dropZone">
-                    <input type="file" id="fileInput" accept=".csv" />
-                    <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="2" fill="none"
-                        stroke-linecap="round" stroke-linejoin="round" class="upload-icon">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                <button class="btn-upload-sidebar" onclick="openUploadModal()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
                     </svg>
-                    <p>Drop CSV or click to browse</p>
-                </div>
+                    <span>Upload Boostlog</span>
+                </button>
             </div>
+            <!-- Hidden legacy file input kept for JS compat -->
+            <input type="file" id="fileInput" accept=".csv" style="display:none;" />
 
             <div class="log-list" id="logList">
                 <h3>Recent Logs</h3>
@@ -165,28 +164,56 @@
 
         <!-- Main Content Area -->
         <main class="main-content">
-            <header class="top-nav">
-                <h2 id="pageTitle">Telemetry Dashboard</h2>
-                <a id="btnDownload" href="#" class="btn-primary"
-                    style="display: none; padding: 6px 16px; font-size: 12px; text-decoration: none; width: auto; border-radius: 20px;">📥
-                    Download</a>
-            </header>
-
             <div class="dashboard-grid">
 
                 <div class="graph-card col-span-2">
                     <div class="card-header">
-                        <h3>Interactive Boostlog</h3>
-                        <div class="controls">
+                        <div class="card-header-left">
+                            <h3 id="pageTitle" class="graph-card-title">Interactive Datalog</h3>
+                            <a id="btnDownload" href="#" class="btn-download" style="display:none;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Download
+                            </a>
+                        </div>
+                        <div class="card-actions">
                             <select class="select-modern" id="xAxisSelect">
-                                <option value="">Select X-Axis</option>
+                                <option value="">X-Axis</option>
                             </select>
+
+                            <button class="btn-focus-mode" id="btnFocusMode" onclick="toggleFocusMode()" title="Focus Mode">
+                                <svg class="icon-expand" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                                </svg>
+                                <svg class="icon-compress" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                                    <path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/>
+                                </svg>
+                                <span>Focus</span>
+                            </button>
                         </div>
                     </div>
-                    <div class="chart-container">
+                    <div class="chart-container" id="chartContainer">
                         <canvas id="mainChart"></canvas>
                         <div class="empty-chart-overlay" id="chartOverlay">
-                            <p>Upload a log to visualize telemetry</p>
+                            <div class="overlay-inner">
+                                <div class="drop-zone" id="dropZoneOverlay">
+                                    <input type="file" id="fileInputOverlay" accept=".csv" />
+                                    <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="2" fill="none"
+                                        stroke-linecap="round" stroke-linejoin="round" class="upload-icon">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="17 8 12 3 7 8"></polyline>
+                                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                                    </svg>
+                                    <p>Drop CSV or click to browse</p>
+                                </div>
+                                <div class="url-import-wrap">
+                                    <div class="url-import-divider"><span>or import from URL</span></div>
+                                    <div class="url-import-row">
+                                        <input type="text" id="urlImportInput" class="url-import-input" placeholder="Paste a CSV URL or bootmod3 /log link…" onkeydown="if(event.key==='Enter') handleUrlImport()" />
+                                        <button class="url-import-btn" onclick="handleUrlImport()">Load</button>
+                                    </div>
+                                    <p class="url-import-hint" id="urlImportHint"></p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="toggle-search-wrap">
@@ -197,6 +224,11 @@
                         </svg>
                         <input type="text" class="toggle-search" id="toggleSearch" placeholder="Filter parameters..."
                             oninput="filterToggles(this.value)">
+                        <div class="bulk-actions">
+                            <button type="button" onclick="toggleAllParams(true)">All</button>
+                            <span class="divider">|</span>
+                            <button type="button" onclick="toggleAllParams(false)">None</button>
+                        </div>
                     </div>
                     <div class="parameter-toggles" id="paramToggles">
                         <!-- Dynamic checkboxes for Y axes -->
@@ -224,6 +256,10 @@
                         <div class="metric-item danger">
                             <span class="label">Max Timing Corr.</span>
                             <span class="value" id="valTiming">-- </span><span class="unit">deg</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="label">PI Fuel Pressure</span>
+                            <span class="value" id="valFuelPressure">-- </span><span class="unit">psi</span>
                         </div>
                         <div class="metric-item">
                             <span class="label">Torque at Clutch</span>
@@ -274,7 +310,59 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=2.2"></script>
+    <!-- Rename Modal -->
+    <div id="renameModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Rename Log</h3>
+                <button class="modal-close" onclick="closeRenameModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);">Enter a new descriptive
+                    name for your datalog.</p>
+                <input type="text" id="renameInput" class="input-modern" placeholder="Log Name"
+                    onkeydown="if(event.key === 'Enter') submitRename()">
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 12px; margin-top: 24px;">
+                <button class="btn-secondary" onclick="closeRenameModal()" style="flex: 1;">Cancel</button>
+                <button class="btn-primary" onclick="submitRename()" style="flex: 1;">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Load a Boostlog</h3>
+                <button class="modal-close" onclick="closeUploadModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="drop-zone" id="dropZone">
+                    <input type="file" id="fileInputModal" accept=".csv" />
+                    <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="2" fill="none"
+                        stroke-linecap="round" stroke-linejoin="round" class="upload-icon">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p>Drop CSV or click to browse</p>
+                </div>
+                <div class="url-import-wrap" style="border: 1px solid var(--border-color); border-radius: 8px; margin-top: 16px; padding: 16px;">
+                    <div class="url-import-divider"><span>or import from URL</span></div>
+                    <div class="url-import-row">
+                        <input type="text" id="urlImportModalInput" class="url-import-input" placeholder="bootmod3.net/log?id=… or direct CSV URL"
+                            onkeydown="if(event.key==='Enter') submitUrlImportModal()" />
+                        <button class="url-import-btn" onclick="submitUrlImportModal()">Load</button>
+                    </div>
+                    <p id="urlImportModalHint" style="font-size: 12px; min-height: 18px; margin-top: 8px; line-height: 1.5;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="/static/app.js?v=2.4"></script>
 </body>
 
 </html>
