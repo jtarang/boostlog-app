@@ -15,6 +15,7 @@ permissions:
 jobs:
   apply:
     runs-on: ubuntu-latest
+    environment: prd
     defaults:
       run:
         working-directory: ./terraform
@@ -35,7 +36,9 @@ jobs:
           terraform_version: 1.5.0
 
       - name: Terraform Init
-        run: terraform init
+        run: |
+          terraform init
+          terraform workspace select prd || terraform workspace new prd
 
       - name: Inject GitHub Secrets into tfvars
         run: |
