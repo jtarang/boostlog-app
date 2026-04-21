@@ -111,7 +111,7 @@ jobs:
               \"echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin\",
               \"docker pull ghcr.io/jtarang/boostlog-app:$SHA_TAG\",
               \"docker-compose down\",
-              \"aws secretsmanager get-secret-value --secret-id boostlog/dev/secrets --query SecretString --output text | jq -r 'to_entries[] | .key + \\\"=\\\" + (.value|tostring)' > .env.dev\",
+              \"aws secretsmanager get-secret-value --secret-id boostlog.app/dev/secrets --query SecretString --output text | jq -r 'to_entries[] | .key + \\\"=\\\" + (.value|tostring)' > .env.dev\",
               \"echo IMAGE_TAG=$SHA_TAG >> .env.dev\",
               \"docker-compose --env-file .env.dev up -d --force-recreate\"
             ]" \
