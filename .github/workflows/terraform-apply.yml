@@ -46,4 +46,6 @@ jobs:
           echo "db_password = \"${{ secrets.DB_PASSWORD }}\"" >> environments/prd.tfvars
 
       - name: Terraform Apply (Prod)
-        run: terraform apply -var-file="environments/prd.tfvars" -auto-approve
+        run: |
+          terraform workspace select default || terraform workspace new default
+          terraform apply -var-file="environments/prd.tfvars" -auto-approve

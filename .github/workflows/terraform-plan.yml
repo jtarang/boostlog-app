@@ -45,4 +45,6 @@ jobs:
           echo "db_password = \"${{ secrets.DB_PASSWORD }}\"" >> environments/prd.tfvars
 
       - name: Terraform Plan
-        run: terraform plan -var-file="environments/prd.tfvars" -no-color
+        run: |
+          terraform workspace select default || terraform workspace new default
+          terraform plan -var-file="environments/prd.tfvars" -no-color

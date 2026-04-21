@@ -64,6 +64,7 @@ jobs:
         working-directory: ./terraform
         run: |
           terraform init
+          terraform workspace select dev || terraform workspace new dev
           echo "github_client_id = \"${{ secrets.GH_CLIENT_ID }}\"" >> environments/dev.tfvars
           echo "github_client_secret = \"${{ secrets.GH_CLIENT_SECRET }}\"" >> environments/dev.tfvars
           echo "cloudflare_tunnel_token = \"${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}\"" >> environments/dev.tfvars
