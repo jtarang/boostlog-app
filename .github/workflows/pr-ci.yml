@@ -1,36 +1,117 @@
-name: CI
+name: PR CI/CD (Dev)
 
 on:
   pull_request:
     branches: [ "main" ]
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: jtarang/boostlog-app
+
 jobs:
-  test:
+  test-and-deploy-dev:
     runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.14.4"
           cache: "pip"
+      
+      - name: Cache Playwright Browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}
 
-      - name: Install dependencies
+      - name: Run Tests
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest httpx playwright
-          python -m playwright install --with-deps
-
-      - name: Create local env mock
-        run: |
+          pip install -r requirements.txt pytest httpx playwright
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" != "true" ]; then
+            python -m playwright install chromium --with-deps
+          else
+            python -m playwright install-deps chromium
+          fi
           echo "AWS_REGION=us-east-1" > .env
           echo "SKIP_AWS_FETCH=true" >> .env
           echo "SECRET_KEY=secure_testing_key_123" >> .env
           mkdir -p data/uploads
-
-      - name: Run Pytest
-        run: |
           python -m pytest tests/
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Apply (Dev)
+        working-directory: ./terraform
+        run: |
+          terraform init
+          echo "github_client_id = \"${{ secrets.GH_CLIENT_ID }}\"" >> environments/dev.tfvars
+          echo "github_client_secret = \"${{ secrets.GH_CLIENT_SECRET }}\"" >> environments/dev.tfvars
+          echo "cloudflare_tunnel_token = \"${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}\"" >> environments/dev.tfvars
+          echo "db_password = \"${{ secrets.DB_PASSWORD }}\"" >> environments/dev.tfvars
+          terraform apply -var-file="environments/dev.tfvars" -auto-approve
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Trigger EC2 Deployment via SSM (Dev)
+        run: |
+          SHA_TAG="sha-${GITHUB_SHA::7}"
+          
+          aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=tag:Name,Values=boostlog-web-dev" \
+            --parameters "commands=[
+              \"cd /app\",
+              \"sudo mkdir -p /app/data\",
+              \"sudo chown -R 1000:1000 /app/data\",
+              \"which jq > /dev/null || sudo apt-get update -y\",
+              \"which jq > /dev/null || sudo apt-get install -y jq\",
+              \"wget -q --header='Authorization: token ${{ secrets.GITHUB_TOKEN }}' -O docker-compose.yml https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/docker-compose.yml\",
+              \"echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin\",
+              \"docker pull ghcr.io/jtarang/boostlog-app:$SHA_TAG\",
+              \"docker-compose down\",
+              \"aws secretsmanager get-secret-value --secret-id boostlog/dev/secrets --query SecretString --output text | jq -r 'to_entries[] | .key + \\\"=\\\" + (.value|tostring)' > .env.dev\",
+              \"echo IMAGE_TAG=$SHA_TAG >> .env.dev\",
+              \"docker-compose --env-file .env.dev up -d --force-recreate\"
+            ]" \
+            --comment "Deploying ghcr.io/jtarang/boostlog-app:$SHA_TAG to dev"

@@ -14,6 +14,7 @@ permissions:
 jobs:
   plan:
     runs-on: ubuntu-latest
+    environment: prd
     defaults:
       run:
         working-directory: ./terraform
