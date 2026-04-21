@@ -1,6 +1,6 @@
 environment          = "dev"
 aws_region           = "us-east-1"
-instance_type        = "t3.micro"
+instance_type        = "t3.medium"
 key_name             = "dev-boostlog-app-key"
 domain_name          = "dev.boostlog.app"
 secret_name          = "boostlog/dev/secrets"

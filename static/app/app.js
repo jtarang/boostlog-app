@@ -467,8 +467,8 @@ function renderChart() {
 
     const scalesConfig = {
         x: {
-            grid: { color: '#2A303F' },
-            ticks: { color: '#8B94A5' }
+            grid: { color: 'rgba(255, 255, 255, 0.04)' },
+            ticks: { color: 'rgba(255, 255, 255, 0.3)', maxTicksLimit: 12 }
         }
     };
 
@@ -518,7 +518,7 @@ function renderChart() {
             type: 'linear',
             display: isPrimary,
             position: meta.position,
-            grid: isPrimary ? { color: '#2A303F' } : { drawOnChartArea: false },
+            grid: isPrimary ? { color: 'rgba(255, 255, 255, 0.04)' } : { drawOnChartArea: false },
             ticks: isPrimary ? { color: meta.color } : { display: false },
             title: isPrimary
                 ? { display: true, text: meta.label, font: { size: 10, weight: 'bold' } }
@@ -537,11 +537,19 @@ function renderChart() {
             label: header,
             data,
             borderColor: color,
-            backgroundColor: `${color}1A`,
+            fill: true,
+            backgroundColor: (context) => {
+                 const ctx = context.chart?.ctx;
+                 if (!ctx) return `${color}1A`;
+                 const gradient = ctx.createLinearGradient(0, 0, 0, context.chart.height || 400);
+                 gradient.addColorStop(0, `${color}33`); // 20% opacity matching canvas
+                 gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                 return gradient;
+            },
             borderWidth: 2,
             pointRadius: 0,
             pointHoverRadius: 4,
-            tension: 0.2,
+            tension: 0.4, // Smoother splines like the landing page
             spanGaps: true,
             yAxisID: uniqueAxisID
         });
@@ -579,10 +587,10 @@ function renderChart() {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: 'rgba(24, 28, 37, 0.95)',
-                    titleColor: '#3A86FF',
+                    backgroundColor: 'rgba(15, 15, 17, 0.95)',
+                    titleColor: '#8338EC',
                     padding: 12,
-                    borderColor: '#2A303F',
+                    borderColor: 'rgba(255,255,255,0.08)',
                     borderWidth: 1,
                     bodySpacing: 4
                 },
