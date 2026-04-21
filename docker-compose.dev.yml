@@ -1,0 +1,61 @@
+services:
+  web:
+    image: ghcr.io/jtarang/boostlog-app:${IMAGE_TAG:-latest}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env.dev
+    depends_on:
+      - db
+      - ollama
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    env_file:
+      - .env.dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    # Uncomment the below section if deploying to an EC2 instance with an NVIDIA GPU setup to enable hardware acceleration.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  ollama-pull-llama:
+    image: ollama/ollama:latest
+    container_name: ollama-pull-llama
+    volumes:
+      - ollama_data:/root/.ollama
+    env_file:
+      - .env.dev
+    entrypoint: /bin/sh
+    command: "-c 'sleep 5; ollama pull ${OLLAMA_MODEL:-llama3.2:1b}'"
+    depends_on:
+      - ollama
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: boostlog-tunnel
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - web
+
+volumes:
+  postgres_data:
+  ollama_data:
