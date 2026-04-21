@@ -6,8 +6,18 @@ import requests
 
 @pytest.fixture(scope="session", autouse=True)
 def start_server():
+    # Ensure data directory exists
+    os.makedirs("./data", exist_ok=True)
+    
+    # Manually create tables for the test DB since main.py no longer calls create_all()
+    from main import Base
+    from sqlalchemy import create_engine
+    test_db_url = "sqlite:///./data/test_e2e.db"
+    test_engine = create_engine(test_db_url)
+    Base.metadata.create_all(bind=test_engine)
+
     env = os.environ.copy()
-    env["DATABASE_URL"] = "sqlite:///./data/test_e2e.db"
+    env["DATABASE_URL"] = test_db_url
     env["AWS_ACCESS_KEY_ID"] = "testing"
     env["AWS_SECRET_ACCESS_KEY"] = "testing"
     env["SKIP_AWS_FETCH"] = "true"
@@ -43,7 +53,7 @@ def start_server():
 def authenticated_page(page):
     import uuid
     username = f"user_{uuid.uuid4().hex[:8]}"
-    page.goto("http://127.0.0.1:8001/")
+    page.goto("http://127.0.0.1:8001/app")
     # Register/Login flow
     page.locator(".auth-tabs .tab:nth-child(2)").click()
     page.locator("#authUsername").fill(username)
