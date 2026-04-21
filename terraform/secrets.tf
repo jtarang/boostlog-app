@@ -5,7 +5,7 @@ resource "aws_kms_key" "boostlog_key" {
 }
 
 resource "aws_kms_alias" "boostlog_key_alias" {
-  name          = "alias/boostlog-key-${var.environment}"
+  name          = "alias/boostlog-key-${var.environment}${local.name_suffix}"
   target_key_id = aws_kms_key.boostlog_key.key_id
 }
 

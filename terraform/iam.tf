@@ -1,3 +1,7 @@
+locals {
+  name_suffix = var.environment == "dev" ? "-v2" : ""
+}
+
 data "aws_iam_policy_document" "ec2_assume_role" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -10,7 +14,7 @@ data "aws_iam_policy_document" "ec2_assume_role" {
 }
 
 resource "aws_iam_role" "ec2_role" {
-  name               = "boostlog-ec2-role-${var.environment}"
+  name               = "boostlog-ec2-role-${var.environment}${local.name_suffix}"
   assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
 }
 
@@ -36,7 +40,7 @@ data "aws_iam_policy_document" "secrets_access" {
 }
 
 resource "aws_iam_role_policy" "secrets_access_policy" {
-  name   = "boostlog-secrets-access-${var.environment}"
+  name   = "boostlog-secrets-access-${var.environment}${local.name_suffix}"
   role   = aws_iam_role.ec2_role.id
   policy = data.aws_iam_policy_document.secrets_access.json
 }
@@ -47,6 +51,6 @@ resource "aws_iam_role_policy_attachment" "ssm_core" {
 }
 
 resource "aws_iam_instance_profile" "ec2_profile" {
-  name = "boostlog-ec2-profile-${var.environment}"
+  name = "boostlog-ec2-profile-${var.environment}${local.name_suffix}"
   role = aws_iam_role.ec2_role.name
 }
