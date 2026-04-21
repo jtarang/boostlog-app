@@ -537,15 +537,6 @@ function renderChart() {
             label: header,
             data,
             borderColor: color,
-            fill: true,
-            backgroundColor: (context) => {
-                 const ctx = context.chart?.ctx;
-                 if (!ctx) return `${color}1A`;
-                 const gradient = ctx.createLinearGradient(0, 0, 0, context.chart.height || 400);
-                 gradient.addColorStop(0, `${color}33`); // 20% opacity matching canvas
-                 gradient.addColorStop(1, 'rgba(0,0,0,0)');
-                 return gradient;
-            },
             borderWidth: 2,
             pointRadius: 0,
             pointHoverRadius: 4,
