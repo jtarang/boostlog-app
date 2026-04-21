@@ -36,7 +36,7 @@ def get_secret(secret_name):
         print(f"Boto3 Error getting secret {secret_name} (bypassing due to local environment): {e}")
     return None
 
-aws_secrets_str = get_secret(os.getenv("AWS_SECRET_NAME", "boostlog/prd/secrets"))
+aws_secrets_str = get_secret(os.getenv("AWS_SECRET_NAME", "boostlog.app/prd/secrets"))
 if aws_secrets_str:
     aws_secrets = json.loads(aws_secrets_str)
 else:
