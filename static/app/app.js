@@ -175,6 +175,16 @@ async function performLogin(username, password) {
     initAuth();
 }
 
+async function loginAsDemo() {
+    const errorEl = document.getElementById('authError');
+    if (errorEl) errorEl.textContent = '';
+    try {
+        await performLogin('demo', 'demo');
+    } catch (err) {
+        if (errorEl) errorEl.textContent = "Demo mode failed: " + err.message;
+    }
+}
+
 function getAuthHeaders() {
     return authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
 }
