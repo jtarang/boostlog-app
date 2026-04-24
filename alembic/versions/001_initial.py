@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.engine.reflection import Inspector
 
 
 # revision identifiers, used by Alembic.
@@ -19,40 +20,47 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    conn = op.get_bind()
+    inspector = Inspector.from_engine(conn)
+    tables = inspector.get_table_names()
+
     # Create Users table
-    op.create_table(
-        'users',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('username', sa.String(), nullable=False),
-        sa.Column('hashed_password', sa.String(), nullable=False),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('username')
-    )
+    if 'users' not in tables:
+        op.create_table(
+            'users',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('username', sa.String(), nullable=False),
+            sa.Column('hashed_password', sa.String(), nullable=False),
+            sa.PrimaryKeyConstraint('id'),
+            sa.UniqueConstraint('username')
+        )
     
     # Create Datalogs table (with original_name initially)
-    op.create_table(
-        'datalogs',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('user_id', sa.Integer(), nullable=False),
-        sa.Column('stored_filename', sa.String(), nullable=False),
-        sa.Column('original_name', sa.String(), nullable=False),
-        sa.Column('uploaded_at', sa.DateTime(timezone=True), nullable=True),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('stored_filename')
-    )
+    if 'datalogs' not in tables:
+        op.create_table(
+            'datalogs',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('user_id', sa.Integer(), nullable=False),
+            sa.Column('stored_filename', sa.String(), nullable=False),
+            sa.Column('original_name', sa.String(), nullable=False),
+            sa.Column('uploaded_at', sa.DateTime(timezone=True), nullable=True),
+            sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+            sa.PrimaryKeyConstraint('id'),
+            sa.UniqueConstraint('stored_filename')
+        )
     
     # Create Analyses table
-    op.create_table(
-        'analyses',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('datalog_id', sa.Integer(), nullable=False),
-        sa.Column('model_used', sa.String(), nullable=False),
-        sa.Column('result_markdown', sa.Text(), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
-        sa.ForeignKeyConstraint(['datalog_id'], ['datalogs.id'], ),
-        sa.PrimaryKeyConstraint('id')
-    )
+    if 'analyses' not in tables:
+        op.create_table(
+            'analyses',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('datalog_id', sa.Integer(), nullable=False),
+            sa.Column('model_used', sa.String(), nullable=False),
+            sa.Column('result_markdown', sa.Text(), nullable=False),
+            sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
+            sa.ForeignKeyConstraint(['datalog_id'], ['datalogs.id'], ),
+            sa.PrimaryKeyConstraint('id')
+        )
 
 
 def downgrade() -> None:
