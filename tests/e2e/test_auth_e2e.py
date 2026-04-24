@@ -1,7 +1,7 @@
 from playwright.sync_api import Page, expect
 
 def test_login_flow(page: Page):
-    page.goto("http://127.0.0.1:8001/")
+    page.goto("http://127.0.0.1:8001/app")
     
     # Ensure overlay is visible
     expect(page.locator("#authOverlay")).to_be_visible()
@@ -24,7 +24,7 @@ def test_login_flow(page: Page):
     expect(page.locator("#navUsername")).to_have_text("e2e_user")
 
 def test_login_error_shows(page: Page):
-    page.goto("http://127.0.0.1:8001/")
+    page.goto("http://127.0.0.1:8001/app")
     
     # Wrong credentials to Login
     page.locator("#authUsername").fill("e2e_user")

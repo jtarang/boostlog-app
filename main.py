@@ -36,7 +36,7 @@ def get_secret(secret_name):
         print(f"Boto3 Error getting secret {secret_name} (bypassing due to local environment): {e}")
     return None
 
-aws_secrets_str = get_secret(os.getenv("AWS_SECRET_NAME", "boostlog/prd/secrets"))
+aws_secrets_str = get_secret(os.getenv("AWS_SECRET_NAME", "boostlog.app/prd/secrets"))
 if aws_secrets_str:
     aws_secrets = json.loads(aws_secrets_str)
 else:
@@ -87,7 +87,7 @@ class Analysis(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     datalog = relationship("Datalog", back_populates="analyses")
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)  # Handled by Alembic migrations
 
 def get_db():
     db = SessionLocal()
@@ -145,8 +145,13 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 _analysis_in_progress: bool = False
 
 @app.get("/", response_class=HTMLResponse)
-async def serve_frontend():
-    with open("static/index.html", "r") as f:
+async def serve_landing():
+    with open("static/landing/index.html", "r") as f:
+        return f.read()
+
+@app.get("/app", response_class=HTMLResponse)
+async def serve_app():
+    with open("static/app/index.html", "r") as f:
         return f.read()
 
 # --- ROUTES ---
@@ -243,7 +248,7 @@ async def github_callback(code: str, db: Session = Depends(get_db)):
         <html>
             <script>
                 localStorage.setItem('boostlog_token', '{local_token}');
-                window.location.href = '/';
+                window.location.href = '/app';
             </script>
             <body>Oauth Flow Complete. Linking Datastore...</body>
         </html>
