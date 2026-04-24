@@ -398,6 +398,37 @@ h4 {
     cursor: not-allowed;
 }
 
+.btn-demo {
+    width: 100%;
+    margin-top: 16px;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(131, 56, 236, 0.4);
+    background: linear-gradient(135deg, rgba(131, 56, 236, 0.05), rgba(131, 56, 236, 0.15));
+    color: #e0b0ff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-demo:hover {
+    background: linear-gradient(135deg, rgba(131, 56, 236, 0.15), rgba(131, 56, 236, 0.3));
+    border-color: #8338EC;
+    color: #ffffff;
+    box-shadow: 0 0 20px rgba(131, 56, 236, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-demo:active {
+    transform: translateY(0);
+}
+
 /* Main Content */
 .main-content {
     flex: 1;

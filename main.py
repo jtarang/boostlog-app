@@ -141,6 +141,19 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+@app.on_event("startup")
+def ensure_demo_user():
+    db = SessionLocal()
+    try:
+        demo_user = db.query(User).filter(User.username == "demo").first()
+        if not demo_user:
+            hashed_pw = get_password_hash("demo")
+            db.add(User(username="demo", hashed_password=hashed_pw))
+            db.commit()
+            print("Demo user created (demo/demo)")
+    finally:
+        db.close()
+
 # Global flag — only one analysis can run at a time across the whole server
 _analysis_in_progress: bool = False
 
