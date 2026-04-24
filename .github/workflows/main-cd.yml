@@ -7,6 +7,7 @@ on:
       - 'main.py'
       - 'static/**'
       - 'Dockerfile'
+      - 'alembic/**'
       - 'docker-compose.yml'
       - 'requirements.txt'
       - 'tests/**'
