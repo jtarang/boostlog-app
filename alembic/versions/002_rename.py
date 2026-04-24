@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.engine.reflection import Inspector
 
 
 # revision identifiers, used by Alembic.
@@ -19,17 +20,24 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # 1. Rename original_name to display_name
-    op.alter_column('datalogs', 'original_name', new_column_name='display_name')
+    conn = op.get_bind()
+    inspector = Inspector.from_engine(conn)
+    columns = [c['name'] for c in inspector.get_columns('datalogs')]
+
+    # 1. Rename original_name to display_name if original_name exists
+    if 'original_name' in columns and 'display_name' not in columns:
+        op.alter_column('datalogs', 'original_name', new_column_name='display_name')
     
-    # 2. Add source_filename (initially nullable)
-    op.add_column('datalogs', sa.Column('source_filename', sa.String(), nullable=True))
-    
-    # 3. Populate source_filename from display_name
-    op.execute("UPDATE datalogs SET source_filename = display_name")
-    
-    # 4. Make it NOT NULL
-    op.alter_column('datalogs', 'source_filename', nullable=False)
+    # 2. Add source_filename (initially nullable) if it doesn't exist
+    if 'source_filename' not in columns:
+        op.add_column('datalogs', sa.Column('source_filename', sa.String(), nullable=True))
+        
+        # 3. Populate source_filename from display_name
+        # We assume if we just added it, we need to populate it
+        op.execute("UPDATE datalogs SET source_filename = display_name")
+        
+        # 4. Make it NOT NULL
+        op.alter_column('datalogs', 'source_filename', nullable=False)
 
 
 def downgrade() -> None:
