@@ -18,7 +18,7 @@ _mock.start()
 # Pre-seed our mock secret
 _client = boto3.client('secretsmanager', region_name='us-east-1')
 _client.create_secret(
-    Name="boostlog/prod/secrets",
+    Name="boostlog.app/prd/secrets",
     SecretString='{"SECRET_KEY": "mocked_secret_key_from_moto", "GITHUB_CLIENT_ID": "mock_id", "GITHUB_CLIENT_SECRET": "mock_secret"}'
 )
 
@@ -28,7 +28,6 @@ from main import app, get_db, Base
 @pytest.fixture(scope="session", autouse=True)
 def configure_upload_dir():
     with tempfile.TemporaryDirectory() as tmpdirname:
-        import main
         main.UPLOAD_DIR = tmpdirname
         yield
 
@@ -49,8 +48,12 @@ engine = create_engine(
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="function", autouse=True)
 def db_session():
+    # Inject test engine and session into main app to handle startup events correctly
+    main.engine = engine
+    main.SessionLocal = TestingSessionLocal
+    
     Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
     try:
