@@ -3,6 +3,13 @@ let authMode = 'login';
 let currentServerFile = null;
 let currentLogId = null;
 let currentRenameId = null;
+let currentProjects = [];
+let currentLogs = [];
+let hasAnalysisById = new Map();
+let currentView = 'dashboard'; // 'dashboard' | 'library'
+let libraryFilter = 'all'; // 'all' | 'unassigned' | <project_id>
+let bulkSelection = new Set();
+const SIDEBAR_LOG_LIMIT = 5;
 
 function setActiveLog(id, name, listItem = null) {
     currentLogId = id;
@@ -15,6 +22,11 @@ function setActiveLog(id, name, listItem = null) {
         } else {
             title.classList.remove('editable');
         }
+    }
+    // Enable/disable AI FAB
+    const fab = document.getElementById('fabAi');
+    if (fab) {
+        fab.disabled = !id && !currentData;
     }
     // Highlight the sidebar item
     document.querySelectorAll('#logItems li').forEach(li => li.classList.remove('active-log'));
@@ -329,6 +341,23 @@ function handleFile(file) {
 
 function processDataForGraph() {
     chartOverlay.style.display = 'none';
+
+    // Enable AI FAB if data is present
+    const fab = document.getElementById('fabAi');
+    if (fab) {
+        fab.disabled = !currentData;
+    }
+
+    // Auto-hide sidebar to focus on the chart
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar && !sidebar.classList.contains('collapsed')) {
+        sidebar.classList.add('collapsed');
+    }
+    // Mobile: close the sidebar overlay if open
+    const sidebarEl = document.querySelector('.sidebar');
+    if (sidebarEl && sidebarEl.classList.contains('open') && window.innerWidth <= 768) {
+        toggleSidebar();
+    }
 
     // Populate X Axis selector (defaulting to Time or RPM)
     xAxisSelect.innerHTML = '';
@@ -797,68 +826,241 @@ async function triggerAnalysis() {
     }
 }
 
-function refreshLogList(selectId = null) {
-    fetch('/api/logs', { headers: getAuthHeaders() })
-        .then(res => res.json())
-        .then(async data => {
-            if (!data.logs || data.logs.length === 0) return;
-            logItems.innerHTML = '';
+async function refreshLogList(selectId = null) {
+    try {
+        const [logsRes, projectsRes] = await Promise.all([
+            fetch('/api/logs', { headers: getAuthHeaders() }),
+            fetch('/api/projects', { headers: getAuthHeaders() })
+        ]);
+        currentLogs = (await logsRes.json()).logs || [];
+        currentProjects = (await projectsRes.json()).projects || [];
 
-            for (const log of data.logs) {
-                // Task 4: Check if this log has a cached analysis
-                let hasAnalysis = false;
-                try {
-                    const storedFilename = log.url.split('/').pop();
-                    const r = await fetch(`/api/analyze/${storedFilename}`, { headers: getAuthHeaders() });
-                    const d = await r.json();
-                    hasAnalysis = Boolean(d.analysis);
-                } catch (_) { }
+        // Resolve "has prior analysis" once for all logs (used by both sidebar and library)
+        const analyses = await Promise.all(currentLogs.map(async (log) => {
+            try {
+                const stored = log.url.split('/').pop();
+                const r = await fetch(`/api/analyze/${stored}`, { headers: getAuthHeaders() });
+                return [log.id, Boolean((await r.json()).analysis)];
+            } catch { return [log.id, false]; }
+        }));
+        hasAnalysisById = new Map(analyses);
 
-                // Task 2: Format the uploaded_at timestamp
-                let timeLabel = '';
-                if (log.uploaded_at) {
-                    const d = new Date(log.uploaded_at);
-                    timeLabel = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-                        + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        renderSidebarLogs(selectId);
+        if (currentView === 'library') renderLibrary();
+    } catch (err) {
+        console.error('Error fetching logs/projects:', err);
+    }
+}
+
+function renderSidebarLogs(selectId = null) {
+    logItems.innerHTML = '';
+
+    if (currentLogs.length === 0) {
+        logItems.innerHTML = '<li class="empty-state">No logs uploaded yet</li>';
+        return;
+    }
+
+    const recent = currentLogs.slice(0, SIDEBAR_LOG_LIMIT);
+    for (const log of recent) renderLogItem(log, hasAnalysisById.get(log.id), selectId);
+
+    if (currentLogs.length > SIDEBAR_LOG_LIMIT) {
+        const more = document.createElement('li');
+        more.className = 'view-all-link';
+        more.innerHTML = `View all ${currentLogs.length} in Library <span aria-hidden="true">→</span>`;
+        more.onclick = () => switchView('library');
+        logItems.appendChild(more);
+    }
+}
+
+function renderLogItem(log, hasAnalysis, selectId) {
+    let timeLabel = '';
+    if (log.uploaded_at) {
+        const d = new Date(log.uploaded_at);
+        timeLabel = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+            + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    }
+
+    const li = document.createElement('li');
+    if (currentLogId && log.id === currentLogId) li.classList.add('active-log');
+    li.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <span style="display:flex; align-items:center; gap:6px; overflow:hidden; flex: 1;">
+                <span>📊</span>
+                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${log.name}</span>
+            </span>
+            <div style="display:flex; align-items:center; gap:4px;">
+                <button class="rename-log-btn" title="Rename Log">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
+                ${hasAnalysis ? '<span class="analysis-badge" title="Has prior analysis">✦ AI</span>' : ''}
+            </div>
+        </div>
+        ${timeLabel ? `<div class="log-timestamp">${timeLabel}</div>` : ''}
+    `;
+
+    li.querySelector('.rename-log-btn').onclick = (e) => {
+        e.stopPropagation();
+        renameLog(log.id, log.name);
+    };
+    li.onclick = () => loadServerLog(log, li);
+    logItems.appendChild(li);
+
+    if (selectId && log.id === selectId) setActiveLog(log.id, log.name, li);
+}
+
+// === Project CRUD ===
+async function createProject(payload) {
+    const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to create build');
+    return data;
+}
+
+async function renameProject(id, name) {
+    const res = await fetch(`/api/projects/${id}`, {
+        method: 'PUT',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to rename build');
+    return data;
+}
+
+async function deleteProject(id) {
+    const res = await fetch(`/api/projects/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || 'Failed to delete build');
+    }
+}
+
+async function moveLogToProject(logId, projectId) {
+    const res = await fetch(`/api/logs/${logId}/project`, {
+        method: 'PUT',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_id: projectId })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to move log');
+    return data;
+}
+
+let pendingProjectCallback = null;
+
+function newProjectPrompt() {
+    openNewProjectModal();
+}
+
+function openNewProjectModal(onCreate = null) {
+    pendingProjectCallback = onCreate;
+    const modal = document.getElementById('newProjectModal');
+    if (modal) {
+        document.getElementById('newProjectInput').value = '';
+        document.getElementById('newProjectVin').value = '';
+        document.getElementById('newProjectVehicle').value = '';
+        document.getElementById('newProjectCustomer').value = '';
+        document.getElementById('newProjectNotes').value = '';
+        document.getElementById('newProjectStatus').value = '';
+        modal.style.display = 'flex';
+        setTimeout(() => document.getElementById('newProjectInput').focus(), 50);
+    }
+}
+
+function closeNewProjectModal() {
+    const modal = document.getElementById('newProjectModal');
+    if (modal) modal.style.display = 'none';
+    pendingProjectCallback = null;
+}
+
+async function submitNewProject() {
+    const name = document.getElementById('newProjectInput').value.trim();
+    if (!name) {
+        showToast('Build name is required', 'error');
+        return;
+    }
+
+    const payload = {
+        name: name,
+        vin: document.getElementById('newProjectVin').value.trim(),
+        vehicle_model: document.getElementById('newProjectVehicle').value.trim(),
+        customer_name: document.getElementById('newProjectCustomer').value.trim(),
+        notes: document.getElementById('newProjectNotes').value.trim(),
+        status: document.getElementById('newProjectStatus').value || null
+    };
+
+    const cb = pendingProjectCallback;
+    closeNewProjectModal();
+    try {
+        const proj = await createProject(payload);
+        showToast('Build created');
+        if (cb) await cb(proj);
+        await refreshLogList();
+    } catch (err) { showToast(err.message, 'error'); }
+}
+
+// === Project picker popover (move log → project) ===
+function closeProjectPicker() {
+    document.getElementById('projectPicker')?.remove();
+}
+
+function showProjectPicker(buttonEl, logId, currentProjectId) {
+    closeProjectPicker();
+
+    const picker = document.createElement('div');
+    picker.className = 'project-picker';
+    picker.id = 'projectPicker';
+
+    const opts = [
+        { id: null, name: 'Unassigned' },
+        ...currentProjects,
+        { id: '__new__', name: '+ New project…' }
+    ];
+
+    opts.forEach(opt => {
+        const item = document.createElement('button');
+        item.className = 'project-picker-item';
+        if (opt.id === currentProjectId) item.classList.add('active');
+        item.textContent = opt.name;
+        item.onclick = async (e) => {
+            e.stopPropagation();
+            closeProjectPicker();
+            try {
+                if (opt.id === '__new__') {
+                    openNewProjectModal(async (proj) => {
+                        await moveLogToProject(logId, proj.id);
+                        showToast('Log moved');
+                    });
+                    return;
                 }
+                await moveLogToProject(logId, opt.id);
+                showToast('Log moved');
+                refreshLogList();
+            } catch (err) { showToast(err.message, 'error'); }
+        };
+        picker.appendChild(item);
+    });
 
-                const li = document.createElement('li');
-                if (currentLogId && log.id === currentLogId) {
-                    li.classList.add('active-log');
-                }
-                li.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-                        <span style="display:flex; align-items:center; gap:6px; overflow:hidden; flex: 1;">
-                            <span>📊</span>
-                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${log.name}</span>
-                        </span>
-                        <div style="display:flex; align-items:center; gap:6px;">
-                            <button class="rename-log-btn" title="Rename Log">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
-                            </button>
-                            ${hasAnalysis ? '<span class="analysis-badge" title="Has prior analysis">✦ AI</span>' : ''}
-                        </div>
-                    </div>
-                    ${timeLabel ? `<div class="log-timestamp">${timeLabel}</div>` : ''}
-                `;
+    document.body.appendChild(picker);
+    const rect = buttonEl.getBoundingClientRect();
+    const pickerRect = picker.getBoundingClientRect();
+    picker.style.top = `${Math.min(rect.bottom + 4, window.innerHeight - pickerRect.height - 8)}px`;
+    picker.style.left = `${Math.max(8, rect.right - pickerRect.width)}px`;
 
-                const renameBtn = li.querySelector('.rename-log-btn');
-                renameBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    renameLog(log.id, log.name);
-                };
-                li.onclick = () => loadServerLog(log, li);
-                logItems.appendChild(li);
-
-                if (selectId && log.id === selectId) {
-                    setActiveLog(log.id, log.name, li);
-                }
-            }
-        })
-        .catch(err => console.error('Error fetching logs:', err));
+    setTimeout(() => {
+        const dismiss = (ev) => {
+            if (!picker.contains(ev.target)) closeProjectPicker();
+            else document.addEventListener('click', dismiss, { once: true });
+        };
+        document.addEventListener('click', dismiss, { once: true });
+    }, 0);
 }
 
 function loadServerLog(log, listItem = null) {
@@ -868,6 +1070,18 @@ function loadServerLog(log, listItem = null) {
         return;
     }
     setActiveLog(log.id, log.name, listItem);
+
+    // Switch to dashboard so the graph is visible
+    if (currentView !== 'dashboard') {
+        switchView('dashboard');
+    }
+
+    // Close mobile sidebar if open
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar && sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+        document.getElementById('sidebarOverlay')?.classList.remove('open');
+    }
 
     fetch(log.url, { headers: getAuthHeaders() })
         .then(res => res.text())
@@ -1034,3 +1248,559 @@ function toggleFocusMode() {
         if (currentChart) currentChart.resize();
     }, 300);
 }
+
+// === View switcher (Dashboard <-> Library) ===
+function switchView(view) {
+    currentView = view;
+    document.body.classList.toggle('view-library', view === 'library');
+    document.body.classList.toggle('view-settings', view === 'settings');
+
+    document.querySelectorAll('[data-view]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === view);
+    });
+
+    const views = ['dashboard', 'libraryView', 'settingsView', 'projectsView'];
+    
+    // Toggle actual element visibility
+    if (view === 'dashboard') {
+        document.querySelector('.dashboard-grid').style.display = 'grid';
+        document.getElementById('libraryView').style.display = 'none';
+        document.getElementById('projectsView').style.display = 'none';
+        document.getElementById('settingsView').style.display = 'none';
+        setTimeout(() => { if (currentChart) currentChart.resize(); }, 50);
+    } else if (view === 'library') {
+        document.querySelector('.dashboard-grid').style.display = 'none';
+        document.getElementById('libraryView').style.display = 'block';
+        document.getElementById('projectsView').style.display = 'none';
+        document.getElementById('settingsView').style.display = 'none';
+        renderLibrary();
+    } else if (view === 'projects') {
+        document.querySelector('.dashboard-grid').style.display = 'none';
+        document.getElementById('libraryView').style.display = 'none';
+        document.getElementById('projectsView').style.display = 'block';
+        document.getElementById('settingsView').style.display = 'none';
+        renderProjectsView();
+    } else if (view === 'settings') {
+        document.querySelector('.dashboard-grid').style.display = 'none';
+        document.getElementById('libraryView').style.display = 'none';
+        document.getElementById('projectsView').style.display = 'none';
+        document.getElementById('settingsView').style.display = 'block';
+        loadUserSettings();
+    }
+}
+
+// === Library View ===
+function renderLibrary() {
+    renderLibraryRail();
+    renderLibraryLogs();
+}
+
+function renderLibraryRail() {
+    const smart = document.getElementById('railSmart');
+    const projects = document.getElementById('railProjects');
+    if (!smart || !projects) return;
+
+    const unassignedCount = currentLogs.filter(l => l.project_id == null).length;
+
+    const smartItems = [
+        { key: 'all', name: 'All Logs', count: currentLogs.length, icon: 'all' },
+        { key: 'unassigned', name: 'Unassigned', count: unassignedCount, icon: 'unassigned' },
+    ];
+
+    smart.innerHTML = '';
+    for (const item of smartItems) {
+        smart.appendChild(buildRailItem(item.key, item.name, item.count, false));
+    }
+
+    projects.innerHTML = '';
+    if (currentProjects.length === 0) {
+        const empty = document.createElement('li');
+        empty.className = 'rail-empty';
+        empty.textContent = 'No projects yet';
+        projects.appendChild(empty);
+    } else {
+        for (const p of currentProjects) {
+            const count = currentLogs.filter(l => l.project_id === p.id).length;
+            projects.appendChild(buildRailItem(p.id, p.name, count, true));
+        }
+    }
+}
+
+function buildRailItem(key, name, count, withActions) {
+    const li = document.createElement('li');
+    li.className = 'rail-item' + (String(libraryFilter) === String(key) ? ' active' : '');
+    li.innerHTML = `
+        <span class="rail-item-name">${name}</span>
+        <span class="rail-item-count">${count}</span>
+        ${withActions ? `
+            <div class="rail-item-actions">
+                <button class="rail-rename" title="Rename">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
+                <button class="rail-delete" title="Delete project">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"></path>
+                    </svg>
+                </button>
+            </div>` : ''}
+    `;
+    li.addEventListener('click', () => {
+        libraryFilter = key;
+        clearBulkSelection();
+        renderLibrary();
+    });
+    if (withActions) {
+        li.querySelector('.rail-rename').onclick = async (e) => {
+            e.stopPropagation();
+            const next = prompt('Rename project:', name);
+            if (!next || next.trim() === name) return;
+            try {
+                await renameProject(key, next.trim());
+                showToast('Build renamed');
+                refreshLogList();
+            } catch (err) { showToast(err.message, 'error'); }
+        };
+        li.querySelector('.rail-delete').onclick = async (e) => {
+            e.stopPropagation();
+            if (!confirm(`Delete project "${name}"? Logs will move back to Unassigned.`)) return;
+            try {
+                await deleteProject(key);
+                if (libraryFilter === key) libraryFilter = 'all';
+                showToast('Build deleted');
+                refreshLogList();
+            } catch (err) { showToast(err.message, 'error'); }
+        };
+    }
+    return li;
+}
+
+function getFilteredLibraryLogs() {
+    let logs = currentLogs.slice();
+    if (libraryFilter === 'all') {
+        // no-op
+    } else if (libraryFilter === 'unassigned') {
+        logs = logs.filter(l => l.project_id == null);
+    } else {
+        logs = logs.filter(l => String(l.project_id) === String(libraryFilter));
+    }
+
+    const q = (document.getElementById('librarySearch')?.value || '').toLowerCase().trim();
+    if (q) logs = logs.filter(l => l.name.toLowerCase().includes(q));
+
+    const sort = document.getElementById('librarySort')?.value || 'newest';
+    if (sort === 'newest') {
+        logs.sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at));
+    } else if (sort === 'oldest') {
+        logs.sort((a, b) => new Date(a.uploaded_at) - new Date(b.uploaded_at));
+    } else if (sort === 'name') {
+        logs.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return logs;
+}
+
+function renderLibraryLogs() {
+    const grid = document.getElementById('libraryGrid');
+    const empty = document.getElementById('libraryEmpty');
+    const title = document.getElementById('libraryActiveTitle');
+    const countPill = document.getElementById('libraryActiveCount');
+    if (!grid) return;
+
+    // Title reflects the active filter
+    if (libraryFilter === 'all') title.textContent = 'All Logs';
+    else if (libraryFilter === 'unassigned') title.textContent = 'Unassigned';
+    else {
+        const proj = currentProjects.find(p => p.id === libraryFilter);
+        title.textContent = proj ? proj.name : 'Build';
+    }
+
+    const logs = getFilteredLibraryLogs();
+    countPill.textContent = logs.length;
+
+    // Show/hide project details button
+    const btnDetails = document.getElementById('btnProjectDetails');
+    if (btnDetails) {
+        btnDetails.style.display = (libraryFilter !== 'all' && libraryFilter !== 'unassigned') ? 'flex' : 'none';
+    }
+
+    grid.innerHTML = '';
+    if (logs.length === 0) {
+        empty.style.display = 'block';
+        empty.querySelector('p').textContent =
+            currentLogs.length === 0 ? 'No logs uploaded yet. Click "Upload Boostlog" in the sidebar to get started.' :
+            'No logs match your filter.';
+        return;
+    }
+    empty.style.display = 'none';
+
+    for (const log of logs) {
+        grid.appendChild(buildLogCard(log));
+    }
+    refreshBulkBar();
+}
+
+function buildLogCard(log) {
+    const card = document.createElement('article');
+    card.className = 'log-card' + (bulkSelection.has(log.id) ? ' selected' : '');
+    const proj = log.project_id != null ? currentProjects.find(p => p.id === log.project_id) : null;
+    const hasAi = hasAnalysisById.get(log.id);
+    let timeLabel = '';
+    if (log.uploaded_at) {
+        const d = new Date(log.uploaded_at);
+        timeLabel = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+            + ' · ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    }
+
+    card.innerHTML = `
+        <label class="log-card-check" title="Select">
+            <input type="checkbox" ${bulkSelection.has(log.id) ? 'checked' : ''}>
+        </label>
+        <div class="log-card-body">
+            <div class="log-card-title">
+                <span class="log-card-icon">📊</span>
+                <span class="log-card-name" title="${log.name}">${log.name}</span>
+            </div>
+            <div class="log-card-meta">
+                ${proj ? `<span class="log-card-project">${proj.name}</span>` : '<span class="log-card-project muted">Unassigned</span>'}
+                ${hasAi ? '<span class="analysis-badge">✦ AI</span>' : ''}
+                ${timeLabel ? `<span class="log-card-time">${timeLabel}</span>` : ''}
+            </div>
+        </div>
+        <div class="log-card-actions">
+            <button class="log-card-btn" data-action="open" title="Open in Workbench">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 12 7 12 10 4 14 20 17 12 21 12"></polyline>
+                </svg>
+            </button>
+            <button class="log-card-btn" data-action="move" title="Move to build">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+            </button>
+            <button class="log-card-btn" data-action="rename" title="Rename">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+            </button>
+        </div>
+    `;
+
+    const checkbox = card.querySelector('.log-card-check input');
+    checkbox.onchange = (e) => {
+        if (e.target.checked) bulkSelection.add(log.id);
+        else bulkSelection.delete(log.id);
+        card.classList.toggle('selected', e.target.checked);
+        refreshBulkBar();
+    };
+    card.querySelector('.log-card-check').onclick = (e) => e.stopPropagation();
+
+    card.querySelector('[data-action="open"]').onclick = (e) => {
+        e.stopPropagation();
+        openLogFromLibrary(log);
+    };
+    card.querySelector('[data-action="move"]').onclick = (e) => {
+        e.stopPropagation();
+        showProjectPicker(e.currentTarget, log.id, log.project_id);
+    };
+    card.querySelector('[data-action="rename"]').onclick = (e) => {
+        e.stopPropagation();
+        renameLog(log.id, log.name);
+    };
+    // Card body click also opens
+    card.querySelector('.log-card-body').onclick = () => openLogFromLibrary(log);
+
+    return card;
+}
+
+function openLogFromLibrary(log) {
+    switchView('dashboard');
+    loadServerLog(log);
+}
+
+function refreshBulkBar() {
+    const bar = document.getElementById('libraryBulkBar');
+    const count = document.getElementById('libraryBulkCount');
+    if (!bar) return;
+    if (bulkSelection.size === 0) {
+        bar.style.display = 'none';
+        return;
+    }
+    bar.style.display = 'flex';
+    count.textContent = `${bulkSelection.size} selected`;
+}
+
+function clearBulkSelection() {
+    bulkSelection.clear();
+    refreshBulkBar();
+    if (currentView === 'library') renderLibraryLogs();
+}
+
+async function bulkMovePrompt() {
+    if (bulkSelection.size === 0) return;
+    const opts = ['Unassigned', ...currentProjects.map(p => p.name), '+ New build…'];
+    const choice = prompt(
+        `Move ${bulkSelection.size} log(s) to which build?\n\n` +
+        opts.map((o, i) => `${i + 1}. ${o}`).join('\n') +
+        '\n\nEnter the number:'
+    );
+    if (!choice) return;
+    const idx = parseInt(choice, 10) - 1;
+    if (isNaN(idx) || idx < 0 || idx >= opts.length) {
+        showToast('Invalid choice', 'error');
+        return;
+    }
+    if (idx === opts.length - 1) {
+        const idsToMove = [...bulkSelection];
+        openNewProjectModal(async (proj) => {
+            await Promise.all(idsToMove.map(id => moveLogToProject(id, proj.id)));
+            showToast(`Moved ${idsToMove.length} log(s)`);
+            bulkSelection.clear();
+        });
+        return;
+    }
+
+    const targetId = idx === 0 ? null : currentProjects[idx - 1].id;
+    try {
+        await Promise.all([...bulkSelection].map(id => moveLogToProject(id, targetId)));
+        showToast(`Moved ${bulkSelection.size} log(s)`);
+        bulkSelection.clear();
+        await refreshLogList();
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+async function loadUserSettings() {
+    try {
+        const res = await fetch('/api/user/me', { headers: getAuthHeaders() });
+        const data = await res.json();
+        if (res.ok) {
+            document.getElementById('setFullName').value = data.full_name || '';
+            document.getElementById('setEmail').value = data.email || '';
+            if (data.settings) {
+                document.getElementById('setUnits').value = data.settings.units || 'metric';
+                document.getElementById('setGraphMode').value = data.settings.graph_mode || 'single';
+            }
+        }
+    } catch (err) { console.error('Failed to load settings:', err); }
+}
+
+async function saveUserSettings() {
+    const payload = {
+        full_name: document.getElementById('setFullName').value.trim(),
+        email: document.getElementById('setEmail').value.trim(),
+        settings_json: JSON.stringify({
+            units: document.getElementById('setUnits').value,
+            graph_mode: document.getElementById('setGraphMode').value
+        })
+    };
+    try {
+        const res = await fetch('/api/user/me', {
+            method: 'PATCH',
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            showToast('Settings saved');
+        } else {
+            const err = await res.json();
+            showToast(err.detail || 'Failed to save settings', 'error');
+        }
+    } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function openProjectDetails() {
+    if (libraryFilter === 'all' || libraryFilter === 'unassigned') return;
+    try {
+        const res = await fetch(`/api/projects/${libraryFilter}`, { headers: getAuthHeaders() });
+        const data = await res.json();
+        if (res.ok) {
+            document.getElementById('detName').value = data.name || '';
+            document.getElementById('detVin').value = data.vin || '';
+            document.getElementById('detVehicle').value = data.vehicle_model || '';
+            document.getElementById('detCustomer').value = data.customer_name || '';
+            document.getElementById('detNotes').value = data.notes || '';
+            document.getElementById('detStatus').value = data.status || '';
+            document.getElementById('projectDetailsModal').style.display = 'flex';
+        }
+    } catch (err) { showToast('Failed to load project details', 'error'); }
+}
+
+function closeProjectDetails() {
+    document.getElementById('projectDetailsModal').style.display = 'none';
+}
+
+async function saveProjectDetails() {
+    const payload = {
+        name: document.getElementById('detName').value.trim(),
+        vin: document.getElementById('detVin').value.trim(),
+        vehicle_model: document.getElementById('detVehicle').value.trim(),
+        customer_name: document.getElementById('detCustomer').value.trim(),
+        notes: document.getElementById('detNotes').value.trim(),
+        status: document.getElementById('detStatus').value || null
+    };
+    try {
+        const res = await fetch(`/api/projects/${libraryFilter}`, {
+            method: 'PATCH',
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            showToast('Build details updated');
+            closeProjectDetails();
+            refreshLogList();
+        } else {
+            const err = await res.json();
+            showToast(err.detail || 'Update failed', 'error');
+        }
+    } catch (err) { showToast(err.message, 'error'); }
+}
+
+// === Garage (Projects Management) View ===
+function timeAgo(isoStr) {
+    if (!isoStr) return null;
+    const diff = Date.now() - new Date(isoStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 30) return `${days}d ago`;
+    return new Date(isoStr).toLocaleDateString();
+}
+
+function getProjectStatus(p) {
+    // Manual override takes priority
+    if (p.status) {
+        const map = {
+            'active': { label: 'Active', cls: 'status-active' },
+            'in_progress': { label: 'In Progress', cls: 'status-progress' },
+            'on_hold': { label: 'On Hold', cls: 'status-hold' },
+            'completed': { label: 'Completed', cls: 'status-completed' }
+        };
+        return map[p.status] || { label: p.status, cls: 'status-new' };
+    }
+    // Auto-detect from activity
+    if (!p.log_count) return { label: 'New', cls: 'status-new' };
+    if (!p.last_activity) return { label: 'Idle', cls: 'status-idle' };
+    const diff = Date.now() - new Date(p.last_activity).getTime();
+    const days = diff / (1000 * 60 * 60 * 24);
+    if (days < 3) return { label: 'Active', cls: 'status-active' };
+    if (days < 14) return { label: 'In Progress', cls: 'status-progress' };
+    return { label: 'Completed', cls: 'status-completed' };
+}
+
+async function renderProjectsView() {
+    const grid = document.getElementById('projectsGrid');
+    const countLabel = document.getElementById('projectsCountLabel');
+    const search = document.getElementById('projectsSearch')?.value.toLowerCase() || '';
+    if (!grid) return;
+
+    const filtered = currentProjects.filter(p => 
+        p.name.toLowerCase().includes(search) || 
+        (p.vin && p.vin.toLowerCase().includes(search)) ||
+        (p.vehicle_model && p.vehicle_model.toLowerCase().includes(search)) ||
+        (p.customer_name && p.customer_name.toLowerCase().includes(search))
+    );
+
+    if (countLabel) countLabel.textContent = `${filtered.length} Build${filtered.length !== 1 ? 's' : ''} in Garage`;
+
+    grid.innerHTML = '';
+    if (filtered.length === 0) {
+        grid.innerHTML = `
+            <div class="library-empty" style="grid-column: 1/-1; text-align: center; padding: 60px 20px;">
+                <p style="font-size: 40px; margin-bottom: 12px;">🏁</p>
+                <p style="font-size: 15px; color: var(--text-secondary);">No builds found. Click <strong>New Build</strong> to add your first vehicle.</p>
+            </div>`;
+        return;
+    }
+
+    filtered.forEach(p => {
+        const status = getProjectStatus(p);
+        const lastAgo = timeAgo(p.last_activity);
+        const card = document.createElement('div');
+        card.className = 'project-mgr-card';
+        card.innerHTML = `
+            <div class="project-mgr-header">
+                <div class="project-mgr-title">
+                    <h3>${p.name}</h3>
+                    <span class="garage-status ${status.cls}">${status.label}</span>
+                </div>
+                <div class="project-mgr-actions">
+                    <button onclick="editProjectFromView(${p.id})" title="Edit">✏️</button>
+                    <button class="danger" onclick="deleteProjectFromView(${p.id}, '${p.name.replace(/'/g, "\\'")}')" title="Delete">🗑️</button>
+                </div>
+            </div>
+            <div class="project-mgr-body">
+                <div class="garage-stats-row">
+                    <div class="garage-stat">
+                        <span class="garage-stat-value">${p.log_count || 0}</span>
+                        <span class="garage-stat-label">Logs</span>
+                    </div>
+                    <div class="garage-stat">
+                        <span class="garage-stat-value">${lastAgo || '—'}</span>
+                        <span class="garage-stat-label">Last Activity</span>
+                    </div>
+                </div>
+                <div class="garage-details-row">
+                    <div class="project-mgr-detail">
+                        <label>Vehicle</label>
+                        <span>${p.vehicle_model || '—'}</span>
+                    </div>
+                    <div class="project-mgr-detail">
+                        <label>VIN</label>
+                        <span class="vin-mono">${p.vin || '—'}</span>
+                    </div>
+                    <div class="project-mgr-detail">
+                        <label>Customer</label>
+                        <span>${p.customer_name || '—'}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="project-mgr-footer">
+                <button onclick="viewProjectLogs(${p.id})">Open Logs →</button>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+function viewProjectLogs(projectId) {
+    libraryFilter = projectId;
+    switchView('library');
+}
+
+async function editProjectFromView(projectId) {
+    libraryFilter = projectId; // Context for openProjectDetails
+    openProjectDetails();
+    // Wrap close modal to refresh our view on save
+    const oldClose = closeProjectDetails;
+    window.closeProjectDetails = () => {
+        oldClose();
+        renderProjectsView();
+        window.closeProjectDetails = oldClose; // restore
+    };
+}
+
+async function deleteProjectFromView(id, name) {
+    if (!confirm(`Are you sure you want to delete project "${name}"?\nDatalogs will be unassigned but NOT deleted.`)) return;
+    try {
+        const res = await fetch(`/api/projects/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+        if (res.ok) {
+            showToast('Build removed');
+            await refreshProjectList();
+            renderProjectsView();
+        } else {
+            const err = await res.json();
+            showToast(err.detail || 'Delete failed', 'error');
+        }
+    } catch (err) { showToast(err.message, 'error'); }
+}
+

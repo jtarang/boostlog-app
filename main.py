@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, F
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from passlib.context import CryptContext
 from pydantic import BaseModel
+from typing import Optional
 from datetime import datetime, timedelta, timezone
 import jwt
 import os
@@ -63,19 +64,40 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=True)
+    full_name = Column(String, nullable=True)
     hashed_password = Column(String, nullable=True)
     github_id = Column(String, unique=True, index=True, nullable=True)
+    settings_json = Column(Text, nullable=True) # JSON blob for frontend prefs
     datalogs = relationship("Datalog", back_populates="owner", cascade="all, delete-orphan")
+    projects = relationship("Project", back_populates="owner", cascade="all, delete-orphan")
+
+class Project(Base):
+    __tablename__ = "projects"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String, nullable=False)
+    vin = Column(String, nullable=True)
+    vehicle_model = Column(String, nullable=True)
+    customer_name = Column(String, nullable=True)
+    notes = Column(Text, nullable=True)
+    status = Column(String, nullable=True)  # manual override: active, in_progress, completed, on_hold
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    owner = relationship("User", back_populates="projects")
+    # Logs detach (project_id -> NULL) when the project is deleted
+    datalogs = relationship("Datalog", back_populates="project", passive_deletes=True)
 
 class Datalog(Base):
     __tablename__ = "datalogs"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="SET NULL"), nullable=True)
     stored_filename = Column(String, unique=True, nullable=False)  # e.g. 2_uuid_original.csv
     display_name = Column(String, nullable=False)
     source_filename = Column(String, nullable=False) # Original filename from user's disk
     uploaded_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     owner = relationship("User", back_populates="datalogs")
+    project = relationship("Project", back_populates="datalogs")
     analyses = relationship("Analysis", back_populates="datalog", cascade="all, delete-orphan")
 
 class Analysis(Base):
@@ -175,6 +197,30 @@ class UserCreate(BaseModel):
 
 class LogRename(BaseModel):
     new_name: str
+
+class ProjectCreate(BaseModel):
+    name: str
+    vin: Optional[str] = None
+    vehicle_model: Optional[str] = None
+    customer_name: Optional[str] = None
+    notes: Optional[str] = None
+    status: Optional[str] = None
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    vin: Optional[str] = None
+    vehicle_model: Optional[str] = None
+    customer_name: Optional[str] = None
+    notes: Optional[str] = None
+    status: Optional[str] = None
+
+class UserUpdate(BaseModel):
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    settings_json: Optional[str] = None
+
+class LogMove(BaseModel):
+    project_id: Optional[int] = None
 
 @app.post("/register")
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -566,7 +612,8 @@ async def list_logs(current_user: User = Depends(get_current_user), db: Session 
             "id": d.id,
             "name": d.display_name,
             "url": f"/api/logs/{d.stored_filename}",
-            "uploaded_at": d.uploaded_at.isoformat()
+            "uploaded_at": d.uploaded_at.isoformat(),
+            "project_id": d.project_id,
         }
         for d in datalogs
     ]}
@@ -583,5 +630,175 @@ async def rename_log(log_id: int, rename_data: LogRename, current_user: User = D
         
     datalog.display_name = rename_data.new_name
     db.commit()
-    
+
     return {"id": datalog.id, "name": datalog.display_name}
+
+# --- PROJECTS ---
+
+@app.get("/api/projects")
+async def list_projects(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    projects = db.query(Project).filter(
+        Project.user_id == current_user.id
+    ).order_by(Project.created_at.asc()).all()
+
+    result = []
+    for p in projects:
+        logs = db.query(Datalog).filter(Datalog.project_id == p.id).all()
+        log_count = len(logs)
+        last_activity = None
+        if logs:
+            latest = max(l.uploaded_at for l in logs if l.uploaded_at)
+            if latest:
+                last_activity = latest.isoformat()
+        result.append({
+            "id": p.id,
+            "name": p.name,
+            "vin": p.vin,
+            "vehicle_model": p.vehicle_model,
+            "customer_name": p.customer_name,
+            "notes": p.notes,
+            "status": p.status,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "log_count": log_count,
+            "last_activity": last_activity
+        })
+    return {"projects": result}
+
+@app.post("/api/projects")
+async def create_project(payload: ProjectCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    name = payload.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Project name cannot be empty")
+    
+    project = Project(
+        user_id=current_user.id,
+        name=name,
+        vin=payload.vin.strip() if payload.vin else None,
+        vehicle_model=payload.vehicle_model.strip() if payload.vehicle_model else None,
+        customer_name=payload.customer_name.strip() if payload.customer_name else None,
+        notes=payload.notes.strip() if payload.notes else None,
+        status=payload.status.strip() if payload.status else None
+    )
+    
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+    return {
+        "id": project.id, 
+        "name": project.name, 
+        "vin": project.vin,
+        "vehicle_model": project.vehicle_model,
+        "customer_name": project.customer_name,
+        "notes": project.notes,
+        "status": project.status,
+        "created_at": project.created_at.isoformat() if project.created_at else None
+    }
+
+@app.put("/api/projects/{project_id}")
+async def rename_project(project_id: int, payload: ProjectUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    project = db.query(Project).filter(
+        Project.id == project_id,
+        Project.user_id == current_user.id
+    ).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    name = payload.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Project name cannot be empty")
+    project.name = name
+    db.commit()
+    return {"id": project.id, "name": project.name}
+
+@app.delete("/api/projects/{project_id}")
+async def delete_project(project_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    project = db.query(Project).filter(
+        Project.id == project_id,
+        Project.user_id == current_user.id
+    ).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    # Detach logs from this project so they reappear in "Unassigned"
+    db.query(Datalog).filter(Datalog.project_id == project.id).update({Datalog.project_id: None})
+    db.delete(project)
+    db.commit()
+    return {"deleted": project_id}
+
+@app.put("/api/logs/{log_id}/project")
+async def move_log_to_project(log_id: int, payload: LogMove, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    datalog = db.query(Datalog).filter(
+        Datalog.id == log_id,
+        Datalog.user_id == current_user.id
+    ).first()
+    if not datalog:
+        raise HTTPException(status_code=404, detail="Log not found")
+
+    if payload.project_id is not None:
+        project = db.query(Project).filter(
+            Project.id == payload.project_id,
+            Project.user_id == current_user.id
+        ).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+    datalog.project_id = payload.project_id
+    db.commit()
+    return {"id": datalog.id, "project_id": datalog.project_id}
+# --- USER SETTINGS ---
+@app.get("/api/user/me")
+async def get_user_me(current_user: User = Depends(get_current_user)):
+    return {
+        "username": current_user.username,
+        "email": current_user.email,
+        "full_name": current_user.full_name,
+        "settings": json.loads(current_user.settings_json) if current_user.settings_json else {}
+    }
+
+@app.patch("/api/user/me")
+async def update_user_me(payload: UserUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if payload.email is not None:
+        current_user.email = payload.email
+    if payload.full_name is not None:
+        current_user.full_name = payload.full_name
+    if payload.settings_json is not None:
+        current_user.settings_json = payload.settings_json
+    db.commit()
+    return {"status": "success"}
+
+# --- PROJECT DETAILS ---
+@app.get("/api/projects/{project_id}")
+async def get_project_details(project_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {
+        "id": project.id,
+        "name": project.name,
+        "vin": project.vin,
+        "vehicle_model": project.vehicle_model,
+        "customer_name": project.customer_name,
+        "notes": project.notes,
+        "status": project.status,
+        "created_at": project.created_at.isoformat() if project.created_at else None
+    }
+
+@app.patch("/api/projects/{project_id}")
+async def update_project_details(project_id: int, payload: ProjectUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if payload.name is not None:
+        project.name = payload.name
+    if payload.vin is not None:
+        project.vin = payload.vin
+    if payload.vehicle_model is not None:
+        project.vehicle_model = payload.vehicle_model
+    if payload.customer_name is not None:
+        project.customer_name = payload.customer_name
+    if payload.notes is not None:
+        project.notes = payload.notes
+    if payload.status is not None:
+        project.status = payload.status
+        
+    db.commit()
+    return {"status": "success"}
