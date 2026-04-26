@@ -35,8 +35,14 @@ ENV PATH=/home/appuser/.local/bin:$PATH
 # Copy application source code
 COPY --chown=appuser:appuser . .
 
+# Make entrypoint script executable
+RUN chmod +x /app/scripts/entrypoint.sh
+
 # Expose port
 EXPOSE 8000
 
-# Command to run the application
+# Set entrypoint to handle migrations and wait-for-db
+ENTRYPOINT ["/app/scripts/entrypoint.sh"]
+
+# Command to run the application (passed as arguments to entrypoint)
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
