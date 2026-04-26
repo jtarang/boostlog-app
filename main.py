@@ -18,9 +18,35 @@ import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 import polars as pl
 from dotenv import load_dotenv
-
+import base64
+from webauthn import (
+    generate_registration_options,
+    verify_registration_response,
+    generate_authentication_options,
+    verify_authentication_response,
+    options_to_json,
+    base64url_to_bytes,
+)
+from webauthn.helpers import bytes_to_base64url
+from webauthn.helpers.structs import (
+    AuthenticatorSelectionCriteria,
+    UserVerificationRequirement,
+    ResidentKeyRequirement,
+    RegistrationCredential,
+    AuthenticationCredential,
+    AttestationConveyancePreference,
+    PublicKeyCredentialDescriptor,
+    AuthenticatorTransport,
+)
 
 load_dotenv()
+
+RP_ID = os.getenv("RP_ID", "localhost")
+RP_NAME = "Boostlog"
+
+# Temporary store for WebAuthn challenges
+# In production, use Redis or a DB table with ttl
+webauthn_challenges = {} 
 
 def get_secret(secret_name):
     if os.getenv("SKIP_AWS_FETCH") == "true":
@@ -69,8 +95,30 @@ class User(Base):
     hashed_password = Column(String, nullable=True)
     github_id = Column(String, unique=True, index=True, nullable=True)
     settings_json = Column(Text, nullable=True) # JSON blob for frontend prefs
+    
+    # WebAuthn / Passkeys
+    webauthn_id = Column(String, unique=True, index=True, nullable=True)
+    
+    # Password Reset
+    password_reset_token = Column(String, unique=True, index=True, nullable=True)
+    password_reset_expiry = Column(DateTime(timezone=True), nullable=True)
+
     datalogs = relationship("Datalog", back_populates="owner", cascade="all, delete-orphan")
     projects = relationship("Project", back_populates="owner", cascade="all, delete-orphan")
+    credentials = relationship("UserCredential", back_populates="user", cascade="all, delete-orphan")
+
+class UserCredential(Base):
+    __tablename__ = "user_credentials"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    credential_id = Column(String, unique=True, index=True, nullable=False)
+    public_key = Column(String, nullable=False)
+    sign_count = Column(Integer, default=0)
+    transports = Column(String, nullable=True) # JSON list
+    name = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", back_populates="credentials")
 
 class Project(Base):
     __tablename__ = "projects"
@@ -222,6 +270,16 @@ class UserUpdate(BaseModel):
 class LogMove(BaseModel):
     project_id: Optional[int] = None
 
+class PasswordResetRequest(BaseModel):
+    username_or_email: str
+
+class PasswordResetConfirm(BaseModel):
+    token: str
+    new_password: str
+
+class UsernameUpdate(BaseModel):
+    new_username: str
+
 @app.post("/register")
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.username == user.username).first()
@@ -242,6 +300,339 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     
     access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
+
+# --- WEBAUTHN / PASSKEYS ---
+
+def _credential_descriptor(c: "UserCredential") -> PublicKeyCredentialDescriptor:
+    transports = []
+    if c.transports:
+        for t in json.loads(c.transports):
+            try:
+                transports.append(AuthenticatorTransport(t))
+            except ValueError:
+                continue
+    return PublicKeyCredentialDescriptor(
+        id=base64url_to_bytes(c.credential_id),
+        transports=transports or None,
+    )
+
+@app.get("/api/auth/webauthn/register/options")
+def webauthn_register_options(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current_user.webauthn_id:
+        current_user.webauthn_id = str(uuid.uuid4())
+        db.commit()
+
+    # Get existing credentials to exclude (skip any rows whose stored id can't be decoded)
+    existing_credentials = []
+    for c in current_user.credentials:
+        try:
+            existing_credentials.append(_credential_descriptor(c))
+        except Exception as e:
+            print(f"WARN: Skipping unreadable credential {c.id} for user {current_user.username}: {e}")
+            continue
+
+    options = generate_registration_options(
+        rp_id=RP_ID,
+        rp_name=RP_NAME,
+        user_id=current_user.webauthn_id.encode("utf-8"),
+        user_name=current_user.username,
+        user_display_name=current_user.full_name or current_user.username,
+        attestation=AttestationConveyancePreference.NONE,
+        authenticator_selection=AuthenticatorSelectionCriteria(
+            authenticator_attachment=None,
+            resident_key=ResidentKeyRequirement.REQUIRED,
+            user_verification=UserVerificationRequirement.PREFERRED,
+        ),
+        exclude_credentials=existing_credentials,
+    )
+    print(f"DEBUG: Generated registration options for {current_user.username}")
+
+
+    webauthn_challenges[f"reg_{current_user.id}"] = options.challenge
+    return json.loads(options_to_json(options))
+
+@app.post("/api/auth/webauthn/register/verify")
+async def webauthn_register_verify(payload: dict, name: Optional[str] = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    challenge = webauthn_challenges.pop(f"reg_{current_user.id}", None)
+    if not challenge:
+        raise HTTPException(status_code=400, detail="Challenge missing or expired")
+
+    try:
+        origin = os.getenv("WP_ORIGIN")
+        if not origin:
+            origin = f"http://{RP_ID}:8000" if RP_ID == "localhost" else f"https://{RP_ID}"
+        
+        print(f"DEBUG: Verifying registration for {current_user.username} (RP_ID: {RP_ID}, Origin: {origin})")
+
+        verification = verify_registration_response(
+            credential=payload,
+            expected_challenge=challenge,
+            expected_origin=origin,
+            expected_rp_id=RP_ID,
+        )
+    except Exception as e:
+        print(f"ERROR: Registration verification failed: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Save the new credential
+    # We use bytes_to_base64url on the verified bytes to ensure DB storage is correct
+    cred_id_str = bytes_to_base64url(verification.credential_id)
+
+    cred_name = (name or "").strip() or f"Passkey {datetime.now(timezone.utc).strftime('%Y-%m-%d')}"
+
+    new_cred = UserCredential(
+        user_id=current_user.id,
+        credential_id=cred_id_str,
+        public_key=base64.b64encode(verification.credential_public_key).decode("utf-8"),
+        sign_count=verification.sign_count,
+        transports=json.dumps(payload.get("response", {}).get("transports", [])),
+        name=cred_name,
+    )
+
+    db.add(new_cred)
+    db.commit()
+    print(f"DEBUG: Successfully registered passkey for {current_user.username}")
+    return {"status": "success", "message": "Passkey registered"}
+
+@app.get("/api/auth/webauthn/login/options")
+def webauthn_login_options(username: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    existing_credentials = []
+    for c in user.credentials:
+        try:
+            existing_credentials.append(_credential_descriptor(c))
+        except Exception as e:
+            print(f"ERROR: Failed to parse credential {c.id} for user {username}: {e}")
+            continue
+
+    if not existing_credentials:
+        print(f"DEBUG: No valid passkeys found for user {username}")
+        raise HTTPException(status_code=400, detail="No passkeys registered for this user")
+
+    try:
+        options = generate_authentication_options(
+            rp_id=RP_ID,
+            allow_credentials=existing_credentials,
+            user_verification=UserVerificationRequirement.PREFERRED,
+        )
+
+        webauthn_challenges[f"login_{username}"] = options.challenge
+        return json.loads(options_to_json(options))
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/auth/webauthn/login/verify")
+async def webauthn_login_verify(payload: dict, username: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    challenge = webauthn_challenges.pop(f"login_{username}", None)
+    if not challenge:
+        raise HTTPException(status_code=400, detail="Challenge missing or expired")
+
+    # Find the credential in DB. Note: we search by the same string ID sent by the payload
+    cred_id = payload.get("id")
+    db_cred = db.query(UserCredential).filter(UserCredential.credential_id == cred_id).first()
+    if not db_cred or db_cred.user_id != user.id:
+        raise HTTPException(status_code=400, detail="Credential not found")
+
+    try:
+        origin = os.getenv("WP_ORIGIN")
+        if not origin:
+            origin = f"http://{RP_ID}:8000" if RP_ID == "localhost" else f"https://{RP_ID}"
+
+        verification = verify_authentication_response(
+            credential=payload,
+            expected_challenge=challenge,
+            expected_origin=origin,
+            expected_rp_id=RP_ID,
+            credential_public_key=base64.b64decode(db_cred.public_key),
+            credential_current_sign_count=db_cred.sign_count,
+        )
+
+    except Exception as e:
+        print(f"ERROR: Login verification failed: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Update sign count
+    db_cred.sign_count = verification.new_sign_count
+    db.commit()
+
+    access_token = create_access_token(data={"sub": user.username})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+# --- DISCOVERABLE-CREDENTIAL (USERNAMELESS / AUTOFILL) LOGIN ---
+
+@app.get("/api/auth/webauthn/login/discoverable/options")
+def webauthn_login_discoverable_options():
+    options = generate_authentication_options(
+        rp_id=RP_ID,
+        allow_credentials=[],
+        user_verification=UserVerificationRequirement.PREFERRED,
+    )
+    challenge_key = bytes_to_base64url(options.challenge)
+    webauthn_challenges[f"disc_{challenge_key}"] = options.challenge
+    return json.loads(options_to_json(options))
+
+@app.post("/api/auth/webauthn/login/discoverable/verify")
+async def webauthn_login_discoverable_verify(payload: dict, db: Session = Depends(get_db)):
+    response = payload.get("response", {}) or {}
+    client_data_b64 = response.get("clientDataJSON")
+    if not client_data_b64:
+        raise HTTPException(status_code=400, detail="Missing clientDataJSON")
+
+    try:
+        client_data = json.loads(base64url_to_bytes(client_data_b64).decode("utf-8"))
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid clientDataJSON")
+
+    challenge_key = client_data.get("challenge")
+    challenge = webauthn_challenges.pop(f"disc_{challenge_key}", None) if challenge_key else None
+    if not challenge:
+        raise HTTPException(status_code=400, detail="Challenge missing or expired")
+
+    cred_id = payload.get("id")
+    db_cred = db.query(UserCredential).filter(UserCredential.credential_id == cred_id).first()
+    if not db_cred:
+        raise HTTPException(status_code=400, detail="Credential not found")
+
+    user = db.query(User).filter(User.id == db_cred.user_id).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="User not found")
+
+    user_handle_b64 = response.get("userHandle")
+    if user_handle_b64:
+        try:
+            user_handle = base64url_to_bytes(user_handle_b64).decode("utf-8")
+        except Exception:
+            user_handle = None
+        if user_handle and user.webauthn_id and user_handle != user.webauthn_id:
+            raise HTTPException(status_code=400, detail="User handle mismatch")
+
+    try:
+        origin = os.getenv("WP_ORIGIN")
+        if not origin:
+            origin = f"http://{RP_ID}:8000" if RP_ID == "localhost" else f"https://{RP_ID}"
+
+        verification = verify_authentication_response(
+            credential=payload,
+            expected_challenge=challenge,
+            expected_origin=origin,
+            expected_rp_id=RP_ID,
+            credential_public_key=base64.b64decode(db_cred.public_key),
+            credential_current_sign_count=db_cred.sign_count,
+        )
+    except Exception as e:
+        print(f"ERROR: Discoverable login verification failed: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    db_cred.sign_count = verification.new_sign_count
+    db.commit()
+
+    access_token = create_access_token(data={"sub": user.username})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/api/auth/passkeys")
+def list_passkeys(current_user: User = Depends(get_current_user)):
+    return [
+        {
+            "id": c.id,
+            "name": c.name or f"Passkey #{c.id}",
+            "transports": json.loads(c.transports) if c.transports else [],
+            "created_at": c.created_at.isoformat() if c.created_at else None,
+        }
+        for c in current_user.credentials
+    ]
+
+@app.delete("/api/auth/passkeys/{cred_id}")
+def delete_passkey(cred_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    cred = db.query(UserCredential).filter(
+        UserCredential.id == cred_id,
+        UserCredential.user_id == current_user.id,
+    ).first()
+    if not cred:
+        raise HTTPException(status_code=404, detail="Passkey not found")
+    db.delete(cred)
+    db.commit()
+    return {"status": "success"}
+
+class PasskeyRename(BaseModel):
+    name: str
+
+@app.patch("/api/auth/passkeys/{cred_id}")
+def rename_passkey(cred_id: int, payload: PasskeyRename, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    new_name = payload.name.strip()
+    if not new_name:
+        raise HTTPException(status_code=400, detail="Name cannot be empty")
+    cred = db.query(UserCredential).filter(
+        UserCredential.id == cred_id,
+        UserCredential.user_id == current_user.id,
+    ).first()
+    if not cred:
+        raise HTTPException(status_code=404, detail="Passkey not found")
+    cred.name = new_name
+    db.commit()
+    return {"status": "success", "name": cred.name}
+
+# --- PASSWORD RESET & USERNAME CHANGE ---
+
+@app.post("/api/auth/reset-password/request")
+def reset_password_request(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(
+        (User.username == payload.username_or_email) | (User.email == payload.username_or_email)
+    ).first()
+    
+    if not user:
+        return {"message": "If an account exists, a reset link will be provided."}
+    
+    token = str(uuid.uuid4())
+    user.password_reset_token = token
+    user.password_reset_expiry = datetime.now(timezone.utc) + timedelta(hours=1)
+    db.commit()
+    
+    # Mocking email send
+    reset_url = f"{os.getenv('WP_ORIGIN', 'http://localhost:8000')}/reset-password?token={token}"
+    print(f"DEBUG: Password reset for {user.username}: {reset_url}")
+    
+    return {"message": "Success", "debug_info": "Reset token generated" if RP_ID == "localhost" else None}
+
+@app.post("/api/auth/reset-password/confirm")
+def reset_password_confirm(payload: PasswordResetConfirm, db: Session = Depends(get_db)):
+    user = db.query(User).filter(
+        User.password_reset_token == payload.token,
+        User.password_reset_expiry > datetime.now(timezone.utc)
+    ).first()
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    user.hashed_password = get_password_hash(payload.new_password)
+    user.password_reset_token = None
+    user.password_reset_expiry = None
+    db.commit()
+    return {"message": "Password updated successfully"}
+
+@app.post("/api/user/change-username")
+def change_username(payload: UsernameUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    new_username = payload.new_username.strip()
+    if not new_username:
+        raise HTTPException(status_code=400, detail="Username cannot be empty")
+        
+    existing = db.query(User).filter(User.username == new_username).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Username already taken")
+        
+    current_user.username = new_username
+    db.commit()
+    
+    access_token = create_access_token(data={"sub": current_user.username})
+    return {"status": "success", "access_token": access_token}
 
 # --- GITHUB OAUTH ---
 GITHUB_CLIENT_ID = aws_secrets.get("GITHUB_CLIENT_ID") or os.getenv("GITHUB_CLIENT_ID")

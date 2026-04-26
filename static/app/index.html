@@ -14,6 +14,7 @@
     <!-- Chart.js for beautiful graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
     <!-- PapaParse for CSV reading -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <!-- marked.js for Markdown parsing -->
@@ -63,14 +64,53 @@
             </div>
 
             <form id="authForm" onsubmit="handleAuth(event)">
-                <input type="text" id="authUsername" placeholder="Username" required class="input-modern">
-                <input type="password" id="authPassword" placeholder="Password" required class="input-modern">
-                <button type="submit" class="btn-primary" id="authSubmitBtn">Login</button>
+                <input type="text" id="authUsername" placeholder="Username" required class="input-modern" autocomplete="username webauthn">
+                <input type="password" id="authPassword" placeholder="Password" required class="input-modern" autocomplete="current-password">
+                
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+                    <button type="submit" class="btn-primary" id="authSubmitBtn">Login</button>
+                    <button type="button" id="btnPasskeyLogin" class="btn-secondary" onclick="loginWithPasskey()" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: var(--text-primary); font-size: 13px; font-weight: 600;">
+                        🔑 Sign in with Passkey
+                    </button>
+                    <a href="#" onclick="openForgotPassword()" style="text-align: center; font-size: 12px; color: var(--accent); text-decoration: none;">Forgot password?</a>
+                </div>
                 <p id="authError" class="auth-error"></p>
             </form>
+        </div>
+    </div>
 
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Recover Access</h3>
+                <button class="modal-close" onclick="closeForgotPassword()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);">Enter your username or email address and we'll send you a recovery link.</p>
+                <input type="text" id="forgotInput" class="input-modern" placeholder="Username or Email">
+                <p id="forgotHint" style="font-size: 11px; margin-top: -8px; color: var(--success); display: none;"></p>
+            </div>
+            <div class="modal-footer" style="padding-top: 12px;">
+                <button class="btn-primary" onclick="submitForgotPassword()" style="width: 100%;">Send Recovery Link</button>
+            </div>
+        </div>
+    </div>
 
-
+    <!-- Reset Password Modal -->
+    <div id="resetPasswordModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Set New Password</h3>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);">Your recovery link has been verified. Please choose a new, strong password.</p>
+                <input type="password" id="resetNewPass" class="input-modern" placeholder="New Password">
+                <p id="resetError" class="auth-error" style="text-align: left;"></p>
+            </div>
+            <div class="modal-footer" style="padding-top: 12px;">
+                <button class="btn-primary" onclick="submitResetPassword()" style="width: 100%;">Update Password</button>
+            </div>
         </div>
     </div>
     <!-- Mobile Header -->
@@ -309,6 +349,26 @@
                                     <option value="single">Single Stacked (Default)</option>
                                     <option value="multi">Multiple Overlay</option>
                                 </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3>Account & Security</h3>
+                        <div class="settings-grid">
+                            <div class="input-group">
+                                <label>Change Username</label>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" id="setNewUsername" class="input-modern" style="margin-bottom: 0;">
+                                    <button class="btn-primary" onclick="updateUsername()" style="padding: 0 16px;">Update</button>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label>Passkeys / Biometrics</label>
+                                <button class="btn-secondary" onclick="registerPasskey()" style="background: rgba(131, 56, 236, 0.1); border: 1px solid var(--accent); color: var(--accent); font-weight: 600;">
+                                    ➕ Add a Passkey
+                                </button>
+                                <div id="passkeyList" style="margin-top: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 6px;"></div>
                             </div>
                         </div>
                     </div>
@@ -559,18 +619,17 @@
     <div id="renameModal" class="modal-overlay" style="display: none;">
         <div class="modal-card">
             <div class="modal-header">
-                <h3>Rename Log</h3>
+                <h3 id="renameModalTitle">Rename</h3>
                 <button class="modal-close" onclick="closeRenameModal()">✕</button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);">Enter a new descriptive
-                    name for your datalog.</p>
-                <input type="text" id="renameInput" class="input-modern" placeholder="Log Name"
+                <p id="renameModalLabel" style="margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);"></p>
+                <input type="text" id="renameInput" class="input-modern" placeholder=""
                     onkeydown="if(event.key === 'Enter') submitRename()">
             </div>
             <div class="modal-footer" style="display: flex; gap: 12px; margin-top: 24px;">
                 <button class="btn-secondary" onclick="closeRenameModal()" style="flex: 1;">Cancel</button>
-                <button class="btn-primary" onclick="submitRename()" style="flex: 1;">Save Changes</button>
+                <button class="btn-primary" id="renameModalConfirm" onclick="submitRename()" style="flex: 1;">Save Changes</button>
             </div>
         </div>
     </div>
@@ -614,9 +673,9 @@
                 <div style="position: relative; z-index: 2;">
                     <h2 style="color: #ff006e; display: flex; align-items: center; gap: 8px;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                        Confirm Delete
+                        <span id="deleteModalTitle">Confirm Delete</span>
                     </h2>
-                    <p style="font-size: 11px; color: rgba(255, 255, 255, 0.5); margin-top: 4px;">Datalogs will be unassigned but NOT deleted.</p>
+                    <p id="deleteModalSubtitle" style="font-size: 11px; color: rgba(255, 255, 255, 0.5); margin-top: 4px;"></p>
                 </div>
                 <button class="btn-close-modal" onclick="closeDeleteModal()">×</button>
             </div>
@@ -707,7 +766,7 @@
         </div>
     </div>
 
-    <script src="/static/app/app.js?v=4.5"></script>
+    <script src="/static/app/app.js?v=4.7"></script>
 </body>
 
 </html>

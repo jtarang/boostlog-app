@@ -123,6 +123,44 @@ function initAuth() {
         refreshLogList();
     } else {
         document.getElementById('authOverlay').style.display = 'flex';
+        startPasskeyAutofill();
+    }
+}
+
+let _autofillStarted = false;
+
+async function startPasskeyAutofill() {
+    if (_autofillStarted) return;
+    if (!window.SimpleWebAuthnBrowser) return;
+    try {
+        const supported = await SimpleWebAuthnBrowser.browserSupportsWebAuthnAutofill?.();
+        if (!supported) return;
+    } catch { return; }
+    _autofillStarted = true;
+    try {
+        const optsRes = await fetch('/api/auth/webauthn/login/discoverable/options');
+        if (!optsRes.ok) return;
+        const optionsJSON = await optsRes.json();
+
+        const asseResp = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON, useBrowserAutofill: true });
+
+        const verifyRes = await fetch('/api/auth/webauthn/login/discoverable/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(asseResp)
+        });
+        const data = await verifyRes.json();
+        if (verifyRes.ok && data.access_token) {
+            authToken = data.access_token;
+            localStorage.setItem('boostlog_token', authToken);
+            location.reload();
+        } else if (verifyRes.ok === false) {
+            console.warn('Passkey autofill verify failed:', data.detail);
+        }
+    } catch (err) {
+        // User cancelled, no passkey selected, or browser aborted — silent fallback.
+        console.debug('Passkey autofill ended:', err && err.message);
+        _autofillStarted = false;
     }
 }
 
@@ -1107,32 +1145,61 @@ function loadServerLog(log, listItem = null) {
             });
         })
         .catch(err => console.error('Error loading historic log:', err));
-} async function renameLog(logId, currentName) {
-    currentRenameId = logId;
+}
+
+let _renameOnSave = null;
+
+function openRenameModal({ title = 'Rename', label = '', placeholder = '', currentName = '', confirmText = 'Save Changes', onSave }) {
     const modal = document.getElementById('renameModal');
+    const titleEl = document.getElementById('renameModalTitle');
+    const labelEl = document.getElementById('renameModalLabel');
+    const confirmBtn = document.getElementById('renameModalConfirm');
     const input = document.getElementById('renameInput');
-    if (modal && input) {
-        input.value = currentName;
-        modal.style.display = 'flex';
-        input.focus();
-        input.select();
-    }
+    if (!modal || !input) return;
+
+    titleEl.textContent = title;
+    labelEl.textContent = label;
+    labelEl.style.display = label ? 'block' : 'none';
+    if (confirmBtn) confirmBtn.textContent = confirmText;
+    input.placeholder = placeholder;
+    input.value = currentName;
+    _renameOnSave = onSave;
+
+    modal.style.display = 'flex';
+    setTimeout(() => { input.focus(); input.select(); }, 0);
+}
+
+async function renameLog(logId, currentName) {
+    openRenameModal({
+        title: 'Rename Log',
+        label: 'Enter a new descriptive name for your datalog.',
+        placeholder: 'Log Name',
+        currentName,
+        onSave: (newName) => submitLogRename(logId, newName)
+    });
 }
 
 function closeRenameModal() {
     const modal = document.getElementById('renameModal');
     if (modal) modal.style.display = 'none';
+    _renameOnSave = null;
 }
 
 async function submitRename() {
     const input = document.getElementById('renameInput');
     const newName = input ? input.value.trim() : '';
-    const logId = currentRenameId;
+    if (!newName || !_renameOnSave) return;
 
-    if (!newName || !logId) return;
-
+    const handler = _renameOnSave;
     closeRenameModal();
+    try {
+        await handler(newName);
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
 
+async function submitLogRename(logId, newName) {
     try {
         const res = await fetch(`/api/logs/${logId}/rename`, {
             method: 'PUT',
@@ -1614,6 +1681,91 @@ async function loadUserSettings() {
             }
         }
     } catch (err) { console.error('Failed to load settings:', err); }
+    loadPasskeys();
+}
+
+async function loadPasskeys() {
+    const list = document.getElementById('passkeyList');
+    if (!list) return;
+    try {
+        const res = await fetch('/api/auth/passkeys', { headers: getAuthHeaders() });
+        const items = await res.json();
+        if (!res.ok || !Array.isArray(items)) {
+            list.innerHTML = '';
+            return;
+        }
+        if (items.length === 0) {
+            list.innerHTML = '<div style="color: var(--text-secondary); font-style: italic;">No passkeys registered yet.</div>';
+            return;
+        }
+        list.innerHTML = items.map(p => {
+            const created = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
+            const transports = (p.transports || []).join(', ');
+            const meta = [created, transports].filter(Boolean).join(' • ');
+            const safeName = escapeHtml(p.name).replace(/'/g, "\\'");
+            return `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;">
+                    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+                        <span style="font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis;">🔑 ${escapeHtml(p.name)}</span>
+                        ${meta ? `<span style="color: var(--text-secondary); font-size: 11px;">${escapeHtml(meta)}</span>` : ''}
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn-secondary" onclick="renamePasskey(${p.id}, '${safeName}')" style="padding: 4px 10px; font-size: 11px; background: transparent; border: 1px solid rgba(255,255,255,0.15); color: var(--text-secondary);">Rename</button>
+                        <button class="btn-secondary" onclick="deletePasskey(${p.id}, '${safeName}')" style="padding: 4px 10px; font-size: 11px; background: transparent; border: 1px solid rgba(255,255,255,0.15); color: var(--text-secondary);">Remove</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (err) {
+        console.error('Failed to load passkeys:', err);
+    }
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renamePasskey(id, currentName) {
+    openRenameModal({
+        title: 'Rename Passkey',
+        label: 'Give this passkey a recognizable name (e.g. "MacBook Touch ID").',
+        placeholder: 'Passkey name',
+        currentName,
+        onSave: async (newName) => {
+            const res = await fetch(`/api/auth/passkeys/${id}`, {
+                method: 'PATCH',
+                headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newName })
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.detail || 'Failed to rename passkey');
+            }
+            showToast('Passkey renamed');
+            loadPasskeys();
+        }
+    });
+}
+
+function deletePasskey(id, name) {
+    openConfirmDeleteModal({
+        title: 'Remove Passkey',
+        subtitle: 'You will no longer be able to sign in with this passkey.',
+        body: `Are you sure you want to remove the passkey <strong>"${escapeHtml(name)}"</strong>?`,
+        confirmText: 'Remove Passkey',
+        onConfirm: async () => {
+            try {
+                const res = await fetch(`/api/auth/passkeys/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+                if (res.ok) {
+                    showToast('Passkey removed');
+                    loadPasskeys();
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    showToast(err.detail || 'Failed to remove passkey', 'error');
+                }
+            } catch (err) { showToast(err.message, 'error'); }
+        }
+    });
 }
 
 async function saveUserSettings() {
@@ -1814,33 +1966,49 @@ async function editProjectFromView(projectId) {
     };
 }
 
-function openDeleteModal(id, name) {
+function openConfirmDeleteModal({ title = 'Confirm Delete', subtitle = '', body = '', confirmText = 'Permanently Delete', onConfirm }) {
     const modal = document.getElementById('deleteConfirmModal');
+    const titleEl = document.getElementById('deleteModalTitle');
+    const subtitleEl = document.getElementById('deleteModalSubtitle');
     const text = document.getElementById('deleteModalText');
     const btn = document.getElementById('btnConfirmDelete');
-    
+
     if (!modal || !text || !btn) return;
 
-    text.innerHTML = `Are you sure you want to delete the build <strong>"${name}"</strong>?<br><br>All related logs will be safely preserved in the <strong>Unassigned</strong> category.`;
-    
+    titleEl.textContent = title;
+    subtitleEl.textContent = subtitle;
+    subtitleEl.style.display = subtitle ? 'block' : 'none';
+    text.innerHTML = body;
+    btn.textContent = confirmText;
+
     btn.onclick = async () => {
         closeDeleteModal();
-        try {
-            const res = await fetch(`/api/projects/${id}`, {
-                method: 'DELETE',
-                headers: getAuthHeaders()
-            });
-            if (res.ok) {
-                showToast('Build removed');
-                await refreshLogList();
-            } else {
-                const err = await res.json();
-                showToast(err.detail || 'Delete failed', 'error');
-            }
-        } catch (err) { showToast(err.message, 'error'); }
+        if (onConfirm) await onConfirm();
     };
 
     modal.style.display = 'flex';
+}
+
+function openDeleteModal(id, name) {
+    openConfirmDeleteModal({
+        subtitle: 'Datalogs will be unassigned but NOT deleted.',
+        body: `Are you sure you want to delete the build <strong>"${escapeHtml(name)}"</strong>?<br><br>All related logs will be safely preserved in the <strong>Unassigned</strong> category.`,
+        onConfirm: async () => {
+            try {
+                const res = await fetch(`/api/projects/${id}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+                if (res.ok) {
+                    showToast('Build removed');
+                    await refreshLogList();
+                } else {
+                    const err = await res.json();
+                    showToast(err.detail || 'Delete failed', 'error');
+                }
+            } catch (err) { showToast(err.message, 'error'); }
+        }
+    });
 }
 
 function closeDeleteModal() {
@@ -1851,3 +2019,178 @@ async function deleteProjectFromView(id, name) {
     openDeleteModal(id, name);
 }
 
+
+/* === Passkeys & Security === */
+
+function registerPasskey() {
+    const defaultName = `Passkey ${new Date().toLocaleDateString()}`;
+    openRenameModal({
+        title: 'Add a Passkey',
+        label: 'Give this passkey a recognizable name (e.g. "MacBook Touch ID"). You\'ll be prompted to authenticate next.',
+        placeholder: 'Passkey name',
+        currentName: defaultName,
+        confirmText: 'Continue',
+        onSave: async (name) => {
+            try {
+                const resp = await fetch('/api/auth/webauthn/register/options', { headers: getAuthHeaders() });
+                const options = await resp.json();
+
+                const attResp = await SimpleWebAuthnBrowser.startRegistration(options);
+
+                const verifyResp = await fetch(`/api/auth/webauthn/register/verify?name=${encodeURIComponent(name)}`, {
+                    method: 'POST',
+                    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify(attResp)
+                });
+
+                const data = await verifyResp.json();
+                if (verifyResp.ok) {
+                    showToast('Passkey registered successfully');
+                    loadUserSettings();
+                } else {
+                    showToast(data.detail || 'Registration failed', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast(err.message, 'error');
+            }
+        }
+    });
+}
+
+async function loginWithPasskey() {
+    const username = document.getElementById('authUsername').value.trim();
+    try {
+        if (username) {
+            await loginWithPasskeyForUser(username);
+        } else {
+            await loginWithDiscoverablePasskey();
+        }
+    } catch (err) {
+        console.error(err);
+        showToast(err.message, 'error');
+    }
+}
+
+async function loginWithPasskeyForUser(username) {
+    const resp = await fetch(`/api/auth/webauthn/login/options?username=${encodeURIComponent(username)}`);
+    const responseText = await resp.text();
+    let options;
+    try { options = JSON.parse(responseText); }
+    catch { throw new Error(`Server error (${resp.status}): ${responseText.substring(0, 100)}`); }
+    if (!resp.ok) throw new Error(options.detail || 'Failed to get login options');
+
+    const asseResp = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
+    const verifyResp = await fetch(`/api/auth/webauthn/login/verify?username=${encodeURIComponent(username)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(asseResp)
+    });
+    const data = await verifyResp.json();
+    if (!verifyResp.ok) throw new Error(data.detail || 'Login failed');
+    localStorage.setItem('boostlog_token', data.access_token);
+    location.reload();
+}
+
+async function loginWithDiscoverablePasskey() {
+    const optsRes = await fetch('/api/auth/webauthn/login/discoverable/options');
+    if (!optsRes.ok) throw new Error('Failed to get login options');
+    const optionsJSON = await optsRes.json();
+
+    // No useBrowserAutofill -> modal account picker, no username needed.
+    const asseResp = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON });
+
+    const verifyRes = await fetch('/api/auth/webauthn/login/discoverable/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(asseResp)
+    });
+    const data = await verifyRes.json();
+    if (!verifyRes.ok) throw new Error(data.detail || 'Passkey login failed');
+    localStorage.setItem('boostlog_token', data.access_token);
+    location.reload();
+}
+
+async function updateUsername() {
+    const newUsername = document.getElementById('setNewUsername').value.trim();
+    if (!newUsername) {
+        showToast('Please enter a new username', 'info');
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/user/change-username', {
+            method: 'POST',
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ new_username: newUsername })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            localStorage.setItem('boostlog_token', data.access_token);
+            showToast('Username updated successfully');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast(data.detail || 'Update failed', 'error');
+        }
+    } catch (err) { showToast(err.message, 'error'); }
+}
+
+function openForgotPassword() {
+    document.getElementById('forgotPasswordModal').style.display = 'flex';
+}
+
+function closeForgotPassword() {
+    document.getElementById('forgotPasswordModal').style.display = 'none';
+}
+
+async function submitForgotPassword() {
+    const input = document.getElementById('forgotInput').value.trim();
+    if (!input) return;
+    
+    try {
+        const res = await fetch('/api/auth/reset-password/request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username_or_email: input })
+        });
+        if (res.ok) {
+            document.getElementById('forgotHint').textContent = 'Recovery check complete (see server logs in dev)';
+            document.getElementById('forgotHint').style.display = 'block';
+        }
+    } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function submitResetPassword() {
+    const newPass = document.getElementById('resetNewPass').value.trim();
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    if (!newPass) {
+        showToast('Enter a new password', 'error');
+        return;
+    }
+    if (!token) return;
+    
+    try {
+        const res = await fetch('/api/auth/reset-password/confirm', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, new_password: newPass })
+        });
+        if (res.ok) {
+            showToast('Password reset successful. You can now login.');
+            document.getElementById('resetPasswordModal').style.display = 'none';
+            window.history.replaceState({}, document.title, "/");
+        } else {
+            const data = await res.json();
+            document.getElementById('resetError').textContent = data.detail || 'Reset failed';
+        }
+    } catch (err) { showToast(err.message, 'error'); }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('token')) {
+        document.getElementById('resetPasswordModal').style.display = 'flex';
+    }
+});
