@@ -1,7 +1,8 @@
-from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status
+from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from passlib.context import CryptContext
@@ -46,7 +47,28 @@ RP_NAME = "Boostlog"
 
 # Temporary store for WebAuthn challenges
 # In production, use Redis or a DB table with ttl
-webauthn_challenges = {} 
+webauthn_challenges = {}
+
+
+def _webauthn_params(request: Request) -> tuple[str, str]:
+    # Behind a Cloudflare tunnel, host/scheme arrive via X-Forwarded-* headers.
+    forwarded_host = request.headers.get("x-forwarded-host")
+    forwarded_proto = request.headers.get("x-forwarded-proto")
+    host_header = forwarded_host or request.headers.get("host", "")
+    scheme = forwarded_proto or request.url.scheme
+
+    hostname = host_header.split(":", 1)[0]
+    rp_id = os.getenv("RP_ID") or hostname or "localhost"
+
+    origin = os.getenv("WP_ORIGIN")
+    if not origin:
+        if host_header:
+            origin = f"{scheme}://{host_header}"
+        else:
+            origin = f"http://{rp_id}:8000" if rp_id == "localhost" else f"https://{rp_id}"
+
+    return rp_id, origin
+
 
 def get_secret(secret_name):
     if os.getenv("SKIP_AWS_FETCH") == "true":
@@ -209,6 +231,13 @@ app = FastAPI(title="Boostlog Web App")
 UPLOAD_DIR = "data/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# Block host header spoofing. Override with ALLOWED_HOSTS=host1,host2 in env.
+_allowed_hosts = [h.strip() for h in os.getenv(
+    "ALLOWED_HOSTS",
+    "boostlog.app,*.boostlog.app,localhost,127.0.0.1,testserver",
+).split(",") if h.strip()]
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=_allowed_hosts)
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.on_event("startup")
@@ -317,10 +346,12 @@ def _credential_descriptor(c: "UserCredential") -> PublicKeyCredentialDescriptor
     )
 
 @app.get("/api/auth/webauthn/register/options")
-def webauthn_register_options(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def webauthn_register_options(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not current_user.webauthn_id:
         current_user.webauthn_id = str(uuid.uuid4())
         db.commit()
+
+    rp_id, _ = _webauthn_params(request)
 
     # Get existing credentials to exclude (skip any rows whose stored id can't be decoded)
     existing_credentials = []
@@ -332,7 +363,7 @@ def webauthn_register_options(current_user: User = Depends(get_current_user), db
             continue
 
     options = generate_registration_options(
-        rp_id=RP_ID,
+        rp_id=rp_id,
         rp_name=RP_NAME,
         user_id=current_user.webauthn_id.encode("utf-8"),
         user_name=current_user.username,
@@ -352,23 +383,21 @@ def webauthn_register_options(current_user: User = Depends(get_current_user), db
     return json.loads(options_to_json(options))
 
 @app.post("/api/auth/webauthn/register/verify")
-async def webauthn_register_verify(payload: dict, name: Optional[str] = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def webauthn_register_verify(request: Request, payload: dict, name: Optional[str] = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     challenge = webauthn_challenges.pop(f"reg_{current_user.id}", None)
     if not challenge:
         raise HTTPException(status_code=400, detail="Challenge missing or expired")
 
     try:
-        origin = os.getenv("WP_ORIGIN")
-        if not origin:
-            origin = f"http://{RP_ID}:8000" if RP_ID == "localhost" else f"https://{RP_ID}"
-        
-        print(f"DEBUG: Verifying registration for {current_user.username} (RP_ID: {RP_ID}, Origin: {origin})")
+        rp_id, origin = _webauthn_params(request)
+
+        print(f"DEBUG: Verifying registration for {current_user.username} (RP_ID: {rp_id}, Origin: {origin})")
 
         verification = verify_registration_response(
             credential=payload,
             expected_challenge=challenge,
             expected_origin=origin,
-            expected_rp_id=RP_ID,
+            expected_rp_id=rp_id,
         )
     except Exception as e:
         print(f"ERROR: Registration verification failed: {e}")
@@ -395,7 +424,7 @@ async def webauthn_register_verify(payload: dict, name: Optional[str] = None, cu
     return {"status": "success", "message": "Passkey registered"}
 
 @app.get("/api/auth/webauthn/login/options")
-def webauthn_login_options(username: str, db: Session = Depends(get_db)):
+def webauthn_login_options(request: Request, username: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == username).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -413,8 +442,9 @@ def webauthn_login_options(username: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="No passkeys registered for this user")
 
     try:
+        rp_id, _ = _webauthn_params(request)
         options = generate_authentication_options(
-            rp_id=RP_ID,
+            rp_id=rp_id,
             allow_credentials=existing_credentials,
             user_verification=UserVerificationRequirement.PREFERRED,
         )
@@ -427,7 +457,7 @@ def webauthn_login_options(username: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/auth/webauthn/login/verify")
-async def webauthn_login_verify(payload: dict, username: str, db: Session = Depends(get_db)):
+async def webauthn_login_verify(request: Request, payload: dict, username: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == username).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -443,15 +473,13 @@ async def webauthn_login_verify(payload: dict, username: str, db: Session = Depe
         raise HTTPException(status_code=400, detail="Credential not found")
 
     try:
-        origin = os.getenv("WP_ORIGIN")
-        if not origin:
-            origin = f"http://{RP_ID}:8000" if RP_ID == "localhost" else f"https://{RP_ID}"
+        rp_id, origin = _webauthn_params(request)
 
         verification = verify_authentication_response(
             credential=payload,
             expected_challenge=challenge,
             expected_origin=origin,
-            expected_rp_id=RP_ID,
+            expected_rp_id=rp_id,
             credential_public_key=base64.b64decode(db_cred.public_key),
             credential_current_sign_count=db_cred.sign_count,
         )
@@ -470,9 +498,10 @@ async def webauthn_login_verify(payload: dict, username: str, db: Session = Depe
 # --- DISCOVERABLE-CREDENTIAL (USERNAMELESS / AUTOFILL) LOGIN ---
 
 @app.get("/api/auth/webauthn/login/discoverable/options")
-def webauthn_login_discoverable_options():
+def webauthn_login_discoverable_options(request: Request):
+    rp_id, _ = _webauthn_params(request)
     options = generate_authentication_options(
-        rp_id=RP_ID,
+        rp_id=rp_id,
         allow_credentials=[],
         user_verification=UserVerificationRequirement.PREFERRED,
     )
@@ -481,7 +510,7 @@ def webauthn_login_discoverable_options():
     return json.loads(options_to_json(options))
 
 @app.post("/api/auth/webauthn/login/discoverable/verify")
-async def webauthn_login_discoverable_verify(payload: dict, db: Session = Depends(get_db)):
+async def webauthn_login_discoverable_verify(request: Request, payload: dict, db: Session = Depends(get_db)):
     response = payload.get("response", {}) or {}
     client_data_b64 = response.get("clientDataJSON")
     if not client_data_b64:
@@ -516,15 +545,13 @@ async def webauthn_login_discoverable_verify(payload: dict, db: Session = Depend
             raise HTTPException(status_code=400, detail="User handle mismatch")
 
     try:
-        origin = os.getenv("WP_ORIGIN")
-        if not origin:
-            origin = f"http://{RP_ID}:8000" if RP_ID == "localhost" else f"https://{RP_ID}"
+        rp_id, origin = _webauthn_params(request)
 
         verification = verify_authentication_response(
             credential=payload,
             expected_challenge=challenge,
             expected_origin=origin,
-            expected_rp_id=RP_ID,
+            expected_rp_id=rp_id,
             credential_public_key=base64.b64decode(db_cred.public_key),
             credential_current_sign_count=db_cred.sign_count,
         )
