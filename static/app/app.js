@@ -120,7 +120,7 @@ function initAuth() {
             if (usernameEl) usernameEl.textContent = payload.sub;
         }
         document.getElementById('authOverlay').style.display = 'none';
-        refreshLogList();
+        refreshLogList(null, true);
     } else {
         document.getElementById('authOverlay').style.display = 'flex';
         startPasskeyAutofill();
@@ -864,7 +864,7 @@ async function triggerAnalysis() {
     }
 }
 
-async function refreshLogList(selectId = null) {
+async function refreshLogList(selectId = null, initialLoad = false) {
     try {
         const [logsRes, projectsRes] = await Promise.all([
             fetch('/api/logs', { headers: getAuthHeaders() }),
@@ -886,6 +886,11 @@ async function refreshLogList(selectId = null) {
         renderSidebarLogs(selectId);
         if (currentView === 'library') renderLibrary();
         if (currentView === 'projects') renderProjectsView();
+
+        // If this is the initial load and the user has projects, redirect to Garage
+        if (initialLoad && currentProjects.length > 0 && currentView === 'dashboard') {
+            switchView('projects');
+        }
     } catch (err) {
         console.error('Error fetching logs/projects:', err);
     }
