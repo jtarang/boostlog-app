@@ -847,6 +847,7 @@ async function refreshLogList(selectId = null) {
 
         renderSidebarLogs(selectId);
         if (currentView === 'library') renderLibrary();
+        if (currentView === 'projects') renderProjectsView();
     } catch (err) {
         console.error('Error fetching logs/projects:', err);
     }
@@ -882,6 +883,10 @@ function renderLogItem(log, hasAnalysis, selectId) {
 
     const li = document.createElement('li');
     if (currentLogId && log.id === currentLogId) li.classList.add('active-log');
+    
+    // Find build for pill
+    const proj = log.project_id != null ? currentProjects.find(p => p.id === log.project_id) : null;
+
     li.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
             <span style="display:flex; align-items:center; gap:6px; overflow:hidden; flex: 1;">
@@ -898,7 +903,10 @@ function renderLogItem(log, hasAnalysis, selectId) {
                 ${hasAnalysis ? '<span class="analysis-badge" title="Has prior analysis">✦ AI</span>' : ''}
             </div>
         </div>
-        ${timeLabel ? `<div class="log-timestamp">${timeLabel}</div>` : ''}
+        <div class="sidebar-log-footer">
+            ${timeLabel ? `<div class="log-timestamp">${timeLabel}</div>` : '<div></div>'}
+            ${proj ? `<div class="sidebar-build-pill">${proj.name}</div>` : ''}
+        </div>
     `;
 
     li.querySelector('.rename-log-btn').onclick = (e) => {
@@ -1021,7 +1029,7 @@ function showProjectPicker(buttonEl, logId, currentProjectId) {
     const opts = [
         { id: null, name: 'Unassigned' },
         ...currentProjects,
-        { id: '__new__', name: '+ New project…' }
+        { id: '__new__', name: '+ New build…' }
     ];
 
     opts.forEach(opt => {
@@ -1470,7 +1478,7 @@ function buildLogCard(log) {
             </div>
         </div>
         <div class="log-card-actions">
-            <button class="log-card-btn" data-action="open" title="Open in Workbench">
+            <button class="log-card-btn" data-action="open" title="Analyze in Dyno">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 12 7 12 10 4 14 20 17 12 21 12"></polyline>
                 </svg>
@@ -1539,39 +1547,59 @@ function clearBulkSelection() {
     if (currentView === 'library') renderLibraryLogs();
 }
 
-async function bulkMovePrompt() {
+function openMoveLogsModal() {
     if (bulkSelection.size === 0) return;
-    const opts = ['Unassigned', ...currentProjects.map(p => p.name), '+ New build…'];
-    const choice = prompt(
-        `Move ${bulkSelection.size} log(s) to which build?\n\n` +
-        opts.map((o, i) => `${i + 1}. ${o}`).join('\n') +
-        '\n\nEnter the number:'
-    );
-    if (!choice) return;
-    const idx = parseInt(choice, 10) - 1;
-    if (isNaN(idx) || idx < 0 || idx >= opts.length) {
-        showToast('Invalid choice', 'error');
-        return;
-    }
-    if (idx === opts.length - 1) {
-        const idsToMove = [...bulkSelection];
+    const modal = document.getElementById('moveLogsModal');
+    const select = document.getElementById('moveBuildSelect');
+    const context = document.getElementById('moveLogsContext');
+    
+    if (!modal || !select) return;
+
+    // Populate select
+    select.innerHTML = '<option value="unassigned">Unassigned (None)</option>';
+    currentProjects.forEach(p => {
+        select.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+    });
+    select.innerHTML += `<option value="new">+ Create New Build...</option>`;
+
+    context.textContent = `Moving ${bulkSelection.size} selected log(s)`;
+    modal.style.display = 'flex';
+}
+
+function closeMoveLogsModal() {
+    document.getElementById('moveLogsModal').style.display = 'none';
+}
+
+async function submitMoveLogs() {
+    const val = document.getElementById('moveBuildSelect').value;
+    const idsToMove = [...bulkSelection];
+    
+    closeMoveLogsModal();
+
+    if (val === 'new') {
         openNewProjectModal(async (proj) => {
             await Promise.all(idsToMove.map(id => moveLogToProject(id, proj.id)));
-            showToast(`Moved ${idsToMove.length} log(s)`);
+            showToast(`Moved ${idsToMove.length} log(s) to ${proj.name}`);
             bulkSelection.clear();
+            await refreshLogList();
         });
         return;
     }
 
-    const targetId = idx === 0 ? null : currentProjects[idx - 1].id;
+    const targetId = val === 'unassigned' ? null : parseInt(val, 10);
     try {
-        await Promise.all([...bulkSelection].map(id => moveLogToProject(id, targetId)));
-        showToast(`Moved ${bulkSelection.size} log(s)`);
+        await Promise.all(idsToMove.map(id => moveLogToProject(id, targetId)));
+        const targetName = targetId === null ? 'Unassigned' : currentProjects.find(p => p.id === targetId)?.name || 'Build';
+        showToast(`Moved ${idsToMove.length} log(s) to ${targetName}`);
         bulkSelection.clear();
         await refreshLogList();
     } catch (err) {
         showToast(err.message, 'error');
     }
+}
+
+function bulkMovePrompt() {
+    openMoveLogsModal();
 }
 async function loadUserSettings() {
     try {
@@ -1786,21 +1814,40 @@ async function editProjectFromView(projectId) {
     };
 }
 
+function openDeleteModal(id, name) {
+    const modal = document.getElementById('deleteConfirmModal');
+    const text = document.getElementById('deleteModalText');
+    const btn = document.getElementById('btnConfirmDelete');
+    
+    if (!modal || !text || !btn) return;
+
+    text.innerHTML = `Are you sure you want to delete the build <strong>"${name}"</strong>?<br><br>All related logs will be safely preserved in the <strong>Unassigned</strong> category.`;
+    
+    btn.onclick = async () => {
+        closeDeleteModal();
+        try {
+            const res = await fetch(`/api/projects/${id}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
+            if (res.ok) {
+                showToast('Build removed');
+                await refreshLogList();
+            } else {
+                const err = await res.json();
+                showToast(err.detail || 'Delete failed', 'error');
+            }
+        } catch (err) { showToast(err.message, 'error'); }
+    };
+
+    modal.style.display = 'flex';
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteConfirmModal').style.display = 'none';
+}
+
 async function deleteProjectFromView(id, name) {
-    if (!confirm(`Are you sure you want to delete project "${name}"?\nDatalogs will be unassigned but NOT deleted.`)) return;
-    try {
-        const res = await fetch(`/api/projects/${id}`, {
-            method: 'DELETE',
-            headers: getAuthHeaders()
-        });
-        if (res.ok) {
-            showToast('Build removed');
-            await refreshProjectList();
-            renderProjectsView();
-        } else {
-            const err = await res.json();
-            showToast(err.detail || 'Delete failed', 'error');
-        }
-    } catch (err) { showToast(err.message, 'error'); }
+    openDeleteModal(id, name);
 }
 

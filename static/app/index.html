@@ -8,7 +8,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="/static/app/styles.css?v=5.0">
+    <link rel="stylesheet" href="/static/app/styles.css?v=5.2">
     <!-- Chart.js for beautiful graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
@@ -123,7 +123,7 @@
                         <line x1="8" y1="21" x2="16" y2="21"></line>
                         <line x1="12" y1="17" x2="12" y2="21"></line>
                     </svg>
-                    <span>Workbench</span>
+                    <span>Dyno</span>
                 </button>
                 <button class="nav-btn" data-view="library" onclick="switchView('library')">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -605,7 +605,56 @@
     </div>
 
 
-    <!-- Project Details Modal -->
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-small garage-modal" style="border-color: rgba(255, 0, 110, 0.4);">
+            <div class="modal-header garage-modal-header" style="background: linear-gradient(135deg, rgba(255, 0, 110, 0.15), rgba(255, 0, 110, 0.05)) !important;">
+                <div style="position: relative; z-index: 2;">
+                    <h2 style="color: #ff006e; display: flex; align-items: center; gap: 8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        Confirm Delete
+                    </h2>
+                    <p style="font-size: 11px; color: rgba(255, 255, 255, 0.5); margin-top: 4px;">Datalogs will be unassigned but NOT deleted.</p>
+                </div>
+                <button class="btn-close-modal" onclick="closeDeleteModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="deleteModalText" style="line-height: 1.5; font-size: 14px;"></p>
+            </div>
+            <div class="modal-footer" style="padding: 16px 28px; background: rgba(0,0,0,0.2);">
+                <button class="btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn-primary" id="btnConfirmDelete" style="background: #ff006e; border-color: #ff006e; box-shadow: 0 0 20px rgba(255, 0, 110, 0.3);">Permanently Delete</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div id="moveLogsModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-small garage-modal">
+            <div class="modal-header garage-modal-header">
+                <div>
+                    <h2>📦 Move to Build</h2>
+                    <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Assign log(s) to a different build</p>
+                </div>
+                <button class="btn-close-modal" onclick="closeMoveLogsModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label>Select Destination Build</label>
+                    <select id="moveBuildSelect" class="select-modern" style="width: 100%; border-color: rgba(255,255,255,0.1);"></select>
+                </div>
+                <p id="moveLogsContext" style="font-size: 12px; color: var(--text-secondary); margin-top: 12px; font-style: italic;"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeMoveLogsModal()">Cancel</button>
+                <button class="btn-primary" onclick="submitMoveLogs()">🚀 Execute Move</button>
+            </div>
+        </div>
+    </div>
+
+
+
     <div id="projectDetailsModal" class="modal-overlay" style="display: none;">
         <div class="modal-content modal-large garage-modal">
             <div class="modal-header garage-modal-header">
@@ -656,7 +705,7 @@
         </div>
     </div>
 
-    <script src="/static/app/app.js?v=4.1"></script>
+    <script src="/static/app/app.js?v=4.5"></script>
 </body>
 
 </html>

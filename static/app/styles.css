@@ -229,6 +229,35 @@ h4 {
     color: var(--text-secondary);
 }
 
+.sidebar-log-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.sidebar-build-pill {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 7px;
+    background: rgba(58, 134, 255, 0.12);
+    color: #3A86FF;
+    border: 1px solid rgba(58, 134, 255, 0.2);
+    border-radius: 4px;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.active-log .sidebar-build-pill {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
 .log-list {
     flex: 1;
 }
@@ -2591,6 +2620,10 @@ body.focus-mode .chart-container {
 
 .modal-large {
     max-width: 650px !important;
+}
+
+.modal-small {
+    max-width: 440px !important;
 }
 
 /* Garage-Themed Modals */
