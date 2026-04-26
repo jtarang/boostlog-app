@@ -8,10 +8,13 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="/static/app/styles.css?v=3.1">
+    <link rel="icon" type="image/png" href="/static/turbo_logo_clean.png?v=2.0">
+    <link rel="apple-touch-icon" href="/static/turbo_logo_clean.png?v=2.0">
+    <link rel="stylesheet" href="/static/app/styles.css?v=5.3">
     <!-- Chart.js for beautiful graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
     <!-- PapaParse for CSV reading -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <!-- marked.js for Markdown parsing -->
@@ -61,14 +64,53 @@
             </div>
 
             <form id="authForm" onsubmit="handleAuth(event)">
-                <input type="text" id="authUsername" placeholder="Username" required class="input-modern">
-                <input type="password" id="authPassword" placeholder="Password" required class="input-modern">
-                <button type="submit" class="btn-primary" id="authSubmitBtn">Login</button>
+                <input type="text" id="authUsername" placeholder="Username" required class="input-modern" autocomplete="username webauthn">
+                <input type="password" id="authPassword" placeholder="Password" required class="input-modern" autocomplete="current-password">
+                
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+                    <button type="submit" class="btn-primary" id="authSubmitBtn">Login</button>
+                    <button type="button" id="btnPasskeyLogin" class="btn-secondary" onclick="loginWithPasskey()" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: var(--text-primary); font-size: 13px; font-weight: 600;">
+                        🔑 Sign in with Passkey
+                    </button>
+                    <a href="#" onclick="openForgotPassword()" style="text-align: center; font-size: 12px; color: var(--accent); text-decoration: none;">Forgot password?</a>
+                </div>
                 <p id="authError" class="auth-error"></p>
             </form>
+        </div>
+    </div>
 
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Recover Access</h3>
+                <button class="modal-close" onclick="closeForgotPassword()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);">Enter your username or email address and we'll send you a recovery link.</p>
+                <input type="text" id="forgotInput" class="input-modern" placeholder="Username or Email">
+                <p id="forgotHint" style="font-size: 11px; margin-top: -8px; color: var(--success); display: none;"></p>
+            </div>
+            <div class="modal-footer" style="padding-top: 12px;">
+                <button class="btn-primary" onclick="submitForgotPassword()" style="width: 100%;">Send Recovery Link</button>
+            </div>
+        </div>
+    </div>
 
-
+    <!-- Reset Password Modal -->
+    <div id="resetPasswordModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Set New Password</h3>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);">Your recovery link has been verified. Please choose a new, strong password.</p>
+                <input type="password" id="resetNewPass" class="input-modern" placeholder="New Password">
+                <p id="resetError" class="auth-error" style="text-align: left;"></p>
+            </div>
+            <div class="modal-footer" style="padding-top: 12px;">
+                <button class="btn-primary" onclick="submitResetPassword()" style="width: 100%;">Update Password</button>
+            </div>
         </div>
     </div>
     <!-- Mobile Header -->
@@ -116,6 +158,30 @@
                 </button>
             </div>
 
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" data-view="dashboard" onclick="switchView('dashboard')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                        <line x1="8" y1="21" x2="16" y2="21"></line>
+                        <line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                    <span>Dyno</span>
+                </button>
+                <button class="nav-btn" data-view="library" onclick="switchView('library')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                    </svg>
+                    <span>Datalogs</span>
+                </button>
+                <button class="nav-btn" data-view="projects" onclick="switchView('projects')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Garage</span>
+                </button>
+            </nav>
+
             <div class="upload-section">
                 <button class="btn-upload-sidebar" onclick="openUploadModal()">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -137,35 +203,43 @@
                 </ul>
             </div>
 
-            <div class="sidebar-user">
-                <div class="user-profile sidebar-expanded-only">
-                    <div class="user-avatar">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            <div class="sidebar-user" style="display: flex; flex-direction: column; gap: 10px; width: 100%; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                <!-- User Profile Pill: Now the primary Settings trigger -->
+                <div class="user-profile sidebar-expanded-only" data-view="settings" onclick="switchView('settings')" style="display: flex; width: 100%; align-items: center; cursor: pointer;">
+                    <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                        <div class="user-avatar">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div style="display: flex; flex-direction: column; overflow: hidden;">
+                            <span id="navUsername" style="font-size: 13px; font-weight: 700; color: var(--text-primary);">Guest</span>
+                            <span style="font-size: 10px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Account Settings</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Collapsed State: Avatar triggers Settings -->
+                <div class="sidebar-collapsed-only" style="display: none; flex-direction: column; gap: 12px; align-items: center; width: 100%;">
+                    <div class="user-avatar" data-view="settings" onclick="switchView('settings')" style="width: 44px; height: 44px; cursor: pointer; transition: var(--transition);">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>
                         </svg>
                     </div>
-                    <span id="navUsername">Guest</span>
                 </div>
-                <button type="button" class="logout-btn sidebar-expanded-only" onclick="logout()" title="Logout">
+
+                <button type="button" class="logout-btn" onclick="logout()" title="Logout" style="width: 100%; justify-content: center; background: rgba(255, 0, 110, 0.08); border: 1px solid rgba(255, 0, 110, 0.2);">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                         <polyline points="16 17 21 12 16 7"></polyline>
                         <line x1="21" y1="12" x2="9" y2="12"></line>
                     </svg>
-                    Logout
-                </button>
-                <!-- Collapsed: icon-only logout -->
-                <button type="button" class="logout-btn sidebar-collapsed-only" onclick="logout()" title="Logout"
-                    style="display: none; padding: 8px; width: 36px; justify-content: center;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
+                    <span class="sidebar-expanded-only">Logout</span>
                 </button>
             </div>
 
@@ -173,6 +247,176 @@
 
         <!-- Main Content Area -->
         <main class="main-content">
+            <!-- Library View -->
+            <section class="library-view" id="libraryView">
+                <header class="library-header view-hero" style="background-image: linear-gradient(rgba(15, 15, 17, 0.7), rgba(15, 15, 17, 0.9)), url('/static/datalogs_hero.png');">
+                    <div class="hero-text">
+                        <div class="hero-title-row">
+                            <svg class="hero-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                            </svg>
+                            <h2>Datalogs</h2>
+                        </div>
+                        <p class="library-sub">Browse and analyze your datalog runs with precision telemetry.</p>
+                    </div>
+                </header>
+                <div class="library-body">
+                    <aside class="library-rail">
+                        <button class="btn-new-project-rail" onclick="newProjectPrompt()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                <line x1="12" y1="11" x2="12" y2="17"></line>
+                                <line x1="9" y1="14" x2="15" y2="14"></line>
+                            </svg>
+                            <span>New Build</span>
+                        </button>
+                        <div class="rail-section-label">Smart</div>
+                        <ul class="rail-list" id="railSmart"></ul>
+                        <div class="rail-section-label">Builds</div>
+                        <ul class="rail-list" id="railProjects"></ul>
+                    </aside>
+                    <section class="library-main">
+                        <div class="library-toolbar">
+                            <div class="library-toolbar-left">
+                                <h3 id="libraryActiveTitle">All Logs</h3>
+                                <span id="libraryActiveCount" class="library-count-pill">0</span>
+                                <button id="btnProjectDetails" class="btn-project-details" onclick="openProjectDetails()" style="display: none;">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    </svg>
+                                    Build Info
+                                </button>
+                            </div>
+                            <div class="library-toolbar-right">
+                                <input type="text" id="librarySearch" class="library-search" placeholder="Search logs..." oninput="renderLibraryLogs()">
+                                <select id="librarySort" class="select-modern library-sort" onchange="renderLibraryLogs()">
+                                    <option value="newest">Newest first</option>
+                                    <option value="oldest">Oldest first</option>
+                                    <option value="name">Name (A–Z)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="library-bulk-bar" id="libraryBulkBar" style="display: none;">
+                            <span id="libraryBulkCount">0 selected</span>
+                            <button class="btn-bulk" onclick="bulkMovePrompt()">Move to build…</button>
+                            <button class="btn-bulk btn-bulk-secondary" onclick="clearBulkSelection()">Clear</button>
+                        </div>
+                        <div class="library-grid" id="libraryGrid"></div>
+                        <div class="library-empty" id="libraryEmpty" style="display: none;">
+                            <p>No logs match your filter.</p>
+                        </div>
+                    </section>
+                </div>
+            </section>
+            
+            <!-- Settings View -->
+            <section class="settings-view" id="settingsView" style="display: none;">
+                <div class="settings-container">
+                    <header class="library-header" style="margin-bottom: 24px;">
+                        <h2>Settings</h2>
+                        <p class="library-sub">Manage your profile and application preferences.</p>
+                    </header>
+
+                    <div class="settings-card">
+                        <h3>Profile Information</h3>
+                        <div class="settings-grid">
+                            <div class="input-group">
+                                <label>Full Name</label>
+                                <input type="text" id="setFullName" class="input-modern" placeholder="e.g. John Doe">
+                            </div>
+                            <div class="input-group">
+                                <label>Email Address</label>
+                                <input type="email" id="setEmail" class="input-modern" placeholder="e.g. john@example.com">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3>Application Preferences</h3>
+                        <div class="settings-grid">
+                            <div class="input-group">
+                                <label>Measurement Units</label>
+                                <select id="setUnits" class="select-modern">
+                                    <option value="metric">Metric (Nm, km/h, Bar)</option>
+                                    <option value="imperial">Imperial (lb-ft, mph, PSI)</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Graph Layout Mode</label>
+                                <select id="setGraphMode" class="select-modern">
+                                    <option value="single">Single Stacked (Default)</option>
+                                    <option value="multi">Multiple Overlay</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3>Account & Security</h3>
+                        <div class="settings-grid">
+                            <div class="input-group">
+                                <label>Change Username</label>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" id="setNewUsername" class="input-modern" style="margin-bottom: 0;">
+                                    <button class="btn-primary" onclick="updateUsername()" style="padding: 0 16px;">Update</button>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label>Passkeys / Biometrics</label>
+                                <button class="btn-secondary" onclick="registerPasskey()" style="background: rgba(131, 56, 236, 0.1); border: 1px solid var(--accent); color: var(--accent); font-weight: 600;">
+                                    ➕ Add a Passkey
+                                </button>
+                                <div id="passkeyList" style="margin-top: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 6px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button class="btn-primary" onclick="saveUserSettings()" style="padding: 12px 32px;">Save All Settings</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Garage View (All Builds) -->
+            <section class="projects-view" id="projectsView" style="display: none;">
+                <header class="library-header view-hero" style="background-image: linear-gradient(rgba(15, 15, 17, 0.7), rgba(15, 15, 17, 0.9)), url('/static/garage_hero.png');">
+                    <div class="hero-text">
+                        <div class="hero-title-row">
+                            <svg class="hero-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                            <h2>Garage</h2>
+                        </div>
+                        <p class="library-sub">Your fleet at a glance — vehicles, customers, and build activity.</p>
+                    </div>
+                </header>
+                
+                <div class="projects-grid-container" style="padding: 24px 30px;">
+                    <div class="library-toolbar" style="margin-bottom: 24px;">
+                        <div class="library-toolbar-left">
+                            <h3 id="projectsCountLabel">0 Builds in Garage</h3>
+                        </div>
+                        <div class="library-toolbar-right" style="display: flex; gap: 12px; align-items: center;">
+                            <input type="text" id="projectsSearch" class="library-search" placeholder="Search by car, VIN, or customer…" oninput="renderProjectsView()" style="width: 260px;">
+                            <button class="btn-primary" onclick="newProjectPrompt()" style="white-space: nowrap;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                New Build
+                            </button>
+                        </div>
+                    </div>
+                    <div class="projects-grid" id="projectsGrid">
+                        <!-- Build cards injected here -->
+                    </div>
+                </div>
+            </section>
+
+
             <div class="dashboard-grid">
 
                 <div class="graph-card col-span-2">
@@ -319,22 +563,73 @@
         </div>
     </div>
 
+    <!-- New Build Modal (Garage) -->
+    <div id="newProjectModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-large garage-modal">
+            <div class="modal-header garage-modal-header">
+                <div>
+                    <h2>🏁 New Build</h2>
+                    <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Add a vehicle to your Garage</p>
+                </div>
+                <button class="btn-close-modal" onclick="closeNewProjectModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-grid">
+                    <div class="input-group">
+                        <label>Build Name <span style="color: var(--accent);">*</span></label>
+                        <input type="text" id="newProjectInput" class="input-modern" placeholder="e.g. Stage 2 93Oct M3">
+                    </div>
+                    <div class="input-group">
+                        <label>Status</label>
+                        <select id="newProjectStatus" class="select-modern">
+                            <option value="">Auto-detect</option>
+                            <option value="active">🟢 Active</option>
+                            <option value="in_progress">🟡 In Progress</option>
+                            <option value="on_hold">⏸️ On Hold</option>
+                            <option value="completed">🟣 Completed</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Vehicle Model / Year</label>
+                        <input type="text" id="newProjectVehicle" class="input-modern" placeholder="e.g. 2021 BMW G80 M3">
+                    </div>
+                    <div class="input-group">
+                        <label>VIN</label>
+                        <input type="text" id="newProjectVin" class="input-modern" placeholder="17-character VIN">
+                    </div>
+                    <div class="input-group">
+                        <label>Customer Name</label>
+                        <input type="text" id="newProjectCustomer" class="input-modern" placeholder="Customer or shop name">
+                    </div>
+                </div>
+                <div class="input-group" style="margin-top: 20px;">
+                    <label>Build Notes</label>
+                    <textarea id="newProjectNotes" class="input-modern" style="min-height: 90px; resize: vertical;" placeholder="Hardware mods, fuel type, target goals…"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeNewProjectModal()">Cancel</button>
+                <button class="btn-primary" onclick="submitNewProject()">🏁 Add to Garage</button>
+            </div>
+        </div>
+    </div>
+
+
     <!-- Rename Modal -->
     <div id="renameModal" class="modal-overlay" style="display: none;">
         <div class="modal-card">
             <div class="modal-header">
-                <h3>Rename Log</h3>
+                <h3 id="renameModalTitle">Rename</h3>
                 <button class="modal-close" onclick="closeRenameModal()">✕</button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);">Enter a new descriptive
-                    name for your datalog.</p>
-                <input type="text" id="renameInput" class="input-modern" placeholder="Log Name"
+                <p id="renameModalLabel" style="margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);"></p>
+                <input type="text" id="renameInput" class="input-modern" placeholder=""
                     onkeydown="if(event.key === 'Enter') submitRename()">
             </div>
             <div class="modal-footer" style="display: flex; gap: 12px; margin-top: 24px;">
                 <button class="btn-secondary" onclick="closeRenameModal()" style="flex: 1;">Cancel</button>
-                <button class="btn-primary" onclick="submitRename()" style="flex: 1;">Save Changes</button>
+                <button class="btn-primary" id="renameModalConfirm" onclick="submitRename()" style="flex: 1;">Save Changes</button>
             </div>
         </div>
     </div>
@@ -371,7 +666,107 @@
     </div>
 
 
-    <script src="/static/app/app.js?v=2.7"></script>
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-small garage-modal" style="border-color: rgba(255, 0, 110, 0.4);">
+            <div class="modal-header garage-modal-header" style="background: linear-gradient(135deg, rgba(255, 0, 110, 0.15), rgba(255, 0, 110, 0.05)) !important;">
+                <div style="position: relative; z-index: 2;">
+                    <h2 style="color: #ff006e; display: flex; align-items: center; gap: 8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        <span id="deleteModalTitle">Confirm Delete</span>
+                    </h2>
+                    <p id="deleteModalSubtitle" style="font-size: 11px; color: rgba(255, 255, 255, 0.5); margin-top: 4px;"></p>
+                </div>
+                <button class="btn-close-modal" onclick="closeDeleteModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="deleteModalText" style="line-height: 1.5; font-size: 14px;"></p>
+            </div>
+            <div class="modal-footer" style="padding: 16px 28px; background: rgba(0,0,0,0.2);">
+                <button class="btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn-primary" id="btnConfirmDelete" style="background: #ff006e; border-color: #ff006e; box-shadow: 0 0 20px rgba(255, 0, 110, 0.3);">Permanently Delete</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div id="moveLogsModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-small garage-modal">
+            <div class="modal-header garage-modal-header">
+                <div>
+                    <h2>📦 Move to Build</h2>
+                    <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Assign log(s) to a different build</p>
+                </div>
+                <button class="btn-close-modal" onclick="closeMoveLogsModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label>Select Destination Build</label>
+                    <select id="moveBuildSelect" class="select-modern" style="width: 100%; border-color: rgba(255,255,255,0.1);"></select>
+                </div>
+                <p id="moveLogsContext" style="font-size: 12px; color: var(--text-secondary); margin-top: 12px; font-style: italic;"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeMoveLogsModal()">Cancel</button>
+                <button class="btn-primary" onclick="submitMoveLogs()">🚀 Execute Move</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div id="projectDetailsModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-large garage-modal">
+            <div class="modal-header garage-modal-header">
+                <div>
+                    <h2>🔧 Build Details</h2>
+                    <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Edit vehicle info and tuning notes</p>
+                </div>
+                <button class="btn-close-modal" onclick="closeProjectDetails()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-grid">
+                    <div class="input-group">
+                        <label>Build Name</label>
+                        <input type="text" id="detName" class="input-modern">
+                    </div>
+                    <div class="input-group">
+                        <label>Status Override</label>
+                        <select id="detStatus" class="select-modern">
+                            <option value="">Auto-detect</option>
+                            <option value="active">🟢 Active</option>
+                            <option value="in_progress">🟡 In Progress</option>
+                            <option value="on_hold">⏸️ On Hold</option>
+                            <option value="completed">🟣 Completed</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Vehicle Model / Year</label>
+                        <input type="text" id="detVehicle" class="input-modern" placeholder="e.g. 2021 BMW G80 M3">
+                    </div>
+                    <div class="input-group">
+                        <label>VIN (17 characters)</label>
+                        <input type="text" id="detVin" class="input-modern" placeholder="VIN">
+                    </div>
+                    <div class="input-group">
+                        <label>Customer Name</label>
+                        <input type="text" id="detCustomer" class="input-modern" placeholder="Customer Name">
+                    </div>
+                </div>
+                <div class="input-group" style="margin-top: 16px;">
+                    <label>Tuner Notes</label>
+                    <textarea id="detNotes" class="input-modern" style="min-height: 120px; resize: vertical;" placeholder="Hardware mods, fuel type, configuration details…"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeProjectDetails()">Cancel</button>
+                <button class="btn-primary" onclick="saveProjectDetails()">💾 Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app/app.js?v=4.7"></script>
 </body>
 
 </html>

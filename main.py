@@ -1,11 +1,13 @@
-from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status
+from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from passlib.context import CryptContext
 from pydantic import BaseModel
+from typing import Optional
 from datetime import datetime, timedelta, timezone
 import jwt
 import os
@@ -17,9 +19,56 @@ import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 import polars as pl
 from dotenv import load_dotenv
-
+import base64
+from webauthn import (
+    generate_registration_options,
+    verify_registration_response,
+    generate_authentication_options,
+    verify_authentication_response,
+    options_to_json,
+    base64url_to_bytes,
+)
+from webauthn.helpers import bytes_to_base64url
+from webauthn.helpers.structs import (
+    AuthenticatorSelectionCriteria,
+    UserVerificationRequirement,
+    ResidentKeyRequirement,
+    RegistrationCredential,
+    AuthenticationCredential,
+    AttestationConveyancePreference,
+    PublicKeyCredentialDescriptor,
+    AuthenticatorTransport,
+)
 
 load_dotenv()
+
+RP_ID = os.getenv("RP_ID", "localhost")
+RP_NAME = "Boostlog"
+
+# Temporary store for WebAuthn challenges
+# In production, use Redis or a DB table with ttl
+webauthn_challenges = {}
+
+
+def _webauthn_params(request: Request) -> tuple[str, str]:
+    # Behind a Cloudflare tunnel, host/scheme arrive via X-Forwarded-* headers.
+    forwarded_host = request.headers.get("x-forwarded-host")
+    forwarded_proto = request.headers.get("x-forwarded-proto")
+    host_header = forwarded_host or request.headers.get("host", "")
+    scheme = forwarded_proto or request.url.scheme
+
+    hostname = host_header.split(":", 1)[0]
+    rp_id = os.getenv("RP_ID") or hostname or "localhost"
+
+    origin = os.getenv("WP_ORIGIN")
+    if not origin:
+        if host_header:
+            origin = f"{scheme}://{host_header}"
+        else:
+            origin = f"http://{rp_id}:8000" if rp_id == "localhost" else f"https://{rp_id}"
+
+    return rp_id, origin
+
 
 def get_secret(secret_name):
     if os.getenv("SKIP_AWS_FETCH") == "true":
@@ -63,19 +112,62 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=True)
+    full_name = Column(String, nullable=True)
     hashed_password = Column(String, nullable=True)
     github_id = Column(String, unique=True, index=True, nullable=True)
+    settings_json = Column(Text, nullable=True) # JSON blob for frontend prefs
+    
+    # WebAuthn / Passkeys
+    webauthn_id = Column(String, unique=True, index=True, nullable=True)
+    
+    # Password Reset
+    password_reset_token = Column(String, unique=True, index=True, nullable=True)
+    password_reset_expiry = Column(DateTime(timezone=True), nullable=True)
+
     datalogs = relationship("Datalog", back_populates="owner", cascade="all, delete-orphan")
+    projects = relationship("Project", back_populates="owner", cascade="all, delete-orphan")
+    credentials = relationship("UserCredential", back_populates="user", cascade="all, delete-orphan")
+
+class UserCredential(Base):
+    __tablename__ = "user_credentials"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    credential_id = Column(String, unique=True, index=True, nullable=False)
+    public_key = Column(String, nullable=False)
+    sign_count = Column(Integer, default=0)
+    transports = Column(String, nullable=True) # JSON list
+    name = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", back_populates="credentials")
+
+class Project(Base):
+    __tablename__ = "projects"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String, nullable=False)
+    vin = Column(String, nullable=True)
+    vehicle_model = Column(String, nullable=True)
+    customer_name = Column(String, nullable=True)
+    notes = Column(Text, nullable=True)
+    status = Column(String, nullable=True)  # manual override: active, in_progress, completed, on_hold
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    owner = relationship("User", back_populates="projects")
+    # Logs detach (project_id -> NULL) when the project is deleted
+    datalogs = relationship("Datalog", back_populates="project", passive_deletes=True)
 
 class Datalog(Base):
     __tablename__ = "datalogs"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="SET NULL"), nullable=True)
     stored_filename = Column(String, unique=True, nullable=False)  # e.g. 2_uuid_original.csv
     display_name = Column(String, nullable=False)
     source_filename = Column(String, nullable=False) # Original filename from user's disk
     uploaded_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     owner = relationship("User", back_populates="datalogs")
+    project = relationship("Project", back_populates="datalogs")
     analyses = relationship("Analysis", back_populates="datalog", cascade="all, delete-orphan")
 
 class Analysis(Base):
@@ -139,6 +231,13 @@ app = FastAPI(title="Boostlog Web App")
 UPLOAD_DIR = "data/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# Block host header spoofing. Override with ALLOWED_HOSTS=host1,host2 in env.
+_allowed_hosts = [h.strip() for h in os.getenv(
+    "ALLOWED_HOSTS",
+    "boostlog.app,*.boostlog.app,localhost,127.0.0.1,testserver",
+).split(",") if h.strip()]
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=_allowed_hosts)
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.on_event("startup")
@@ -176,6 +275,40 @@ class UserCreate(BaseModel):
 class LogRename(BaseModel):
     new_name: str
 
+class ProjectCreate(BaseModel):
+    name: str
+    vin: Optional[str] = None
+    vehicle_model: Optional[str] = None
+    customer_name: Optional[str] = None
+    notes: Optional[str] = None
+    status: Optional[str] = None
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    vin: Optional[str] = None
+    vehicle_model: Optional[str] = None
+    customer_name: Optional[str] = None
+    notes: Optional[str] = None
+    status: Optional[str] = None
+
+class UserUpdate(BaseModel):
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    settings_json: Optional[str] = None
+
+class LogMove(BaseModel):
+    project_id: Optional[int] = None
+
+class PasswordResetRequest(BaseModel):
+    username_or_email: str
+
+class PasswordResetConfirm(BaseModel):
+    token: str
+    new_password: str
+
+class UsernameUpdate(BaseModel):
+    new_username: str
+
 @app.post("/register")
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.username == user.username).first()
@@ -196,6 +329,337 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     
     access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
+
+# --- WEBAUTHN / PASSKEYS ---
+
+def _credential_descriptor(c: "UserCredential") -> PublicKeyCredentialDescriptor:
+    transports = []
+    if c.transports:
+        for t in json.loads(c.transports):
+            try:
+                transports.append(AuthenticatorTransport(t))
+            except ValueError:
+                continue
+    return PublicKeyCredentialDescriptor(
+        id=base64url_to_bytes(c.credential_id),
+        transports=transports or None,
+    )
+
+@app.get("/api/auth/webauthn/register/options")
+def webauthn_register_options(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current_user.webauthn_id:
+        current_user.webauthn_id = str(uuid.uuid4())
+        db.commit()
+
+    rp_id, _ = _webauthn_params(request)
+
+    # Get existing credentials to exclude (skip any rows whose stored id can't be decoded)
+    existing_credentials = []
+    for c in current_user.credentials:
+        try:
+            existing_credentials.append(_credential_descriptor(c))
+        except Exception as e:
+            print(f"WARN: Skipping unreadable credential {c.id} for user {current_user.username}: {e}")
+            continue
+
+    options = generate_registration_options(
+        rp_id=rp_id,
+        rp_name=RP_NAME,
+        user_id=current_user.webauthn_id.encode("utf-8"),
+        user_name=current_user.username,
+        user_display_name=current_user.full_name or current_user.username,
+        attestation=AttestationConveyancePreference.NONE,
+        authenticator_selection=AuthenticatorSelectionCriteria(
+            authenticator_attachment=None,
+            resident_key=ResidentKeyRequirement.REQUIRED,
+            user_verification=UserVerificationRequirement.PREFERRED,
+        ),
+        exclude_credentials=existing_credentials,
+    )
+    print(f"DEBUG: Generated registration options for {current_user.username}")
+
+
+    webauthn_challenges[f"reg_{current_user.id}"] = options.challenge
+    return json.loads(options_to_json(options))
+
+@app.post("/api/auth/webauthn/register/verify")
+async def webauthn_register_verify(request: Request, payload: dict, name: Optional[str] = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    challenge = webauthn_challenges.pop(f"reg_{current_user.id}", None)
+    if not challenge:
+        raise HTTPException(status_code=400, detail="Challenge missing or expired")
+
+    try:
+        rp_id, origin = _webauthn_params(request)
+
+        print(f"DEBUG: Verifying registration for {current_user.username} (RP_ID: {rp_id}, Origin: {origin})")
+
+        verification = verify_registration_response(
+            credential=payload,
+            expected_challenge=challenge,
+            expected_origin=origin,
+            expected_rp_id=rp_id,
+        )
+    except Exception as e:
+        print(f"ERROR: Registration verification failed: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Save the new credential
+    # We use bytes_to_base64url on the verified bytes to ensure DB storage is correct
+    cred_id_str = bytes_to_base64url(verification.credential_id)
+
+    cred_name = (name or "").strip() or f"Passkey {datetime.now(timezone.utc).strftime('%Y-%m-%d')}"
+
+    new_cred = UserCredential(
+        user_id=current_user.id,
+        credential_id=cred_id_str,
+        public_key=base64.b64encode(verification.credential_public_key).decode("utf-8"),
+        sign_count=verification.sign_count,
+        transports=json.dumps(payload.get("response", {}).get("transports", [])),
+        name=cred_name,
+    )
+
+    db.add(new_cred)
+    db.commit()
+    print(f"DEBUG: Successfully registered passkey for {current_user.username}")
+    return {"status": "success", "message": "Passkey registered"}
+
+@app.get("/api/auth/webauthn/login/options")
+def webauthn_login_options(request: Request, username: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    existing_credentials = []
+    for c in user.credentials:
+        try:
+            existing_credentials.append(_credential_descriptor(c))
+        except Exception as e:
+            print(f"ERROR: Failed to parse credential {c.id} for user {username}: {e}")
+            continue
+
+    if not existing_credentials:
+        print(f"DEBUG: No valid passkeys found for user {username}")
+        raise HTTPException(status_code=400, detail="No passkeys registered for this user")
+
+    try:
+        rp_id, _ = _webauthn_params(request)
+        options = generate_authentication_options(
+            rp_id=rp_id,
+            allow_credentials=existing_credentials,
+            user_verification=UserVerificationRequirement.PREFERRED,
+        )
+
+        webauthn_challenges[f"login_{username}"] = options.challenge
+        return json.loads(options_to_json(options))
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/auth/webauthn/login/verify")
+async def webauthn_login_verify(request: Request, payload: dict, username: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    challenge = webauthn_challenges.pop(f"login_{username}", None)
+    if not challenge:
+        raise HTTPException(status_code=400, detail="Challenge missing or expired")
+
+    # Find the credential in DB. Note: we search by the same string ID sent by the payload
+    cred_id = payload.get("id")
+    db_cred = db.query(UserCredential).filter(UserCredential.credential_id == cred_id).first()
+    if not db_cred or db_cred.user_id != user.id:
+        raise HTTPException(status_code=400, detail="Credential not found")
+
+    try:
+        rp_id, origin = _webauthn_params(request)
+
+        verification = verify_authentication_response(
+            credential=payload,
+            expected_challenge=challenge,
+            expected_origin=origin,
+            expected_rp_id=rp_id,
+            credential_public_key=base64.b64decode(db_cred.public_key),
+            credential_current_sign_count=db_cred.sign_count,
+        )
+
+    except Exception as e:
+        print(f"ERROR: Login verification failed: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Update sign count
+    db_cred.sign_count = verification.new_sign_count
+    db.commit()
+
+    access_token = create_access_token(data={"sub": user.username})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+# --- DISCOVERABLE-CREDENTIAL (USERNAMELESS / AUTOFILL) LOGIN ---
+
+@app.get("/api/auth/webauthn/login/discoverable/options")
+def webauthn_login_discoverable_options(request: Request):
+    rp_id, _ = _webauthn_params(request)
+    options = generate_authentication_options(
+        rp_id=rp_id,
+        allow_credentials=[],
+        user_verification=UserVerificationRequirement.PREFERRED,
+    )
+    challenge_key = bytes_to_base64url(options.challenge)
+    webauthn_challenges[f"disc_{challenge_key}"] = options.challenge
+    return json.loads(options_to_json(options))
+
+@app.post("/api/auth/webauthn/login/discoverable/verify")
+async def webauthn_login_discoverable_verify(request: Request, payload: dict, db: Session = Depends(get_db)):
+    response = payload.get("response", {}) or {}
+    client_data_b64 = response.get("clientDataJSON")
+    if not client_data_b64:
+        raise HTTPException(status_code=400, detail="Missing clientDataJSON")
+
+    try:
+        client_data = json.loads(base64url_to_bytes(client_data_b64).decode("utf-8"))
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid clientDataJSON")
+
+    challenge_key = client_data.get("challenge")
+    challenge = webauthn_challenges.pop(f"disc_{challenge_key}", None) if challenge_key else None
+    if not challenge:
+        raise HTTPException(status_code=400, detail="Challenge missing or expired")
+
+    cred_id = payload.get("id")
+    db_cred = db.query(UserCredential).filter(UserCredential.credential_id == cred_id).first()
+    if not db_cred:
+        raise HTTPException(status_code=400, detail="Credential not found")
+
+    user = db.query(User).filter(User.id == db_cred.user_id).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="User not found")
+
+    user_handle_b64 = response.get("userHandle")
+    if user_handle_b64:
+        try:
+            user_handle = base64url_to_bytes(user_handle_b64).decode("utf-8")
+        except Exception:
+            user_handle = None
+        if user_handle and user.webauthn_id and user_handle != user.webauthn_id:
+            raise HTTPException(status_code=400, detail="User handle mismatch")
+
+    try:
+        rp_id, origin = _webauthn_params(request)
+
+        verification = verify_authentication_response(
+            credential=payload,
+            expected_challenge=challenge,
+            expected_origin=origin,
+            expected_rp_id=rp_id,
+            credential_public_key=base64.b64decode(db_cred.public_key),
+            credential_current_sign_count=db_cred.sign_count,
+        )
+    except Exception as e:
+        print(f"ERROR: Discoverable login verification failed: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    db_cred.sign_count = verification.new_sign_count
+    db.commit()
+
+    access_token = create_access_token(data={"sub": user.username})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/api/auth/passkeys")
+def list_passkeys(current_user: User = Depends(get_current_user)):
+    return [
+        {
+            "id": c.id,
+            "name": c.name or f"Passkey #{c.id}",
+            "transports": json.loads(c.transports) if c.transports else [],
+            "created_at": c.created_at.isoformat() if c.created_at else None,
+        }
+        for c in current_user.credentials
+    ]
+
+@app.delete("/api/auth/passkeys/{cred_id}")
+def delete_passkey(cred_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    cred = db.query(UserCredential).filter(
+        UserCredential.id == cred_id,
+        UserCredential.user_id == current_user.id,
+    ).first()
+    if not cred:
+        raise HTTPException(status_code=404, detail="Passkey not found")
+    db.delete(cred)
+    db.commit()
+    return {"status": "success"}
+
+class PasskeyRename(BaseModel):
+    name: str
+
+@app.patch("/api/auth/passkeys/{cred_id}")
+def rename_passkey(cred_id: int, payload: PasskeyRename, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    new_name = payload.name.strip()
+    if not new_name:
+        raise HTTPException(status_code=400, detail="Name cannot be empty")
+    cred = db.query(UserCredential).filter(
+        UserCredential.id == cred_id,
+        UserCredential.user_id == current_user.id,
+    ).first()
+    if not cred:
+        raise HTTPException(status_code=404, detail="Passkey not found")
+    cred.name = new_name
+    db.commit()
+    return {"status": "success", "name": cred.name}
+
+# --- PASSWORD RESET & USERNAME CHANGE ---
+
+@app.post("/api/auth/reset-password/request")
+def reset_password_request(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(
+        (User.username == payload.username_or_email) | (User.email == payload.username_or_email)
+    ).first()
+    
+    if not user:
+        return {"message": "If an account exists, a reset link will be provided."}
+    
+    token = str(uuid.uuid4())
+    user.password_reset_token = token
+    user.password_reset_expiry = datetime.now(timezone.utc) + timedelta(hours=1)
+    db.commit()
+    
+    # Mocking email send
+    reset_url = f"{os.getenv('WP_ORIGIN', 'http://localhost:8000')}/reset-password?token={token}"
+    print(f"DEBUG: Password reset for {user.username}: {reset_url}")
+    
+    return {"message": "Success", "debug_info": "Reset token generated" if RP_ID == "localhost" else None}
+
+@app.post("/api/auth/reset-password/confirm")
+def reset_password_confirm(payload: PasswordResetConfirm, db: Session = Depends(get_db)):
+    user = db.query(User).filter(
+        User.password_reset_token == payload.token,
+        User.password_reset_expiry > datetime.now(timezone.utc)
+    ).first()
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    user.hashed_password = get_password_hash(payload.new_password)
+    user.password_reset_token = None
+    user.password_reset_expiry = None
+    db.commit()
+    return {"message": "Password updated successfully"}
+
+@app.post("/api/user/change-username")
+def change_username(payload: UsernameUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    new_username = payload.new_username.strip()
+    if not new_username:
+        raise HTTPException(status_code=400, detail="Username cannot be empty")
+        
+    existing = db.query(User).filter(User.username == new_username).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Username already taken")
+        
+    current_user.username = new_username
+    db.commit()
+    
+    access_token = create_access_token(data={"sub": current_user.username})
+    return {"status": "success", "access_token": access_token}
 
 # --- GITHUB OAUTH ---
 GITHUB_CLIENT_ID = aws_secrets.get("GITHUB_CLIENT_ID") or os.getenv("GITHUB_CLIENT_ID")
@@ -566,7 +1030,8 @@ async def list_logs(current_user: User = Depends(get_current_user), db: Session 
             "id": d.id,
             "name": d.display_name,
             "url": f"/api/logs/{d.stored_filename}",
-            "uploaded_at": d.uploaded_at.isoformat()
+            "uploaded_at": d.uploaded_at.isoformat(),
+            "project_id": d.project_id,
         }
         for d in datalogs
     ]}
@@ -583,5 +1048,175 @@ async def rename_log(log_id: int, rename_data: LogRename, current_user: User = D
         
     datalog.display_name = rename_data.new_name
     db.commit()
-    
+
     return {"id": datalog.id, "name": datalog.display_name}
+
+# --- PROJECTS ---
+
+@app.get("/api/projects")
+async def list_projects(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    projects = db.query(Project).filter(
+        Project.user_id == current_user.id
+    ).order_by(Project.created_at.asc()).all()
+
+    result = []
+    for p in projects:
+        logs = db.query(Datalog).filter(Datalog.project_id == p.id).all()
+        log_count = len(logs)
+        last_activity = None
+        if logs:
+            latest = max(l.uploaded_at for l in logs if l.uploaded_at)
+            if latest:
+                last_activity = latest.isoformat()
+        result.append({
+            "id": p.id,
+            "name": p.name,
+            "vin": p.vin,
+            "vehicle_model": p.vehicle_model,
+            "customer_name": p.customer_name,
+            "notes": p.notes,
+            "status": p.status,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "log_count": log_count,
+            "last_activity": last_activity
+        })
+    return {"projects": result}
+
+@app.post("/api/projects")
+async def create_project(payload: ProjectCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    name = payload.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Project name cannot be empty")
+    
+    project = Project(
+        user_id=current_user.id,
+        name=name,
+        vin=payload.vin.strip() if payload.vin else None,
+        vehicle_model=payload.vehicle_model.strip() if payload.vehicle_model else None,
+        customer_name=payload.customer_name.strip() if payload.customer_name else None,
+        notes=payload.notes.strip() if payload.notes else None,
+        status=payload.status.strip() if payload.status else None
+    )
+    
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+    return {
+        "id": project.id, 
+        "name": project.name, 
+        "vin": project.vin,
+        "vehicle_model": project.vehicle_model,
+        "customer_name": project.customer_name,
+        "notes": project.notes,
+        "status": project.status,
+        "created_at": project.created_at.isoformat() if project.created_at else None
+    }
+
+@app.put("/api/projects/{project_id}")
+async def rename_project(project_id: int, payload: ProjectUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    project = db.query(Project).filter(
+        Project.id == project_id,
+        Project.user_id == current_user.id
+    ).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    name = payload.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Project name cannot be empty")
+    project.name = name
+    db.commit()
+    return {"id": project.id, "name": project.name}
+
+@app.delete("/api/projects/{project_id}")
+async def delete_project(project_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    project = db.query(Project).filter(
+        Project.id == project_id,
+        Project.user_id == current_user.id
+    ).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    # Detach logs from this project so they reappear in "Unassigned"
+    db.query(Datalog).filter(Datalog.project_id == project.id).update({Datalog.project_id: None})
+    db.delete(project)
+    db.commit()
+    return {"deleted": project_id}
+
+@app.put("/api/logs/{log_id}/project")
+async def move_log_to_project(log_id: int, payload: LogMove, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    datalog = db.query(Datalog).filter(
+        Datalog.id == log_id,
+        Datalog.user_id == current_user.id
+    ).first()
+    if not datalog:
+        raise HTTPException(status_code=404, detail="Log not found")
+
+    if payload.project_id is not None:
+        project = db.query(Project).filter(
+            Project.id == payload.project_id,
+            Project.user_id == current_user.id
+        ).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+    datalog.project_id = payload.project_id
+    db.commit()
+    return {"id": datalog.id, "project_id": datalog.project_id}
+# --- USER SETTINGS ---
+@app.get("/api/user/me")
+async def get_user_me(current_user: User = Depends(get_current_user)):
+    return {
+        "username": current_user.username,
+        "email": current_user.email,
+        "full_name": current_user.full_name,
+        "settings": json.loads(current_user.settings_json) if current_user.settings_json else {}
+    }
+
+@app.patch("/api/user/me")
+async def update_user_me(payload: UserUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if payload.email is not None:
+        current_user.email = payload.email
+    if payload.full_name is not None:
+        current_user.full_name = payload.full_name
+    if payload.settings_json is not None:
+        current_user.settings_json = payload.settings_json
+    db.commit()
+    return {"status": "success"}
+
+# --- PROJECT DETAILS ---
+@app.get("/api/projects/{project_id}")
+async def get_project_details(project_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {
+        "id": project.id,
+        "name": project.name,
+        "vin": project.vin,
+        "vehicle_model": project.vehicle_model,
+        "customer_name": project.customer_name,
+        "notes": project.notes,
+        "status": project.status,
+        "created_at": project.created_at.isoformat() if project.created_at else None
+    }
+
+@app.patch("/api/projects/{project_id}")
+async def update_project_details(project_id: int, payload: ProjectUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if payload.name is not None:
+        project.name = payload.name
+    if payload.vin is not None:
+        project.vin = payload.vin
+    if payload.vehicle_model is not None:
+        project.vehicle_model = payload.vehicle_model
+    if payload.customer_name is not None:
+        project.customer_name = payload.customer_name
+    if payload.notes is not None:
+        project.notes = payload.notes
+    if payload.status is not None:
+        project.status = payload.status
+        
+    db.commit()
+    return {"status": "success"}
