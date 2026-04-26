@@ -33,7 +33,7 @@ def upgrade() -> None:
     if 'settings_json' not in user_cols:
         op.add_column('users', sa.Column('settings_json', sa.Text(), nullable=True))
 
-    # 2. Create Projects table
+    # 2. Update Projects table
     tables = inspector.get_table_names()
     if 'projects' not in tables:
         op.create_table(
@@ -50,6 +50,19 @@ def upgrade() -> None:
             sa.PrimaryKeyConstraint('id')
         )
         op.create_index(op.f('ix_projects_id'), 'projects', ['id'], unique=False)
+    else:
+        # Table exists, but maybe columns are missing (e.g. from an old partial manual creation)
+        proj_cols = [c['name'] for c in inspector.get_columns('projects')]
+        if 'vin' not in proj_cols:
+            op.add_column('projects', sa.Column('vin', sa.String(), nullable=True))
+        if 'vehicle_model' not in proj_cols:
+            op.add_column('projects', sa.Column('vehicle_model', sa.String(), nullable=True))
+        if 'customer_name' not in proj_cols:
+            op.add_column('projects', sa.Column('customer_name', sa.String(), nullable=True))
+        if 'notes' not in proj_cols:
+            op.add_column('projects', sa.Column('notes', sa.Text(), nullable=True))
+        if 'created_at' not in proj_cols:
+            op.add_column('projects', sa.Column('created_at', sa.DateTime(timezone=True), nullable=True))
 
     # 3. Update Datalogs table
     log_cols = [c['name'] for c in inspector.get_columns('datalogs')]
