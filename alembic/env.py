@@ -7,7 +7,8 @@ from sqlalchemy import pool
 from alembic import context
 
 # Import your models here to populate the metadata
-from main import Base
+from backend.db import Base
+import backend.models  # noqa: F401  ensure models register with Base.metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

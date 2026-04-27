@@ -22,13 +22,15 @@ _client.create_secret(
     SecretString='{"SECRET_KEY": "mocked_secret_key_from_moto", "GITHUB_CLIENT_ID": "mock_id", "GITHUB_CLIENT_SECRET": "mock_secret"}'
 )
 
-import main
-from main import app, get_db, Base
+from backend import config as backend_config
+from backend import db as backend_db
+from backend.main import app
+from backend.db import get_db, Base
 
 @pytest.fixture(scope="session", autouse=True)
 def configure_upload_dir():
     with tempfile.TemporaryDirectory() as tmpdirname:
-        main.UPLOAD_DIR = tmpdirname
+        backend_config.UPLOAD_DIR = tmpdirname
         yield
 
 @pytest.fixture(scope="function", autouse=True)
@@ -50,9 +52,9 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 
 @pytest.fixture(scope="function", autouse=True)
 def db_session():
-    # Inject test engine and session into main app to handle startup events correctly
-    main.engine = engine
-    main.SessionLocal = TestingSessionLocal
+    # Inject test engine and session into backend.db so startup events use them
+    backend_db.engine = engine
+    backend_db.SessionLocal = TestingSessionLocal
     
     Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
