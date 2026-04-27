@@ -9,1182 +9,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet">
-  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"
-    integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
-    crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
-    integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
-    crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
-    integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
-    crossorigin="anonymous"></script>
-
-  <style>
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    :root {
-      --bg: #0B0E14;
-      --surface: #121620;
-      --surface2: #181C25;
-      --border: #2A303F;
-      --border2: #343d52;
-      --accent: #8338EC;
-      --accent-glow: rgba(131, 56, 236, 0.4);
-      --pink: #FF006E;
-      --pink-dim: rgba(255, 0, 110, 0.10);
-      --danger: #FF006E;
-      --success: #38B000;
-      --purple: #8338EC;
-      --orange: #f59e0b;
-      --text: #E0E4EB;
-      --muted: #8B94A5;
-      --muted2: #556070;
-      --font-head: 'Inter', sans-serif;
-      --font-head2: 'Outfit', sans-serif;
-      --font-mono: 'Inter', monospace;
-      --card-radius: 16px;
-      --grad: linear-gradient(135deg, #8338EC, #FF006E);
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      line-height: 1.6;
-      overflow-x: hidden;
-    }
-
-    ::selection {
-      background: var(--pink-dim);
-    }
-
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: var(--bg);
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--border2);
-      border-radius: 3px;
-    }
-
-    /* NAV */
-    nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 5vw;
-      height: 64px;
-      background: rgba(11, 13, 17, 0.85);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--border);
-      transition: border-color 0.3s;
-    }
-
-    .nav-logo img {
-      height: 36px;
-      width: auto;
-      display: block;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 2rem;
-      list-style: none;
-    }
-
-    .nav-links a {
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 0.875rem;
-      font-weight: 500;
-      transition: color 0.2s;
-    }
-
-    .nav-links a:hover {
-      color: var(--text);
-    }
-
-    .nav-cta {
-      display: flex;
-      gap: 0.75rem;
-      align-items: center;
-    }
-
-    .btn-ghost {
-      background: none;
-      border: 1px solid var(--border2);
-      color: var(--muted);
-      padding: 0.45rem 1.1rem;
-      border-radius: 6px;
-      font-size: 0.875rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-family: var(--font-head);
-      text-decoration: none;
-    }
-
-    .btn-ghost:hover {
-      border-color: var(--pink);
-      color: var(--text);
-      background: var(--pink-dim);
-    }
-
-    .btn-primary {
-      background: var(--grad);
-      border: none;
-      color: #fff;
-      padding: 0.5rem 1.2rem;
-      border-radius: 6px;
-      font-size: 0.875rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-family: var(--font-head);
-      text-decoration: none;
-      box-shadow: 0 0 24px rgba(131, 56, 236, 0.35);
-    }
-
-    .btn-primary:hover {
-      opacity: 0.9;
-      box-shadow: 0 0 36px rgba(131, 56, 236, 0.5);
-      transform: translateY(-1px);
-    }
-
-    /* HERO */
-    .hero {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 120px 5vw 60px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: rgba(131, 56, 236, 0.08);
-      border: 1px solid rgba(131, 56, 236, 0.3);
-      color: var(--accent);
-      padding: 0.3rem 0.9rem;
-      border-radius: 100px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      margin-bottom: 2rem;
-    }
-
-    .hero-badge::before {
-      content: '●';
-      font-size: 0.6rem;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 1;
-      }
-
-      50% {
-        opacity: 0.3;
-      }
-    }
-
-    .hero h1 {
-      font-size: clamp(2.8rem, 7vw, 6rem);
-      font-weight: 700;
-      line-height: 1.05;
-      letter-spacing: -0.03em;
-      margin-bottom: 1.5rem;
-      text-wrap: balance;
-      max-width: 900px;
-      font-family: 'Outfit', sans-serif;
-    }
-
-    .hero h1 .accent-pink {
-      background: linear-gradient(to right, #3A86FF, #d400ff, #FF006E);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .hero h1 .accent-green {
-      color: var(--success);
-    }
-
-    .hero-sub {
-      font-size: clamp(1rem, 1.8vw, 1.2rem);
-      color: var(--muted);
-      max-width: 540px;
-      margin-bottom: 2.5rem;
-      text-wrap: balance;
-      line-height: 1.7;
-    }
-
-    .hero-ctas {
-      display: flex;
-      gap: 0.875rem;
-      align-items: center;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-bottom: 1rem;
-    }
-
-    .btn-large {
-      padding: 0.8rem 2rem;
-      font-size: 1rem;
-      border-radius: 8px;
-      font-weight: 600;
-    }
-
-    .hero-footnote {
-      font-size: 0.78rem;
-      color: var(--muted);
-    }
-
-    /* CHART PREVIEW */
-    .chart-wrapper {
-      margin-top: 4rem;
-      width: 100%;
-      max-width: 1100px;
-      position: relative;
-    }
-
-    .chart-glow {
-      position: absolute;
-      top: -60px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 700px;
-      height: 300px;
-      background: radial-gradient(ellipse, rgba(131, 56, 236, 0.07) 0%, rgba(131, 56, 236, 0.04) 50%, transparent 70%);
-      pointer-events: none;
-    }
-
-    .chart-frame {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--card-radius);
-      overflow: hidden;
-      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--border);
-    }
-
-    .chart-titlebar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface2);
-    }
-
-    .chart-title {
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-
-    .chart-dots {
-      display: flex;
-      gap: 6px;
-    }
-
-    .chart-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-    }
-
-    .chart-legend {
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-      padding: 10px 16px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.72rem;
-      color: var(--muted);
-    }
-
-    .legend-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
-
-    canvas#heroChart {
-      display: block;
-      width: 100%;
-      height: 240px;
-    }
-
-    .chart-metrics {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      border-top: 1px solid var(--border);
-    }
-
-    .metric-cell {
-      padding: 14px 16px;
-      border-right: 1px solid var(--border);
-    }
-
-    .metric-cell:last-child {
-      border-right: none;
-    }
-
-    .metric-label {
-      font-size: 0.65rem;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: 600;
-    }
-
-    .metric-value {
-      font-size: 1.4rem;
-      font-weight: 700;
-      font-family: 'Outfit', sans-serif;
-      margin-top: 2px;
-    }
-
-    .metric-unit {
-      font-size: 0.65rem;
-      color: var(--muted);
-    }
-
-    /* SECTION SHARED */
-    section {
-      padding: 100px 5vw;
-    }
-
-    .section-label {
-      font-size: 0.72rem;
-      color: var(--muted);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      margin-bottom: 1rem;
-      font-weight: 600;
-    }
-
-    .section-label::before {
-      content: '// ';
-      color: var(--accent);
-    }
-
-    h2 {
-      font-size: clamp(2rem, 4vw, 3.2rem);
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      line-height: 1.1;
-      margin-bottom: 1rem;
-      font-family: 'Outfit', sans-serif;
-    }
-
-    .section-sub {
-      color: var(--muted);
-      font-size: 1.05rem;
-      max-width: 500px;
-      text-wrap: balance;
-      line-height: 1.7;
-    }
-
-    /* FEATURES */
-    #features {
-      background: var(--bg);
-    }
-
-    .features-header {
-      text-align: center;
-      margin-bottom: 4rem;
-    }
-
-    .features-header h2 {
-      max-width: 700px;
-      margin: 0 auto 1rem;
-    }
-
-    .features-header .section-sub {
-      margin: 0 auto;
-    }
-
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
-      gap: 1px;
-      background: var(--border);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-
-    .feature-card {
-      background: var(--surface2);
-      padding: 2rem 2rem;
-      transition: background 0.2s;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .feature-card:hover {
-      background: #1d2130;
-    }
-
-    .feature-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, #3a86ff, #8338ec, transparent);
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-
-    .feature-card:hover::before {
-      opacity: 1;
-    }
-
-    .feature-icon {
-      width: 36px;
-      height: 36px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-    }
-
-    .feature-card h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      letter-spacing: -0.01em;
-    }
-
-    .feature-card p {
-      font-size: 0.875rem;
-      color: var(--muted);
-      line-height: 1.65;
-    }
-
-    /* HOW IT WORKS */
-    #how {
-      background: var(--surface);
-    }
-
-    .how-wrapper {
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-
-    .how-header {
-      margin-bottom: 4rem;
-    }
-
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2px;
-      background: var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-    }
-
-    .step {
-      background: var(--bg);
-      padding: 2.5rem 2rem;
-      position: relative;
-    }
-
-    .step-num {
-      font-size: 0.7rem;
-      color: var(--accent);
-      letter-spacing: 0.1em;
-      font-weight: 700;
-      margin-bottom: 1.5rem;
-      display: block;
-    }
-
-    .step h3 {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 0.75rem;
-      letter-spacing: -0.02em;
-    }
-
-    .step p {
-      font-size: 0.875rem;
-      color: var(--muted);
-      line-height: 1.65;
-    }
-
-    .step-visual {
-      margin-top: 1.5rem;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 0.75rem;
-      font-size: 0.72rem;
-      color: var(--muted);
-      line-height: 1.8;
-    }
-
-    .step-visual .hi {
-      color: var(--success);
-    }
-
-    .step-visual .hi2 {
-      color: var(--orange);
-    }
-
-    .step-visual .hi3 {
-      color: var(--accent);
-    }
-
-    /* AI SECTION */
-    #ai {
-      background: var(--bg);
-      overflow: hidden;
-    }
-
-    .ai-wrapper {
-      max-width: 1100px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4rem;
-      align-items: center;
-    }
-
-    .ai-bullets {
-      list-style: none;
-      margin-top: 2rem;
-    }
-
-    .ai-bullets li {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.75rem;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.9rem;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    .ai-bullets li:last-child {
-      border-bottom: none;
-    }
-
-    .ai-bullets li::before {
-      content: '→';
-      color: var(--accent);
-      font-size: 0.8rem;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-
-    .ai-chat {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--card-radius);
-      overflow: hidden;
-    }
-
-    .ai-chat-header {
-      background: var(--bg);
-      border-bottom: 1px solid var(--border);
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .ai-chat-title {
-      font-size: 0.75rem;
-      color: var(--muted);
-      font-weight: 500;
-    }
-
-    .ai-status {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.7rem;
-      color: #d400ff;
-    }
-
-    .ai-status::before {
-      content: '●';
-      font-size: 0.55rem;
-      animation: pulse 2s infinite;
-    }
-
-    .ai-messages {
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .msg-user,
-    .msg-ai {
-      border-radius: 8px;
-      padding: 0.75rem 1rem;
-      font-size: 0.82rem;
-      line-height: 1.6;
-    }
-
-    .msg-user {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--text);
-      align-self: flex-end;
-      max-width: 80%;
-    }
-
-    .msg-ai {
-      background: rgba(131, 56, 236, 0.07);
-      border: 1px solid rgba(131, 56, 236, 0.22);
-      color: var(--text);
-      align-self: flex-start;
-      max-width: 90%;
-    }
-
-    .msg-ai strong {
-      color: #d400ff;
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-
-    .msg-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      margin-top: 0.6rem;
-    }
-
-    .msg-tag {
-      background: rgba(131, 56, 236, 0.1);
-      border: 1px solid rgba(212, 0, 255, 0.3);
-      color: #d400ff;
-      border-radius: 4px;
-      padding: 0.15rem 0.5rem;
-      font-size: 0.65rem;
-    }
-
-    /* PLATFORMS */
-    .platforms-bar {
-      background: var(--surface2);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      padding: 2rem 5vw;
-      text-align: center;
-    }
-
-    .platforms-label {
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      color: var(--muted2);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin-bottom: 1.5rem;
-    }
-
-    .platforms-list {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      gap: 2rem;
-    }
-
-    .platform-pill {
-      font-size: 0.8rem;
-      color: var(--muted);
-      background: var(--bg);
-      border: 1px solid var(--border);
-      padding: 0.4rem 1rem;
-      border-radius: 100px;
-      transition: all 0.2s;
-      font-weight: 500;
-    }
-
-    .platform-pill:hover {
-      border-color: var(--accent);
-      color: var(--text);
-    }
-
-    /* PRICING */
-    #pricing {
-      background: var(--bg);
-    }
-
-    .pricing-header {
-      text-align: center;
-      margin-bottom: 4rem;
-    }
-
-    .pricing-header h2 {
-      margin-bottom: 0.75rem;
-    }
-
-    .pricing-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1px;
-      background: var(--border);
-      max-width: 1000px;
-      margin: 0 auto;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-    }
-
-    .price-card {
-      background: var(--surface);
-      padding: 2.5rem 2rem;
-      position: relative;
-    }
-
-    .price-card.featured {
-      background: var(--surface2);
-    }
-
-    .price-card.featured::before {
-      content: 'MOST POPULAR';
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--grad);
-      color: #fff;
-      font-family: var(--font-mono);
-      font-size: 0.65rem;
-      letter-spacing: 0.1em;
-      padding: 0.25rem 0.9rem;
-      border-radius: 0 0 6px 6px;
-    }
-
-    .price-tier {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      color: var(--muted);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin-bottom: 0.5rem;
-    }
-
-    .price-amount {
-      display: flex;
-      align-items: baseline;
-      gap: 0.25rem;
-      margin: 1rem 0 0.25rem;
-    }
-
-    .price-num {
-      font-size: 3rem;
-      font-weight: 700;
-      font-family: var(--font-mono);
-      letter-spacing: -0.04em;
-    }
-
-    .price-period {
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-
-    .price-desc {
-      font-size: 0.82rem;
-      color: var(--muted);
-      margin-bottom: 1.5rem;
-      line-height: 1.6;
-    }
-
-    .price-features {
-      list-style: none;
-      margin-bottom: 2rem;
-    }
-
-    .price-features li {
-      display: flex;
-      gap: 0.6rem;
-      align-items: flex-start;
-      font-size: 0.85rem;
-      padding: 0.45rem 0;
-      border-bottom: 1px solid var(--border);
-      color: var(--muted);
-    }
-
-    .price-features li:last-child {
-      border-bottom: none;
-    }
-
-    .price-features li::before {
-      content: '✓';
-      color: var(--success);
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-
-    .price-features li.dim::before {
-      color: var(--muted2);
-      content: '–';
-    }
-
-    .price-features li.dim {
-      color: var(--muted2);
-    }
-
-    .btn-outline {
-      display: block;
-      width: 100%;
-      padding: 0.7rem;
-      border: 1px solid var(--border2);
-      background: none;
-      color: var(--text);
-      border-radius: 7px;
-      font-family: var(--font-head);
-      font-size: 0.875rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.2s;
-      text-decoration: none;
-    }
-
-    .btn-outline:hover {
-      border-color: var(--pink);
-      color: var(--pink);
-    }
-
-    .btn-full {
-      display: block;
-      width: 100%;
-      padding: 0.7rem;
-      background: var(--grad);
-      border: none;
-      color: #fff;
-      border-radius: 7px;
-      font-family: var(--font-head);
-      font-size: 0.875rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.2s;
-      text-decoration: none;
-      box-shadow: 0 0 20px rgba(131, 56, 236, 0.3);
-    }
-
-    .btn-full:hover {
-      opacity: 0.9;
-      box-shadow: 0 0 30px rgba(131, 56, 236, 0.45);
-    }
-
-    /* FAQ */
-    #faq {
-      background: var(--surface);
-    }
-
-    .faq-wrapper {
-      max-width: 720px;
-      margin: 0 auto;
-    }
-
-    .faq-header {
-      margin-bottom: 3rem;
-    }
-
-    .faq-item {
-      border-bottom: 1px solid var(--border);
-      padding: 1.25rem 0;
-    }
-
-    .faq-q {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      cursor: pointer;
-      font-weight: 500;
-      font-size: 0.95rem;
-      gap: 1rem;
-      user-select: none;
-    }
-
-    .faq-q:hover {
-      color: var(--text);
-    }
-
-    .faq-icon {
-      color: var(--muted);
-      font-size: 1.2rem;
-      flex-shrink: 0;
-      transition: transform 0.3s;
-      font-family: var(--font-mono);
-    }
-
-    .faq-icon.open {
-      transform: rotate(45deg);
-      color: var(--accent);
-    }
-
-    .faq-a {
-      font-size: 0.875rem;
-      color: var(--muted);
-      line-height: 1.75;
-      padding-top: 0.75rem;
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.35s ease, padding 0.3s;
-    }
-
-    .faq-a.open {
-      max-height: 200px;
-    }
-
-    /* CTA FOOTER */
-    .cta-section {
-      background: var(--bg);
-      padding: 100px 5vw;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .cta-glow {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 800px;
-      height: 400px;
-      background: radial-gradient(ellipse, rgba(131, 56, 236, 0.08) 0%, rgba(131, 56, 236, 0.05) 50%, transparent 70%);
-      pointer-events: none;
-    }
-
-    .cta-section h2 {
-      max-width: 600px;
-      margin: 0 auto 1rem;
-    }
-
-    .cta-section p {
-      color: var(--muted);
-      max-width: 440px;
-      margin: 0 auto 2.5rem;
-    }
-
-    footer {
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      padding: 2.5rem 5vw;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-
-    .footer-logo {
-      font-size: 1rem;
-      font-weight: 700;
-    }
-
-    .footer-logo span {
-      color: var(--accent);
-    }
-
-    .footer-logo em {
-      color: var(--text);
-      font-style: normal;
-    }
-
-    .footer-links {
-      display: flex;
-      gap: 1.5rem;
-    }
-
-    .footer-links a {
-      color: var(--muted2);
-      text-decoration: none;
-      font-size: 0.82rem;
-      transition: color 0.2s;
-    }
-
-    .footer-links a:hover {
-      color: var(--text);
-    }
-
-    .footer-copy {
-      font-size: 0.78rem;
-      color: var(--muted2);
-      font-family: var(--font-mono);
-    }
-
-    /* TWEAKS PANEL */
-    .tweaks-panel {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      z-index: 999;
-      background: var(--surface2);
-      border: 1px solid var(--border2);
-      border-radius: 12px;
-      padding: 1.25rem;
-      width: 260px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-      display: none;
-    }
-
-    .tweaks-panel.active {
-      display: block;
-    }
-
-    .tweaks-title {
-      font-size: 0.75rem;
-      font-family: var(--font-mono);
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      margin-bottom: 1rem;
-    }
-
-    .tweak-row {
-      margin-bottom: 0.875rem;
-    }
-
-    .tweak-label {
-      font-size: 0.75rem;
-      color: var(--muted);
-      margin-bottom: 0.3rem;
-      display: block;
-    }
-
-    .tweak-options {
-      display: flex;
-      gap: 0.4rem;
-      flex-wrap: wrap;
-    }
-
-    .tweak-opt {
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      padding: 0.25rem 0.6rem;
-      border-radius: 4px;
-      border: 1px solid var(--border2);
-      background: var(--surface);
-      color: var(--muted);
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .tweak-opt:hover,
-    .tweak-opt.active {
-      border-color: var(--pink);
-      color: #fff;
-      background: linear-gradient(135deg, rgba(131, 56, 236, 0.2), rgba(131, 56, 236, 0.2));
-    }
-
-    .tweak-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .toggle-switch {
-      width: 36px;
-      height: 20px;
-      border-radius: 10px;
-      background: var(--border2);
-      cursor: pointer;
-      position: relative;
-      transition: background 0.2s;
-    }
-
-    .toggle-switch.on {
-      background: var(--success);
-    }
-
-    .toggle-knob {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #fff;
-      position: absolute;
-      top: 3px;
-      left: 3px;
-      transition: left 0.2s;
-    }
-
-    .toggle-switch.on .toggle-knob {
-      left: 19px;
-    }
-
-    @media (max-width: 768px) {
-      .nav-links {
-        display: none;
-      }
-
-      .pricing-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .steps {
-        grid-template-columns: 1fr;
-      }
-
-      .ai-wrapper {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-      }
-
-      .chart-metrics {
-        grid-template-columns: repeat(3, 1fr);
-      }
-
-      footer {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="/static/landing/styles.css?v=6.0">
 </head>
 
 <body>
@@ -1210,572 +35,316 @@
     </div>
   </nav>
 
-  <div id="root"></div>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">AI Tuning Agent · Now in beta</div>
+    <h1>Telemetry that <br /><span class="accent-pink">tunes itself.</span></h1>
+    <p class="hero-sub">The professional datalog analysis suite for high-performance builds. Organize your Garage, pull insights.</p>
+    <div class="hero-ctas">
+      <a href="/app" class="btn-primary btn-large">Upload your first log</a>
+      <a href="/app" class="btn-ghost btn-large">See live demo</a>
+    </div>
+    <p class="hero-footnote">Free forever for personal use. Demo account: demo/demo</p>
 
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
-
-    /* ─── STATIC CHART ─── */
-    function HeroChart() {
-      const canvasRef = useRef(null);
-
-      useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-
-        // Seeded noise for natural tiny variance without waves
-        function noise(seed) {
-          let s = seed;
-          return () => { s = (s * 16807 + 0) % 2147483647; return (s / 2147483647) - 0.5; };
-        }
-
-        function genBoost(n) {
-          const rng = noise(42);
-          return Array.from({ length: n }, (_, i) => {
-            const t = i / n;
-            // Aggressive dyno curve: lag then violent spool
-            const spool = 1 / (1 + Math.exp(-35 * (t - 0.35)));
-            const hold = 0.48 - 0.02 * Math.max(0, t - 0.6);
-            return spool * hold - 0.04 + rng() * 0.008;
-          });
-        }
-        function genAFR(n) {
-          const rng = noise(77);
-          return Array.from({ length: n }, (_, i) => {
-            const t = i / n;
-            // AFR dips rich aggressively as boost hits
-            const spool = 1 / (1 + Math.exp(-30 * (t - 0.36)));
-            const base = -0.10 - 0.15 * spool + 0.04 * Math.max(0, t - 0.65);
-            return base + rng() * 0.015;
-          });
-        }
-        function genTarget(n) {
-          return Array.from({ length: n }, (_, i) => {
-            const t = i / n;
-            // Target steps up aggressively right before boost hits
-            const ramp = 1 / (1 + Math.exp(-50 * (t - 0.30)));
-            const hold = 0.50 - 0.01 * Math.max(0, t - 0.6);
-            return ramp * hold;
-          });
-        }
-        function genTorque(n) {
-          const rng = noise(13);
-          return Array.from({ length: n }, (_, i) => {
-            const t = i / n;
-            // Huge torque spike with the boost hit, then tapers off hard (classic dyno)
-            const rise = 1 / (1 + Math.exp(-35 * (t - 0.35)));
-            const peak = 1 - 0.65 * Math.max(0, t - 0.45);
-            return rise * peak * 0.55 - 0.02 + rng() * 0.006;
-          });
-        }
-
-        function draw() {
-          const W = canvas.offsetWidth;
-          const H = 240;
-          ctx.clearRect(0, 0, W, H);
-          const n = 200;
-          const boost = genBoost(n);
-          const afr = genAFR(n);
-          const target = genTarget(n);
-
-          // Grid & Realistic Axis Labels
-          ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-          ctx.fillStyle = 'rgba(255,255,255,0.3)';
-          ctx.font = '10px "Inter", sans-serif';
-          ctx.lineWidth = 1;
-
-          const gridSize = 40;
-          const numRows = Math.floor(H / gridSize);
-          const yLabels = ["30 psi", "24 psi", "18 psi", "12 psi", "6 psi", "0 psi", "-6 inHg"];
-
-          for (let i = 0; i <= numRows; i++) {
-            const y = i * gridSize;
-            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-            if (i < 6) ctx.fillText(yLabels[i], 8, y + 14);
-          }
-
-          const numCols = Math.floor(W / gridSize);
-          for (let i = 0; i <= numCols; i++) {
-            const x = i * gridSize;
-            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-
-            // Label every 3rd vertical line to prevent crowding
-            if (i > 0 && i % 3 === 0) {
-              const rpm = Math.round(2500 + (x / W) * 4500);
-              ctx.fillText(rpm + " rpm", x + 6, H - 8);
-            }
-          }
-
-          // Zero line
-          ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-          ctx.lineWidth = 1;
-          ctx.setLineDash([4, 4]);
-          ctx.beginPath(); ctx.moveTo(0, H * 0.72); ctx.lineTo(W, H * 0.72); ctx.stroke();
-          ctx.setLineDash([]);
-
-          // Draw line
-          function drawLine(data, color, glowColor, lineW = 1.5) {
-            const grad = ctx.createLinearGradient(0, 0, 0, H);
-            grad.addColorStop(0, glowColor.replace('1)', '0.15)'));
-            grad.addColorStop(0.5, 'transparent');
-
-            // Fill area
-            ctx.beginPath();
-            data.forEach((v, i) => {
-              const x = (i / (n - 1)) * W;
-              const y = H * 0.88 - v * (H / 1.1);
-              i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-            });
-            ctx.lineTo(W, H * 0.72); ctx.lineTo(0, H * 0.72); ctx.closePath();
-            ctx.fillStyle = grad; ctx.fill();
-
-            // Line
-            ctx.beginPath();
-            ctx.shadowColor = glowColor; ctx.shadowBlur = 8;
-            data.forEach((v, i) => {
-              const x = (i / (n - 1)) * W;
-              const y = H * 0.88 - v * (H / 1.1);
-              i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-            });
-            ctx.strokeStyle = color; ctx.lineWidth = lineW; ctx.stroke();
-            ctx.shadowBlur = 0;
-          }
-
-          const torque = genTorque(n);
-          drawLine(torque, 'rgba(131,56,236,0.8)', 'rgba(131,56,236,1)', 1.5);
-          drawLine(target, 'rgba(232,49,122,0.5)', 'rgba(232,49,122,1)', 1.2);
-          drawLine(boost, '#3A86FF', 'rgba(58,134,255,1)', 2.5);
-
-        }
-
-        function resize() {
-          canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-          canvas.height = 240 * window.devicePixelRatio;
-          canvas.style.height = '240px';
-          ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-          draw();
-        }
-
-        resize();
-        window.addEventListener('resize', resize);
-        return () => window.removeEventListener('resize', resize);
-      }, []);
-
-      return <canvas ref={canvasRef} id="heroChart" style={{ width: '100%', height: '240px' }} />;
-    }
-
-    /* ─── FAQ ─── */
-    const faqs = [
-      { q: "Which loggers and ECUs are supported?", a: "boostLog works with any CSV export — MHD, Bootmod3, EcuTek, HP Tuners, COBB, AEM, and most other popular loggers. If it exports a CSV, we can parse it." },
-      { q: "Is my data private?", a: "Yes. Logs are stored encrypted, visible only to you. We never share or sell your tune data. You can delete all logs at any time from your account settings." },
-      { q: "Does the AI replace a real tuner?", a: "No — it's a powerful second opinion. The AI flags issues and suggests map changes, but a professional tuner brings experience, safety oversight, and dyno validation. Think of it as a 24/7 co-pilot." },
-      { q: "Can I compare multiple pulls?", a: "Yes. On Pro and Tuner plans you can load two logs side-by-side, overlaying parameters across runs to spot deltas between a cold pull and a hot one, or before/after map changes." },
-      { q: "Do you offer team or shop accounts?", a: "Yes — the Tuner plan gives you client workspaces, shared map libraries, and white-label sharing links. Contact us for volume pricing." },
-    ];
-
-    function FAQ() {
-      const [open, setOpen] = useState(null);
-      return (
-        <section id="faq">
-          <div className="faq-wrapper">
-            <div className="faq-header">
-              <p className="section-label">FAQ</p>
-              <h2>Questions?<br />Answered.</h2>
-            </div>
-            {faqs.map((f, i) => (
-              <div className="faq-item" key={i}>
-                <div className="faq-q" onClick={() => setOpen(open === i ? null : i)}>
-                  <span>{f.q}</span>
-                  <span className={`faq-icon ${open === i ? 'open' : ''}`}>+</span>
-                </div>
-                <div className={`faq-a ${open === i ? 'open' : ''}`}>{f.a}</div>
-              </div>
-            ))}
+    <div class="chart-wrapper">
+      <div class="chart-glow"></div>
+      <div class="chart-frame">
+        <div class="chart-titlebar">
+          <div class="chart-dots">
+            <div class="chart-dot" style="background:#ff5f57"></div>
+            <div class="chart-dot" style="background:#febc2e"></div>
+            <div class="chart-dot" style="background:#28c840"></div>
           </div>
-        </section>
-      );
-    }
+          <span class="chart-title">datalog_695d8fd8.csv</span>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#3A86FF"></div>Boost [Pre-Throttle]</div>
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(232,49,122,0.7)"></div>Boost Target</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>Lambda / AFR</div>
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(131,56,236,0.8)"></div>Torque clutch</div>
+        </div>
+        <canvas id="heroChart"></canvas>
+        <div class="chart-metrics">
+          <div class="metric-cell"><div class="metric-label">Max Boost</div><div class="metric-value">18.4</div><div class="metric-unit">psi</div></div>
+          <div class="metric-cell"><div class="metric-label">Peak RPM</div><div class="metric-value">6800</div><div class="metric-unit">rpm</div></div>
+          <div class="metric-cell"><div class="metric-label">Timing Cor.</div><div class="metric-value" style="color:var(--pink)">-1.4</div><div class="metric-unit">deg</div></div>
+          <div class="metric-cell"><div class="metric-label">Torque</div><div class="metric-value">412</div><div class="metric-unit">Nm</div></div>
+          <div class="metric-cell"><div class="metric-label">Speed</div><div class="metric-value">94</div><div class="metric-unit">mph</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    /* ─── TWEAKS ─── */
-    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-      "accent": "blue",
-      "density": "comfortable",
-      "showBadge": true
-    }/*EDITMODE-END*/;
+  <!-- PLATFORMS -->
+  <div class="platforms-bar">
+    <p class="platforms-label">Works with every major logger</p>
+    <div class="platforms-list">
+      <div class="platform-pill">MHD Tuning</div>
+      <div class="platform-pill">Bootmod3</div>
+      <div class="platform-pill">EcuTek</div>
+      <div class="platform-pill">HP Tuners</div>
+      <div class="platform-pill">COBB</div>
+      <div class="platform-pill">AEM</div>
+      <div class="platform-pill">Haltech</div>
+    </div>
+  </div>
 
-    function Tweaks({ visible }) {
-      const [tweaks, setTweaks] = useState(() => {
-        try { return { ...TWEAK_DEFAULTS, ...JSON.parse(localStorage.getItem('bl_tweaks') || '{}') }; }
-        catch { return TWEAK_DEFAULTS; }
-      });
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="features-header">
+      <p class="section-label" style="display: inline-block;">Features</p>
+      <h2>Everything in your log,<br />finally readable.</h2>
+      <p class="section-sub">Extract every bit of horsepower using data, not guesswork. Built for professional tuners and serious enthusiasts.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card"><div class="feature-icon">📈</div><h3>Interactive Plots</h3><p>Toggle every PID and overlay them on a fast, scrubbable chart. Isolate pulls with precision.</p></div>
+      <div class="feature-card"><div class="feature-icon">🤖</div><h3>AI Tuning Agent</h3><p>Get plain-English analysis and concrete map suggestions based on your specific run geometry.</p></div>
+      <div class="feature-card"><div class="feature-icon">⚡</div><h3>Session Metrics</h3><p>Auto-extracted Max Boost, Peak RPM, Timing Corrections, Fueling Deviations & more.</p></div>
+      <div class="feature-card"><div class="feature-icon">🔔</div><h3>Anomalies</h3><p>Instantly see knock events, lean spikes and WGDC oscillations colour-coded by severity.</p></div>
+      <div class="feature-card"><div class="feature-icon">📄</div><h3>Universal CSV</h3><p>Proprietary parser supports MHD, Bootmod3, EcuTek, HP Tuners, COBB and AEM.</p></div>
+      <div class="feature-card"><div class="feature-icon">🔗</div><h3>Share & Sync</h3><p>Send a secure link to your tuner. Compare current runs against your baseline in one click.</p></div>
+    </div>
+  </section>
 
-      function set(key, val) {
-        const next = { ...tweaks, [key]: val };
-        setTweaks(next);
-        localStorage.setItem('bl_tweaks', JSON.stringify(next));
-        window.parent.postMessage({ type: '__edit_mode_set_keys', edits: next }, '*');
-
-        if (key === 'accent') {
-          const map = { blue: '#3a86ff', green: '#1fd86e', cyan: '#22d3ee' };
-          document.documentElement.style.setProperty('--pink', map[val]);
-        }
-        if (key === 'density') {
-          const sz = val === 'compact' ? '80px' : val === 'comfortable' ? '100px' : '120px';
-          document.querySelectorAll('section').forEach(s => { s.style.paddingTop = sz; s.style.paddingBottom = sz; });
-        }
-      }
-
-      return (
-        <div className={`tweaks-panel ${visible ? 'active' : ''}`}>
-          <div className="tweaks-title">Tweaks</div>
-
-          <div className="tweak-row">
-            <span className="tweak-label">Accent color</span>
-            <div className="tweak-options">
-              {['blue', 'green', 'cyan'].map(c => (
-                <div key={c} className={`tweak-opt ${tweaks.accent === c ? 'active' : ''}`}
-                  onClick={() => set('accent', c)}
-                  style={tweaks.accent === c ? { borderColor: c === 'blue' ? '#3a86ff' : c === 'green' ? '#1fd86e' : '#22d3ee' } : {}}>
-                  {c}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="tweak-row">
-            <span className="tweak-label">Section density</span>
-            <div className="tweak-options">
-              {['compact', 'comfortable', 'spacious'].map(d => (
-                <div key={d} className={`tweak-opt ${tweaks.density === d ? 'active' : ''}`}
-                  onClick={() => set('density', d)}>{d}</div>
-              ))}
-            </div>
-          </div>
-
-          <div className="tweak-row">
-            <div className="tweak-toggle">
-              <span className="tweak-label" style={{ margin: 0 }}>Beta badge</span>
-              <div className={`toggle-switch ${tweaks.showBadge ? 'on' : ''}`} onClick={() => {
-                set('showBadge', !tweaks.showBadge);
-                document.querySelector('.hero-badge').style.display = tweaks.showBadge ? 'none' : 'inline-flex';
-              }}>
-                <div className="toggle-knob" />
-              </div>
-            </div>
+  <!-- HOW IT WORKS -->
+  <section id="how">
+    <div class="how-wrapper">
+      <div class="how-header" style="text-align: center; margin-bottom: 4rem;">
+        <p class="section-label" style="display: inline-block;">How it works</p>
+        <h2 style="margin: 1rem auto;">From CSV to calibration<br />in 60 seconds.</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">01 — UPLOAD</span>
+          <h3>Drop your CSV</h3>
+          <p>Drag a datalog from any platform. We parse headers automatically — no manual mapping required.</p>
+          <div class="step-visual">
+            <span class="hi">▲ Drop CSV</span> or click to browse<br />
+            <span style="color:var(--muted2)">────────────────────</span><br />
+            <span class="hi">✓ datalog_695d8fd8.csv</span><br />
+            <span style="color:var(--muted2)">48 parameters extracted</span>
           </div>
         </div>
-      );
-    }
+        <div class="step">
+          <span class="step-num">02 — EXPLORE</span>
+          <h3>Explore the run</h3>
+          <p>Toggle parameters and isolate WOT events. Scrub through the pull with 100Hz precision.</p>
+          <div class="step-visual">
+            <span class="hi3">● Boost [Pre-Throttle]</span><br />
+            <span class="hi">● Boost Target</span><br />
+            <span class="hi2">● Lambda Actual [AFR]</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">03 — ANALYZE</span>
+          <h3>Get AI insights</h3>
+          <p>The Tuning Agent recommends map changes — boost target, fuel pressure, and timing cells.</p>
+          <div class="step-visual">
+            <span class="hi2">→ Timing pull 2° @ 5800</span><br />
+            <span class="hi3">Suggest +1.5% LPFP correction</span><br />
+            <span style="color:var(--muted2)">Pull WGDC 2% @ 5500–6200</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    /* ─── APP ─── */
-    function App() {
-      const [tweaksVisible, setTweaksVisible] = useState(false);
-
-      useEffect(() => {
-        // Restore tweaks
-        try {
-          const saved = JSON.parse(localStorage.getItem('bl_tweaks') || '{}');
-          if (saved.accent) {
-            const map = { pink: '#e8317a', green: '#1fd86e', cyan: '#22d3ee' };
-            document.documentElement.style.setProperty('--pink', map[saved.accent]);
-          }
-        } catch { }
-
-        window.addEventListener('message', e => {
-          if (e.data?.type === '__activate_edit_mode') setTweaksVisible(true);
-          if (e.data?.type === '__deactivate_edit_mode') setTweaksVisible(false);
-        });
-        window.parent.postMessage({ type: '__edit_mode_available' }, '*');
-      }, []);
-
-      return (
-        <>
-          {/* HERO */}
-          <section className="hero">
-            <div className="hero-badge">AI Tuning Agent · Now in beta</div>
-            <h1>Datalogs that<br /><span className="accent-pink">tune themselves.</span></h1>
-            <p className="hero-sub">Upload a CSV from any ECU logger. boostLog plots every parameter, surfaces knock and fueling issues, and an AI agent recommends map changes — in seconds.</p>
-            <div className="hero-ctas">
-              <a href="/app" className="btn-primary btn-large">Upload your first log</a>
-              <a href="/app" className="btn-ghost btn-large">View live demo →</a>
-            </div>
-            <p className="hero-footnote">Free forever · No credit card · Demo: demo / demo</p>
-
-            <div className="chart-wrapper">
-              <div className="chart-glow" />
-              <div className="chart-frame">
-                <div className="chart-titlebar">
-                  <div className="chart-dots">
-                    <div className="chart-dot" style={{ background: '#ff5f57' }} />
-                    <div className="chart-dot" style={{ background: '#febc2e' }} />
-                    <div className="chart-dot" style={{ background: '#28c840' }} />
-                  </div>
-                  <span className="chart-title">datalog_695d8fd8.csv · Interactive Boostlog</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--muted)', background: 'var(--bg)', border: '1px solid var(--border)', padding: '3px 10px', borderRadius: '4px', cursor: 'pointer' }}>Download ↓</span>
-                </div>
-                <div className="chart-legend">
-                  <div className="legend-item"><div className="legend-dot" style={{ background: '#3A86FF' }} />Boost [Pre-Throttle] psi</div>
-                  <div className="legend-item"><div className="legend-dot" style={{ background: 'rgba(232,49,122,0.7)' }} />Boost Target psi</div>
-                  <div className="legend-item"><div className="legend-dot" style={{ background: '#f97316' }} />Lambda / AFR</div>
-                  <div className="legend-item"><div className="legend-dot" style={{ background: 'rgba(131,56,236,0.8)' }} />Torque at Clutch Nm</div>
-                </div>
-                <HeroChart />
-                <div className="chart-metrics">
-                  <div className="metric-cell">
-                    <div className="metric-label">Max Boost</div>
-                    <div className="metric-value" style={{ color: '#3A86FF' }}>18.4</div>
-                    <div className="metric-unit">psi</div>
-                  </div>
-                  <div className="metric-cell">
-                    <div className="metric-label">Peak RPM</div>
-                    <div className="metric-value">6800</div>
-                    <div className="metric-unit">rpm</div>
-                  </div>
-                  <div className="metric-cell">
-                    <div className="metric-label">Max Timing Corr.</div>
-                    <div className="metric-value" style={{ color: '#FF006E' }}>−1.4</div>
-                    <div className="metric-unit">deg</div>
-                  </div>
-                  <div className="metric-cell">
-                    <div className="metric-label">Torque at Clutch</div>
-                    <div className="metric-value">412</div>
-                    <div className="metric-unit">Nm</div>
-                  </div>
-                  <div className="metric-cell">
-                    <div className="metric-label">Max Speed</div>
-                    <div className="metric-value">94</div>
-                    <div className="metric-unit">mph</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* PLATFORMS BAR */}
-          <div className="platforms-bar">
-            <p className="platforms-label">Works with every major logger</p>
-            <div className="platforms-list">
-              {['MHD', 'Bootmod3', 'EcuTek', 'HP Tuners', 'COBB', 'AEM', 'ECUMASTER', 'Haltech', 'MoTeC'].map(p => (
-                <div className="platform-pill" key={p}>{p}</div>
-              ))}
+  <!-- AI SECTION -->
+  <section id="ai">
+    <div class="ai-wrapper">
+      <div>
+        <p class="section-label">AI Tuning Agent</p>
+        <h2>A tuner in<br />your pocket.</h2>
+        <p class="section-sub">Ask questions in plain English. The agent reads your datalog, correlates parameters and gives you actionable map recommendations.</p>
+        <ul class="ai-bullets">
+          <li>Knock detection across RPM cells</li>
+          <li>Fueling drift & LPFP/HPFP correlation</li>
+          <li>WGDC vs target boost analysis</li>
+          <li>Plain-English tuning recommendations</li>
+          <li>Compare before/after map changes</li>
+        </ul>
+      </div>
+      <div class="ai-chat">
+        <div class="ai-chat-header">
+          <span class="ai-chat-title">AI Tuning Agent · Now in beta</span>
+          <span class="ai-status">live</span>
+        </div>
+        <div class="ai-messages">
+          <div class="msg-user">Analyze datalog_695d8fd8.csv — focus on the WOT pull at 5800 RPM.</div>
+          <div class="msg-ai">
+            <strong>boostLog AI</strong><br />
+            Boost target tracking is clean (−0.1 psi avg deviation). I'm seeing <strong style="color:#fbbf24">2° of timing pull at 5800 RPM</strong>. AFR drifts to 11.4 — slightly rich.
+            <br /><br />
+            Recommend <strong style="color:var(--success)">+1.5% LPFP correction</strong> and pull WGDC by 2% in the 5500–6200 cell.
+            <div class="msg-tags">
+              <span class="msg-tag">timing-pull</span>
+              <span class="msg-tag">afr-rich</span>
+              <span class="msg-tag">wgdc</span>
             </div>
           </div>
-
-          {/* FEATURES */}
-          <section id="features">
-            <div className="features-header">
-              <p className="section-label">Features</p>
-              <h2>Everything in your log,<br />finally readable.</h2>
-              <p className="section-sub">Built for tuners, calibrators and enthusiasts who want answers — not spreadsheets.</p>
-            </div>
-            <div className="features-grid">
-              {[
-                { icon: '📈', title: 'Interactive Plots', desc: 'Toggle every PID — boost, AFR, IAT, timing, WGDC — and overlay them on a fast, scrubbable chart.' },
-                { icon: '🤖', title: 'AI Tuning Agent', desc: 'Trained on thousands of pulls. Get plain-English analysis and concrete map suggestions in seconds.' },
-                { icon: '⚡', title: 'Session Metrics', desc: 'Auto-extracted Max Boost, Peak RPM, Timing Corrections, Torque at Clutch & more from every pull.' },
-                { icon: '🔔', title: 'Knock & Fueling Alerts', desc: 'Instantly see negative timing events, lean spikes, fuel pressure drops — colour-coded by severity.' },
-                { icon: '📄', title: 'Universal CSV', desc: 'Works with MHD, Bootmod3, EcuTek, HP Tuners, COBB and most logger exports. Zero config needed.' },
-                { icon: '🔗', title: 'Share & Compare', desc: 'Send a link to your tuner. Compare two pulls side-by-side without screenshots or attachments.' },
-              ].map(f => (
-                <div className="feature-card" key={f.title}>
-                  <div className="feature-icon">{f.icon}</div>
-                  <h3>{f.title}</h3>
-                  <p>{f.desc}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* HOW IT WORKS */}
-          <section id="how">
-            <div className="how-wrapper">
-              <div className="how-header">
-                <p className="section-label">How it works</p>
-                <h2>From CSV to calibration<br />in 60 seconds.</h2>
-              </div>
-              <div className="steps">
-                <div className="step">
-                  <span className="step-num">01 — UPLOAD</span>
-                  <h3>Drop your CSV</h3>
-                  <p>Drag a datalog from MHD, Bootmod3, COBB or any logger. We parse the headers automatically — no mapping required.</p>
-                  <div className="step-visual">
-                    <span className="hi">▲</span> Drop CSV or click to browse<br />
-                    <span style={{ color: 'var(--muted2)' }}>────────────────────</span><br />
-                    <span className="hi">✓</span> <span className="hi">datalog_695d8fd8.csv</span><br />
-                    <span style={{ color: 'var(--muted2)' }}>  48 parameters · 12,400 rows</span>
-                  </div>
-                </div>
-                <div className="step">
-                  <span className="step-num">02 — EXPLORE</span>
-                  <h3>Explore the run</h3>
-                  <p>Toggle parameters, scrub through the pull, focus on RPM ranges and isolate WOT events with precision.</p>
-                  <div className="step-visual">
-                    <span className="hi">●</span> <span className="hi">Boost [Pre-Throttle]</span><br />
-                    <span className="hi2">●</span> <span className="hi2">Boost Pressure [Elevation]</span><br />
-                    <span className="hi3">●</span> <span className="hi3">Boost [Target]</span><br />
-                    <span style={{ color: 'var(--muted2)' }}>○ Lambda Actual [AFR]</span><br />
-                    <span style={{ color: 'var(--muted2)' }}>○ Ignition Timing [deg]</span>
-                  </div>
-                </div>
-                <div className="step">
-                  <span className="step-num">03 — ANALYZE</span>
-                  <h3>Get AI insights</h3>
-                  <p>The Tuning Agent reads the log and recommends map changes — boost target, WGDC, fueling, timing corrections.</p>
-                  <div className="step-visual">
-                    <span className="hi">→</span> <span className="hi">2° timing pull @ 5800 RPM</span><br />
-                    <span className="hi2">→</span> <span className="hi2">AFR drift 11.4 (rich)</span><br />
-                    <span style={{ color: 'var(--muted2)' }}>Suggest +1.5% LPFP correction</span><br />
-                    <span style={{ color: 'var(--muted2)' }}>Pull WGDC 2% @ 5500–6200</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* AI SECTION */}
-          <section id="ai">
-            <div className="ai-wrapper">
-              <div>
-                <p className="section-label">AI Tuning Agent</p>
-                <h2>A tuner in<br />your pocket.</h2>
-                <p className="section-sub">Ask questions in plain English. The agent reads your datalog, correlates parameters and gives you actionable map recommendations.</p>
-                <ul className="ai-bullets">
-                  <li>Knock detection across RPM cells</li>
-                  <li>Fueling drift & LPFP/HPFP correlation</li>
-                  <li>WGDC vs target boost analysis</li>
-                  <li>Plain-English tuning recommendations</li>
-                  <li>Compare before/after map changes</li>
-                </ul>
-              </div>
-              <div className="ai-chat">
-                <div className="ai-chat-header">
-                  <span className="ai-chat-title">AI Tuning Agent · Run #128</span>
-                  <span className="ai-status">live</span>
-                </div>
-                <div className="ai-messages">
-                  <div className="msg-user">Analyze datalog_695d8fd8.csv — focus on the WOT pull at 5800 RPM.</div>
-                  <div className="msg-ai">
-                    <strong>boostLog AI</strong><br />
-                    Boost target tracking is clean (−0.1 psi avg deviation). I'm seeing <strong style={{ color: '#fbbf24' }}>2° of timing pull at 5800 RPM</strong>. AFR drifts to 11.4 — slightly rich.
-                    <br /><br />
-                    Recommend <strong style={{ color: 'var(--success)' }}>+1.5% LPFP correction</strong> and pull WGDC by 2% in the 5500–6200 cell.
-                    <div className="msg-tags">
-                      <span className="msg-tag">timing-pull</span>
-                      <span className="msg-tag">afr-rich</span>
-                      <span className="msg-tag">wgdc</span>
-                    </div>
-                  </div>
-                  <div className="msg-user">What about the cold start idle quality?</div>
-                  <div className="msg-ai">
-                    <strong>boostLog AI</strong><br />
-                    IAT at log start: 14°C. STFT oscillating ±4% for the first 40s — normal cold enrichment. IAC duty cycle stabilises at 2:12. No cold start misfire signatures detected.
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* PRICING */}
-          <section id="pricing">
-            <div className="pricing-header">
-              <p className="section-label">Pricing</p>
-              <h2>Simple pricing.<br />Serious gains.</h2>
-              <p className="section-sub" style={{ margin: '0 auto' }}>Start free. Upgrade when you're ready to chase numbers.</p>
-            </div>
-            <div className="pricing-grid">
-              <div className="price-card">
-                <div className="price-tier">Free</div>
-                <p style={{ fontSize: '0.85rem', color: 'var(--muted)', lineHeight: '1.5' }}>Personal tunes & weekend pulls</p>
-                <div className="price-amount">
-                  <span className="price-num">$0</span>
-                  <span className="price-period">/ forever</span>
-                </div>
-                <ul className="price-features" style={{ marginTop: '1.5rem' }}>
-                  <li>Unlimited CSV uploads</li>
-                  <li>Interactive plots & metrics</li>
-                  <li>5 AI analyses / month</li>
-                  <li>7-day log history</li>
-                  <li className="dim">Run comparison</li>
-                  <li className="dim">Unlimited history</li>
-                </ul>
-                <a href="/app" className="btn-outline">Get started free</a>
-              </div>
-
-              <div className="price-card featured">
-                <div className="price-tier">Pro</div>
-                <p style={{ fontSize: '0.85rem', color: 'var(--muted)', lineHeight: '1.5' }}>Enthusiasts chasing every last hp</p>
-                <div className="price-amount">
-                  <span className="price-num">$9</span>
-                  <span className="price-period">/ month</span>
-                </div>
-                <ul className="price-features" style={{ marginTop: '1.5rem' }}>
-                  <li>Everything in Free</li>
-                  <li>Unlimited AI analyses</li>
-                  <li>Compare runs side-by-side</li>
-                  <li>Unlimited log history</li>
-                  <li>Priority support</li>
-                  <li className="dim">Client workspaces</li>
-                </ul>
-                <a href="/app" className="btn-full">Start 14-day trial</a>
-              </div>
-
-              <div className="price-card">
-                <div className="price-tier">Tuner</div>
-                <p style={{ fontSize: '0.85rem', color: 'var(--muted)', lineHeight: '1.5' }}>Pro tuners with multiple clients</p>
-                <div className="price-amount">
-                  <span className="price-num">$29</span>
-                  <span className="price-period">/ month</span>
-                </div>
-                <ul className="price-features" style={{ marginTop: '1.5rem' }}>
-                  <li>Everything in Pro</li>
-                  <li>Client workspaces</li>
-                  <li>Shared map library</li>
-                  <li>API & webhook access</li>
-                  <li>White-label sharing</li>
-                  <li>Volume discounts</li>
-                </ul>
-                <a href="/app" className="btn-outline">Talk to sales</a>
-              </div>
-            </div>
-          </section>
-
-          <FAQ />
-
-          {/* CTA */}
-          <div className="cta-section">
-            <div className="cta-glow" />
-            <p className="section-label" style={{ justifyContent: 'center', display: 'flex' }}>Get started</p>
-            <h2>Ready to unlock<br />your tune?</h2>
-            <p>Drop your first datalog and let boostLog handle the analysis. Free forever for personal use.</p>
-            <div style={{ display: 'flex', gap: '0.875rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <a href="/app" className="btn-primary btn-large">Upload your first log</a>
-              <a href="/app" className="btn-ghost btn-large">See live demo</a>
-            </div>
+          <div class="msg-user">What about the cold start idle quality?</div>
+          <div class="msg-ai">
+            <strong>boostLog AI</strong><br />
+            IAT at log start: 14°C. STFT oscillating ±4% for the first 40s — normal cold enrichment. IAC duty cycle stabilises at 2:12. No cold start misfire signatures detected.
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-          <footer>
-            <div className="footer-logo" style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ fontFamily: "'Outfit',sans-serif", fontSize: '1.1rem', fontWeight: 800, background: 'linear-gradient(to right,#3A86FF,#d400ff,#FF006E)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', position: 'relative', zIndex: 2 }}>boostLog</span>
-              <img className="turbo-logo-img" src="/static/turbo_logo_clean.png?v=2.0" alt="boostLog" style={{ width: '28px', height: 'auto', marginLeft: '-16px', filter: 'drop-shadow(0 0 6px rgba(255,0,110,0.5))', position: 'relative', zIndex: 1, flexShrink: 0 }} />
-              <span style={{ color: 'var(--muted)', fontSize: '0.75rem', marginLeft: '0.5rem' }}>// datalogs that tune themselves</span>
-            </div>
-            <div className="footer-links">
-              <a href="#features">Features</a>
-              <a href="#pricing">Pricing</a>
-              <a href="#faq">FAQ</a>
-              <a href="/app">Login</a>
-            </div>
-            <span className="footer-copy">© 2026 boostLog</span>
-          </footer>
+  <!-- PRICING -->
+  <section id="pricing">
+    <div class="pricing-header" style="text-align: center; margin-bottom: 4rem;">
+      <p class="section-label" style="display: inline-block;">Pricing</p>
+      <h2 style="margin: 1rem auto;">Simple pricing.<br />Serious gains.</h2>
+      <p class="section-sub" style="margin:0 auto">Start free. Upgrade when you're ready to chase numbers.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-tier">Free</div>
+        <p style="font-size:0.85rem; color:var(--muted); line-height:1.5">Personal tunes & weekend pulls</p>
+        <div class="price-amount">
+          <span class="price-num">$0</span>
+          <span class="price-period">/ forever</span>
+        </div>
+        <ul class="price-features" style="margin-top:1.5rem">
+          <li>Unlimited CSV uploads</li>
+          <li>Interactive plots & metrics</li>
+          <li>5 AI analyses / month</li>
+          <li>7-day log history</li>
+          <li class="dim">Run comparison</li>
+          <li class="dim">Unlimited history</li>
+        </ul>
+        <a href="/app" class="btn-outline">Get started free</a>
+      </div>
 
-          <Tweaks visible={tweaksVisible} />
-        </>
-      );
-    }
+      <div class="price-card featured">
+        <div class="price-badge">MOST POPULAR</div>
+        <div class="price-tier">Pro</div>
+        <p style="font-size:0.85rem; color:var(--muted); line-height:1.5">Enthusiasts chasing every last hp</p>
+        <div class="price-amount">
+          <span class="price-num">$9</span>
+          <span class="price-period">/ month</span>
+        </div>
+        <ul class="price-features" style="margin-top:1.5rem">
+          <li>Everything in Free</li>
+          <li>Unlimited AI analyses</li>
+          <li>Compare runs side-by-side</li>
+          <li>Unlimited log history</li>
+          <li>Priority support</li>
+          <li class="dim">Multi-vehicle Garage</li>
+        </ul>
+        <a href="/app" class="btn-full">Start 14-day trial</a>
+      </div>
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
+      <div class="price-card">
+        <div class="price-tier">Tuner</div>
+        <p style="font-size:0.85rem; color:var(--muted); line-height:1.5">Pro tuners with multiple clients</p>
+        <div class="price-amount">
+          <span class="price-num">$29</span>
+          <span class="price-period">/ month</span>
+        </div>
+        <ul class="price-features" style="margin-top:1.5rem">
+          <li>Everything in Pro</li>
+          <li>Multi-vehicle Garage</li>
+          <li>Shared map library</li>
+          <li>API & webhook access</li>
+          <li>White-label sharing</li>
+          <li>Volume discounts</li>
+        </ul>
+        <a href="/app" class="btn-outline">Talk to sales</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="cta" class="cta-section">
+    <div class="cta-glow"></div>
+    <p class="section-label" style="justify-content:center; display:flex">Get started</p>
+    <h2>Ready to unlock<br />your tune?</h2>
+    <p>Drop your first datalog and let boostLog handle the analysis. Free forever for personal use.</p>
+    <div style="display:flex; gap:0.875rem; justifyContent:center; flexWrap:wrap; justify-content:center; margin-top:2rem">
+      <a href="/app" class="btn-primary btn-large">Upload your first log</a>
+      <a href="/app" class="btn-ghost btn-large">See live demo</a>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div id="faqContainer" class="faq-wrapper">
+      <div class="faq-header" style="text-align: center; margin-bottom: 4rem;">
+        <p class="section-label" style="display: inline-block;">FAQ</p>
+        <h2 style="margin: 1rem auto;">Common Questions</h2>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>Which dataloggers are supported?</span><span class="faq-icon">+</span></div>
+        <div class="faq-a">We support MHD, Bootmod3, EcuTek, HP Tuners, COBB, AEM and any CSV with standard headers.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>Can I compare multiple logs side-by-side?</span><span class="faq-icon">+</span></div>
+        <div class="faq-a">Yes. Pro users can overlay multiple runs to see exactly how map changes or hardware upgrades affected performance curves.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>Is my tuning data private?</span><span class="faq-icon">+</span></div>
+        <div class="faq-a">Yes. Your logs are private to your account. We never share or sell any tune configurations.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>Do you support custom PID mapping?</span><span class="faq-icon">+</span></div>
+        <div class="faq-a">Our proprietary parser handles 400+ standard PIDs. Custom PIDs can be mapped via our Tuner Garage API.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>Does the AI Tuner replace a human?</span><span class="faq-icon">+</span></div>
+        <div class="faq-a">No. It's a second pair of eyes that correlates data faster than a human, but map changes should always be verified by a professional.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>Is there a mobile app?</span><span class="faq-icon">+</span></div>
+        <div class="faq-a">We are a mobile-first web app. You can upload and analyze logs directly from your phone's browser at the track.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TWEAKS -->
+  <div id="tweaksPanel" class="tweaks-panel">
+    <div class="tweaks-title">Design Tweaks</div>
+    <div class="tweak-row">
+      <span class="tweak-label">Accent Color</span>
+      <div class="tweak-options">
+        <div class="tweak-opt" data-key="accent" data-value="blue">Blue</div>
+        <div class="tweak-opt" data-key="accent" data-value="purple">Purple</div>
+        <div class="tweak-opt" data-key="accent" data-value="pink">Pink</div>
+      </div>
+    </div>
+    <div class="tweak-row">
+       <span class="tweak-label">Grid Spacing</span>
+       <div class="tweak-options">
+         <div class="tweak-opt" data-key="density" data-value="compact">Compact</div>
+         <div class="tweak-opt" data-key="density" data-value="comfortable">Comfortable</div>
+       </div>
+    </div>
+    <div class="tweak-toggle">
+       <span class="tweak-label">Show Badges</span>
+       <div class="toggle-switch"><div class="toggle-knob"></div></div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-logo" style="display:flex; align-items:center">
+      <span style="font-family:'Outfit',sans-serif; fontSize:1.1rem; font-weight:800; background:linear-gradient(to right,#3A86FF,#d400ff,#FF006E); -webkit-background-clip:text; -webkit-text-fill-color:transparent; position:relative; z-index:2">boostLog</span>
+      <img class="turbo-logo-img" src="/static/turbo_logo_clean.png?v=2.0" alt="boostLog" style="width:28px; height:auto; margin-left:-16px; filter:drop-shadow(0 0 6px rgba(255,0,110,0.5)); position:relative; z-index:1; flex-shrink:0" />
+      <span style="color:var(--muted); font-size:0.75rem; margin-left:0.5rem">// datalogs that tune themselves</span>
+    </div>
+    <div class="footer-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#ai">AI Tuner</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="/app">Login</a>
+    </div>
+    <span class="footer-copy">© 2026 boostLog</span>
+  </footer>
+
+  <script type="module" src="/static/landing/main.js"></script>
 </body>
 
 </html>

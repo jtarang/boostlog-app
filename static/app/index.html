@@ -35,11 +35,11 @@
                     alt="Turbo Logo">
             </div>
             <div class="auth-tabs">
-                <button type="button" class="tab active" onclick="switchAuthTab('login')">Login</button>
-                <button type="button" class="tab" onclick="switchAuthTab('register')">Register</button>
+                <button type="button" class="tab active" data-action="switchAuthTab" data-mode="login">Login</button>
+                <button type="button" class="tab" data-action="switchAuthTab" data-mode="register">Register</button>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; margin-bottom: 8px;">
-                <button type="button" class="btn-demo" onclick="loginAsDemo()" style="margin: 0;">
+                <button type="button" class="btn-demo" data-action="loginAsDemo" style="margin: 0;">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #FF006E;">
                         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                     </svg>
@@ -63,16 +63,16 @@
                 <hr style="flex: 1; border: none; border-top: 1px solid var(--border-color);">
             </div>
 
-            <form id="authForm" onsubmit="handleAuth(event)">
+            <form id="authForm">
                 <input type="text" id="authUsername" placeholder="Username" required class="input-modern" autocomplete="username webauthn">
                 <input type="password" id="authPassword" placeholder="Password" required class="input-modern" autocomplete="current-password">
                 
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
                     <button type="submit" class="btn-primary" id="authSubmitBtn">Login</button>
-                    <button type="button" id="btnPasskeyLogin" class="btn-secondary" onclick="loginWithPasskey()" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: var(--text-primary); font-size: 13px; font-weight: 600;">
+                    <button type="button" id="btnPasskeyLogin" class="btn-secondary" data-action="loginWithPasskey" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: var(--text-primary); font-size: 13px; font-weight: 600;">
                         🔑 Sign in with Passkey
                     </button>
-                    <a href="#" onclick="openForgotPassword()" style="text-align: center; font-size: 12px; color: var(--accent); text-decoration: none;">Forgot password?</a>
+                    <a href="#" data-action="openForgotPassword" style="text-align: center; font-size: 12px; color: var(--accent); text-decoration: none;">Forgot password?</a>
                 </div>
                 <p id="authError" class="auth-error"></p>
             </form>
@@ -84,7 +84,7 @@
         <div class="modal-card">
             <div class="modal-header">
                 <h3>Recover Access</h3>
-                <button class="modal-close" onclick="closeForgotPassword()">✕</button>
+                <button class="modal-close" data-action="closeForgotPassword">✕</button>
             </div>
             <div class="modal-body">
                 <p style="margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);">Enter your username or email address and we'll send you a recovery link.</p>
@@ -92,7 +92,7 @@
                 <p id="forgotHint" style="font-size: 11px; margin-top: -8px; color: var(--success); display: none;"></p>
             </div>
             <div class="modal-footer" style="padding-top: 12px;">
-                <button class="btn-primary" onclick="submitForgotPassword()" style="width: 100%;">Send Recovery Link</button>
+                <button class="btn-primary" data-action="submitForgotPassword" style="width: 100%;">Send Recovery Link</button>
             </div>
         </div>
     </div>
@@ -109,13 +109,13 @@
                 <p id="resetError" class="auth-error" style="text-align: left;"></p>
             </div>
             <div class="modal-footer" style="padding-top: 12px;">
-                <button class="btn-primary" onclick="submitResetPassword()" style="width: 100%;">Update Password</button>
+                <button class="btn-primary" data-action="submitResetPassword" style="width: 100%;">Update Password</button>
             </div>
         </div>
     </div>
     <!-- Mobile Header -->
     <div class="mobile-header">
-        <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()">
+        <button class="hamburger" id="hamburgerBtn" data-action="toggleSidebar">
             <span></span><span></span><span></span>
         </button>
         <div style="display: flex; align-items: center;">
@@ -130,7 +130,7 @@
 
     <div class="app-container">
         <!-- Sidebar Overlay (mobile) -->
-        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+        <div class="sidebar-overlay" id="sidebarOverlay" data-action="toggleSidebar"></div>
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="brand" style="width: 100%; display: flex; align-items: center; justify-content: space-between;">
@@ -144,13 +144,13 @@
                         alt="Turbo Logo">
                 </div>
                 <!-- Collapsed: turbo icon only -->
-                <div class="sidebar-collapsed-only" style="display: none; cursor: pointer;" onclick="collapseSidebar()">
+                <div class="sidebar-collapsed-only" style="display: none; cursor: pointer;" data-action="collapseSidebar">
                     <img src="/static/turbo_logo_clean.png?v=2.0"
                         style="width: 40px; height: auto; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255,0,110,0.5));"
                         alt="boostLog">
                 </div>
                 <button class="sidebar-collapse-btn sidebar-expanded-only" id="sidebarCollapseBtn"
-                    onclick="collapseSidebar()" title="Collapse sidebar">
+                    data-action="collapseSidebar" title="Collapse sidebar">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="15 18 9 12 15 6"></polyline>
@@ -159,7 +159,7 @@
             </div>
 
             <nav class="sidebar-nav">
-                <button class="nav-btn active" data-view="dashboard" onclick="switchView('dashboard')">
+                <button class="nav-btn active" data-view="dashboard" data-action="switchView">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
                         <line x1="8" y1="21" x2="16" y2="21"></line>
@@ -167,13 +167,13 @@
                     </svg>
                     <span>Dyno</span>
                 </button>
-                <button class="nav-btn" data-view="library" onclick="switchView('library')">
+                <button class="nav-btn" data-view="library" data-action="switchView">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
                     </svg>
                     <span>Datalogs</span>
                 </button>
-                <button class="nav-btn" data-view="projects" onclick="switchView('projects')">
+                <button class="nav-btn" data-view="builds" data-action="switchView">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -183,7 +183,7 @@
             </nav>
 
             <div class="upload-section">
-                <button class="btn-upload-sidebar" onclick="openUploadModal()">
+                <button class="btn-upload-sidebar" data-action="openUploadModal">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                         <polyline points="17 8 12 3 7 8"/>
@@ -205,7 +205,7 @@
 
             <div class="sidebar-user" style="display: flex; flex-direction: column; gap: 10px; width: 100%; border-top: 1px solid var(--border-color); padding-top: 16px;">
                 <!-- User Profile Pill: Now the primary Settings trigger -->
-                <div class="user-profile sidebar-expanded-only" data-view="settings" onclick="switchView('settings')" style="display: flex; width: 100%; align-items: center; cursor: pointer;">
+                <div class="user-profile sidebar-expanded-only" data-view="settings" data-action="switchView" style="display: flex; width: 100%; align-items: center; cursor: pointer;">
                     <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
                         <div class="user-avatar">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -223,7 +223,7 @@
 
                 <!-- Collapsed State: Avatar triggers Settings -->
                 <div class="sidebar-collapsed-only" style="display: none; flex-direction: column; gap: 12px; align-items: center; width: 100%;">
-                    <div class="user-avatar" data-view="settings" onclick="switchView('settings')" style="width: 44px; height: 44px; cursor: pointer; transition: var(--transition);">
+                    <div class="user-avatar" data-view="settings" data-action="switchView" style="width: 44px; height: 44px; cursor: pointer; transition: var(--transition);">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -232,7 +232,7 @@
                     </div>
                 </div>
 
-                <button type="button" class="logout-btn" onclick="logout()" title="Logout" style="width: 100%; justify-content: center; background: rgba(255, 0, 110, 0.08); border: 1px solid rgba(255, 0, 110, 0.2);">
+                <button type="button" class="logout-btn" data-action="logout" title="Logout" style="width: 100%; justify-content: center; background: rgba(255, 0, 110, 0.08); border: 1px solid rgba(255, 0, 110, 0.2);">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -262,7 +262,7 @@
                 </header>
                 <div class="library-body">
                     <aside class="library-rail">
-                        <button class="btn-new-project-rail" onclick="newProjectPrompt()">
+                        <button class="btn-new-build-rail" data-action="newBuildPrompt">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                                 <line x1="12" y1="11" x2="12" y2="17"></line>
@@ -273,14 +273,14 @@
                         <div class="rail-section-label">Smart</div>
                         <ul class="rail-list" id="railSmart"></ul>
                         <div class="rail-section-label">Builds</div>
-                        <ul class="rail-list" id="railProjects"></ul>
+                        <ul class="rail-list" id="railBuilds"></ul>
                     </aside>
                     <section class="library-main">
                         <div class="library-toolbar">
                             <div class="library-toolbar-left">
                                 <h3 id="libraryActiveTitle">All Logs</h3>
                                 <span id="libraryActiveCount" class="library-count-pill">0</span>
-                                <button id="btnProjectDetails" class="btn-project-details" onclick="openProjectDetails()" style="display: none;">
+                                <button id="btnBuildDetails" class="btn-build-details" data-action="openBuildDetails" style="display: none;">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <circle cx="12" cy="12" r="10"></circle>
                                         <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -290,8 +290,8 @@
                                 </button>
                             </div>
                             <div class="library-toolbar-right">
-                                <input type="text" id="librarySearch" class="library-search" placeholder="Search logs..." oninput="renderLibraryLogs()">
-                                <select id="librarySort" class="select-modern library-sort" onchange="renderLibraryLogs()">
+                                <input type="text" id="librarySearch" class="library-search" placeholder="Search logs...">
+                                <select id="librarySort" class="select-modern library-sort">
                                     <option value="newest">Newest first</option>
                                     <option value="oldest">Oldest first</option>
                                     <option value="name">Name (A–Z)</option>
@@ -300,8 +300,8 @@
                         </div>
                         <div class="library-bulk-bar" id="libraryBulkBar" style="display: none;">
                             <span id="libraryBulkCount">0 selected</span>
-                            <button class="btn-bulk" onclick="bulkMovePrompt()">Move to build…</button>
-                            <button class="btn-bulk btn-bulk-secondary" onclick="clearBulkSelection()">Clear</button>
+                            <button class="btn-bulk" data-action="bulkMovePrompt">Move to build…</button>
+                            <button class="btn-bulk btn-bulk-secondary" data-action="clearBulkSelection">Clear</button>
                         </div>
                         <div class="library-grid" id="libraryGrid"></div>
                         <div class="library-empty" id="libraryEmpty" style="display: none;">
@@ -360,12 +360,12 @@
                                 <label>Change Username</label>
                                 <div style="display: flex; gap: 8px;">
                                     <input type="text" id="setNewUsername" class="input-modern" style="margin-bottom: 0;">
-                                    <button class="btn-primary" onclick="updateUsername()" style="padding: 0 16px;">Update</button>
+                                    <button class="btn-primary" data-action="updateUsername" style="padding: 0 16px;">Update</button>
                                 </div>
                             </div>
                             <div class="input-group">
                                 <label>Passkeys / Biometrics</label>
-                                <button class="btn-secondary" onclick="registerPasskey()" style="background: rgba(131, 56, 236, 0.1); border: 1px solid var(--accent); color: var(--accent); font-weight: 600;">
+                                <button class="btn-secondary" data-action="registerPasskey" style="background: rgba(131, 56, 236, 0.1); border: 1px solid var(--accent); color: var(--accent); font-weight: 600;">
                                     ➕ Add a Passkey
                                 </button>
                                 <div id="passkeyList" style="margin-top: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 6px;"></div>
@@ -374,13 +374,13 @@
                     </div>
 
                     <div class="settings-actions">
-                        <button class="btn-primary" onclick="saveUserSettings()" style="padding: 12px 32px;">Save All Settings</button>
+                        <button class="btn-primary" data-action="saveUserSettings" style="padding: 12px 32px;">Save All Settings</button>
                     </div>
                 </div>
             </section>
 
             <!-- Garage View (All Builds) -->
-            <section class="projects-view" id="projectsView" style="display: none;">
+            <section class="builds-view" id="buildsView" style="display: none;">
                 <header class="library-header view-hero" style="background-image: linear-gradient(rgba(15, 15, 17, 0.7), rgba(15, 15, 17, 0.9)), url('/static/garage_hero.png');">
                     <div class="hero-text">
                         <div class="hero-title-row">
@@ -394,14 +394,14 @@
                     </div>
                 </header>
                 
-                <div class="projects-grid-container" style="padding: 24px 30px;">
+                <div class="builds-grid-container" style="padding: 24px 30px;">
                     <div class="library-toolbar" style="margin-bottom: 24px;">
                         <div class="library-toolbar-left">
-                            <h3 id="projectsCountLabel">0 Builds in Garage</h3>
+                            <h3 id="buildsCountLabel">0 Builds in Garage</h3>
                         </div>
                         <div class="library-toolbar-right" style="display: flex; gap: 12px; align-items: center;">
-                            <input type="text" id="projectsSearch" class="library-search" placeholder="Search by car, VIN, or customer…" oninput="renderProjectsView()" style="width: 260px;">
-                            <button class="btn-primary" onclick="newProjectPrompt()" style="white-space: nowrap;">
+                            <input type="text" id="buildsSearch" class="library-search" placeholder="Search by car, VIN, or customer…" style="width: 260px;">
+                            <button class="btn-primary" data-action="newBuildPrompt" style="white-space: nowrap;">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -410,7 +410,7 @@
                             </button>
                         </div>
                     </div>
-                    <div class="projects-grid" id="projectsGrid">
+                    <div class="builds-grid" id="buildsGrid">
                         <!-- Build cards injected here -->
                     </div>
                 </div>
@@ -422,7 +422,7 @@
                 <div class="graph-card col-span-2">
                     <div class="card-header">
                         <div class="card-header-left">
-                            <h3 id="pageTitle" class="graph-card-title">Interactive Datalog</h3>
+                            <h3 id="pageTitle" class="graph-card-title">Dyno Telemetry</h3>
                             <a id="btnDownload" href="#" class="btn-download" style="display:none;">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                                 Download
@@ -433,7 +433,7 @@
                                 <option value="">X-Axis</option>
                             </select>
 
-                            <button class="btn-focus-mode" id="btnFocusMode" onclick="toggleFocusMode()" title="Focus Mode">
+                            <button class="btn-focus-mode" id="btnFocusMode" data-action="toggleFocusMode" title="Focus Mode">
                                 <svg class="icon-expand" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
                                 </svg>
@@ -461,8 +461,8 @@
                                 <div class="url-import-wrap">
                                     <div class="url-import-divider"><span>or import from URL</span></div>
                                     <div class="url-import-row">
-                                        <input type="text" id="urlImportInput" class="url-import-input" placeholder="Paste a CSV URL or bootmod3 /log link…" onkeydown="if(event.key==='Enter') handleUrlImport()" />
-                                        <button class="url-import-btn" onclick="handleUrlImport()">Load</button>
+                                        <input type="text" id="urlImportInput" class="url-import-input" placeholder="Paste a CSV URL or bootmod3 /log link…" />
+                                        <button class="url-import-btn" data-action="handleUrlImport">Load</button>
                                     </div>
                                     <p class="url-import-hint" id="urlImportHint"></p>
                                 </div>
@@ -475,12 +475,11 @@
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
-                        <input type="text" class="toggle-search" id="toggleSearch" placeholder="Filter parameters..."
-                            oninput="filterToggles(this.value)">
+                        <input type="text" class="toggle-search" id="toggleSearch" placeholder="Filter parameters...">
                         <div class="bulk-actions">
-                            <button type="button" onclick="toggleAllParams(true)">All</button>
+                            <button type="button" data-action="toggleAllParams" data-checked="true">All</button>
                             <span class="divider">|</span>
-                            <button type="button" onclick="toggleAllParams(false)">None</button>
+                            <button type="button" data-action="toggleAllParams" data-checked="false">None</button>
                         </div>
                     </div>
                     <div class="parameter-toggles" id="paramToggles">
@@ -489,7 +488,7 @@
                 </div>
 
                 <div class="stats-card col-span-2">
-                    <div class="collapsible-header" onclick="toggleMetrics()">
+                    <div class="collapsible-header" data-action="toggleMetrics">
                         <h3 style="margin: 0;">Session Metrics</h3>
                         <svg class="collapse-chevron" id="metricsChevron" width="18" height="18" viewBox="0 0 24 24"
                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -530,12 +529,12 @@
     </div>
 
     <!-- Floating AI Button -->
-    <button class="fab-ai" id="fabAi" disabled onclick="toggleAiDrawer()">
+    <button class="fab-ai" id="fabAi" disabled data-action="toggleAiDrawer">
         <img src="/static/turbo_logo_clean.png?v=2.0" alt="AI Tuner">
     </button>
 
     <!-- AI Drawer Overlay -->
-    <div class="ai-drawer-overlay" id="aiDrawerOverlay" onclick="toggleAiDrawer()"></div>
+    <div class="ai-drawer-overlay" id="aiDrawerOverlay" data-action="toggleAiDrawer"></div>
 
     <!-- AI Drawer Panel -->
     <div class="ai-drawer" id="aiDrawer">
@@ -544,7 +543,7 @@
                 <img src="/static/turbo_logo_clean.png?v=2.0" style="width: 24px; height: 24px;" alt="">
                 AI Tuning Agent
             </h3>
-            <button class="ai-drawer-close" onclick="toggleAiDrawer()">✕</button>
+            <button class="ai-drawer-close" data-action="toggleAiDrawer">✕</button>
         </div>
         <div class="ai-drawer-body">
             <div id="analysisHistory" style="display: none;">
@@ -559,29 +558,29 @@
             </div>
         </div>
         <div class="ai-drawer-actions">
-            <button class="btn-primary" id="btnAnalyze" disabled onclick="triggerAnalysis()">Start Analysis</button>
+            <button class="btn-primary" id="btnAnalyze" disabled data-action="triggerAnalysis">Start Analysis</button>
         </div>
     </div>
 
     <!-- New Build Modal (Garage) -->
-    <div id="newProjectModal" class="modal-overlay" style="display: none;">
+    <div id="newBuildModal" class="modal-overlay" style="display: none;">
         <div class="modal-content modal-large garage-modal">
             <div class="modal-header garage-modal-header">
                 <div>
                     <h2>🏁 New Build</h2>
                     <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Add a vehicle to your Garage</p>
                 </div>
-                <button class="btn-close-modal" onclick="closeNewProjectModal()">×</button>
+                <button class="btn-close-modal" data-action="closeNewBuildModal">×</button>
             </div>
             <div class="modal-body">
                 <div class="settings-grid">
                     <div class="input-group">
                         <label>Build Name <span style="color: var(--accent);">*</span></label>
-                        <input type="text" id="newProjectInput" class="input-modern" placeholder="e.g. Stage 2 93Oct M3">
+                        <input type="text" id="newBuildInput" class="input-modern" placeholder="e.g. Stage 2 93Oct M3">
                     </div>
                     <div class="input-group">
                         <label>Status</label>
-                        <select id="newProjectStatus" class="select-modern">
+                        <select id="newBuildStatus" class="select-modern">
                             <option value="">Auto-detect</option>
                             <option value="active">🟢 Active</option>
                             <option value="in_progress">🟡 In Progress</option>
@@ -591,25 +590,25 @@
                     </div>
                     <div class="input-group">
                         <label>Vehicle Model / Year</label>
-                        <input type="text" id="newProjectVehicle" class="input-modern" placeholder="e.g. 2021 BMW G80 M3">
+                        <input type="text" id="newBuildVehicle" class="input-modern" placeholder="e.g. 2021 BMW G80 M3">
                     </div>
                     <div class="input-group">
                         <label>VIN</label>
-                        <input type="text" id="newProjectVin" class="input-modern" placeholder="17-character VIN">
+                        <input type="text" id="newBuildVin" class="input-modern" placeholder="17-character VIN">
                     </div>
                     <div class="input-group">
                         <label>Customer Name</label>
-                        <input type="text" id="newProjectCustomer" class="input-modern" placeholder="Customer or shop name">
+                        <input type="text" id="newBuildCustomer" class="input-modern" placeholder="Customer or shop name">
                     </div>
                 </div>
                 <div class="input-group" style="margin-top: 20px;">
                     <label>Build Notes</label>
-                    <textarea id="newProjectNotes" class="input-modern" style="min-height: 90px; resize: vertical;" placeholder="Hardware mods, fuel type, target goals…"></textarea>
+                    <textarea id="newBuildNotes" class="input-modern" style="min-height: 90px; resize: vertical;" placeholder="Hardware mods, fuel type, target goals…"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeNewProjectModal()">Cancel</button>
-                <button class="btn-primary" onclick="submitNewProject()">🏁 Add to Garage</button>
+                <button class="btn-secondary" data-action="closeNewBuildModal">Cancel</button>
+                <button class="btn-primary" data-action="submitNewBuild">🏁 Add to Garage</button>
             </div>
         </div>
     </div>
@@ -620,16 +619,15 @@
         <div class="modal-card">
             <div class="modal-header">
                 <h3 id="renameModalTitle">Rename</h3>
-                <button class="modal-close" onclick="closeRenameModal()">✕</button>
+                <button class="modal-close" data-action="closeRenameModal">✕</button>
             </div>
             <div class="modal-body">
                 <p id="renameModalLabel" style="margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);"></p>
-                <input type="text" id="renameInput" class="input-modern" placeholder=""
-                    onkeydown="if(event.key === 'Enter') submitRename()">
+                <input type="text" id="renameInput" class="input-modern" placeholder="">
             </div>
             <div class="modal-footer" style="display: flex; gap: 12px; margin-top: 24px;">
-                <button class="btn-secondary" onclick="closeRenameModal()" style="flex: 1;">Cancel</button>
-                <button class="btn-primary" id="renameModalConfirm" onclick="submitRename()" style="flex: 1;">Save Changes</button>
+                <button class="btn-secondary" data-action="closeRenameModal" style="flex: 1;">Cancel</button>
+                <button class="btn-primary" id="renameModalConfirm" data-action="submitRename" style="flex: 1;">Save Changes</button>
             </div>
         </div>
     </div>
@@ -639,7 +637,7 @@
         <div class="modal-card" style="max-width: 500px;">
             <div class="modal-header">
                 <h3>Load a Boostlog</h3>
-                <button class="modal-close" onclick="closeUploadModal()">✕</button>
+                <button class="modal-close" data-action="closeUploadModal">✕</button>
             </div>
             <div class="modal-body">
                 <div class="drop-zone" id="dropZone">
@@ -655,9 +653,8 @@
                 <div class="url-import-wrap" style="border: 1px solid var(--border-color); border-radius: 8px; margin-top: 16px; padding: 16px;">
                     <div class="url-import-divider"><span>or import from URL</span></div>
                     <div class="url-import-row">
-                        <input type="text" id="urlImportModalInput" class="url-import-input" placeholder="bootmod3.net/log?id=… or direct CSV URL"
-                            onkeydown="if(event.key==='Enter') submitUrlImportModal()" />
-                        <button class="url-import-btn" onclick="submitUrlImportModal()">Load</button>
+                        <input type="text" id="urlImportModalInput" class="url-import-input" placeholder="bootmod3.net/log?id=… or direct CSV URL" />
+                        <button class="url-import-btn" data-action="submitUrlImportModal">Load</button>
                     </div>
                     <p id="urlImportModalHint" style="font-size: 12px; min-height: 18px; margin-top: 8px; line-height: 1.5;"></p>
                 </div>
@@ -677,13 +674,13 @@
                     </h2>
                     <p id="deleteModalSubtitle" style="font-size: 11px; color: rgba(255, 255, 255, 0.5); margin-top: 4px;"></p>
                 </div>
-                <button class="btn-close-modal" onclick="closeDeleteModal()">×</button>
+                <button class="btn-close-modal" data-action="closeDeleteModal">×</button>
             </div>
             <div class="modal-body">
                 <p id="deleteModalText" style="line-height: 1.5; font-size: 14px;"></p>
             </div>
             <div class="modal-footer" style="padding: 16px 28px; background: rgba(0,0,0,0.2);">
-                <button class="btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn-secondary" data-action="closeDeleteModal">Cancel</button>
                 <button class="btn-primary" id="btnConfirmDelete" style="background: #ff006e; border-color: #ff006e; box-shadow: 0 0 20px rgba(255, 0, 110, 0.3);">Permanently Delete</button>
             </div>
         </div>
@@ -698,7 +695,7 @@
                     <h2>📦 Move to Build</h2>
                     <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Assign log(s) to a different build</p>
                 </div>
-                <button class="btn-close-modal" onclick="closeMoveLogsModal()">×</button>
+                <button class="btn-close-modal" data-action="closeMoveLogsModal">×</button>
             </div>
             <div class="modal-body">
                 <div class="input-group">
@@ -708,22 +705,22 @@
                 <p id="moveLogsContext" style="font-size: 12px; color: var(--text-secondary); margin-top: 12px; font-style: italic;"></p>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeMoveLogsModal()">Cancel</button>
-                <button class="btn-primary" onclick="submitMoveLogs()">🚀 Execute Move</button>
+                <button class="btn-secondary" data-action="closeMoveLogsModal">Cancel</button>
+                <button class="btn-primary" data-action="submitMoveLogs">🚀 Execute Move</button>
             </div>
         </div>
     </div>
 
 
 
-    <div id="projectDetailsModal" class="modal-overlay" style="display: none;">
+    <div id="buildDetailsModal" class="modal-overlay" style="display: none;">
         <div class="modal-content modal-large garage-modal">
             <div class="modal-header garage-modal-header">
                 <div>
                     <h2>🔧 Build Details</h2>
                     <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Edit vehicle info and tuning notes</p>
                 </div>
-                <button class="btn-close-modal" onclick="closeProjectDetails()">×</button>
+                <button class="btn-close-modal" data-action="closeBuildDetails">×</button>
             </div>
             <div class="modal-body">
                 <div class="settings-grid">
@@ -760,13 +757,13 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeProjectDetails()">Cancel</button>
-                <button class="btn-primary" onclick="saveProjectDetails()">💾 Save Changes</button>
+                <button class="btn-secondary" data-action="closeBuildDetails">Cancel</button>
+                <button class="btn-primary" data-action="saveBuildDetails">💾 Save Changes</button>
             </div>
         </div>
     </div>
 
-    <script src="/static/app/app.js?v=4.7"></script>
+    <script type="module" src="/static/app/main.js?v=5.0"></script>
 </body>
 
 </html>
