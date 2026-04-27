@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { renderLibrary } from './library.js';
-import { renderProjectsView } from './projects.js';
+import { renderBuildsView } from './builds.js';
 import { loadUserSettings } from './settings.js';
 
 export function switchView(view) {
@@ -15,25 +15,25 @@ export function switchView(view) {
     if (view === 'dashboard') {
         document.querySelector('.dashboard-grid').style.display = 'grid';
         document.getElementById('libraryView').style.display = 'none';
-        document.getElementById('projectsView').style.display = 'none';
+        document.getElementById('buildsView').style.display = 'none';
         document.getElementById('settingsView').style.display = 'none';
         setTimeout(() => { if (state.currentChart) state.currentChart.resize(); }, 50);
     } else if (view === 'library') {
         document.querySelector('.dashboard-grid').style.display = 'none';
         document.getElementById('libraryView').style.display = 'block';
-        document.getElementById('projectsView').style.display = 'none';
+        document.getElementById('buildsView').style.display = 'none';
         document.getElementById('settingsView').style.display = 'none';
         renderLibrary();
-    } else if (view === 'projects') {
+    } else if (view === 'builds') {
         document.querySelector('.dashboard-grid').style.display = 'none';
         document.getElementById('libraryView').style.display = 'none';
-        document.getElementById('projectsView').style.display = 'block';
+        document.getElementById('buildsView').style.display = 'block';
         document.getElementById('settingsView').style.display = 'none';
-        renderProjectsView();
+        renderBuildsView();
     } else if (view === 'settings') {
         document.querySelector('.dashboard-grid').style.display = 'none';
         document.getElementById('libraryView').style.display = 'none';
-        document.getElementById('projectsView').style.display = 'none';
+        document.getElementById('buildsView').style.display = 'none';
         document.getElementById('settingsView').style.display = 'block';
         loadUserSettings();
     }

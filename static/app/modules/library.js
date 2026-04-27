@@ -4,12 +4,12 @@ import { renameLog } from './modals.js';
 import { switchView } from './view.js';
 import { loadServerLog, refreshLogList } from './sidebar.js';
 import {
-    renameProject,
-    deleteProject,
-    moveLogToProject,
-    showProjectPicker,
-    openNewProjectModal,
-} from './projects.js';
+    renameBuild,
+    deleteBuild,
+    moveLogToBuild,
+    showBuildPicker,
+    openNewBuildModal,
+} from './builds.js';
 
 export function renderLibrary() {
     renderLibraryRail();
@@ -18,10 +18,10 @@ export function renderLibrary() {
 
 function renderLibraryRail() {
     const smart = document.getElementById('railSmart');
-    const projects = document.getElementById('railProjects');
-    if (!smart || !projects) return;
+    const builds = document.getElementById('railBuilds');
+    if (!smart || !builds) return;
 
-    const unassignedCount = state.currentLogs.filter(l => l.project_id == null).length;
+    const unassignedCount = state.currentLogs.filter(l => l.build_id == null).length;
 
     const smartItems = [
         { key: 'all', name: 'All Logs', count: state.currentLogs.length },
@@ -33,16 +33,16 @@ function renderLibraryRail() {
         smart.appendChild(buildRailItem(item.key, item.name, item.count, false));
     }
 
-    projects.innerHTML = '';
-    if (state.currentProjects.length === 0) {
+    builds.innerHTML = '';
+    if (state.currentBuilds.length === 0) {
         const empty = document.createElement('li');
         empty.className = 'rail-empty';
-        empty.textContent = 'No projects yet';
-        projects.appendChild(empty);
+        empty.textContent = 'No builds yet';
+        builds.appendChild(empty);
     } else {
-        for (const p of state.currentProjects) {
-            const count = state.currentLogs.filter(l => l.project_id === p.id).length;
-            projects.appendChild(buildRailItem(p.id, p.name, count, true));
+        for (const b of state.currentBuilds) {
+            const count = state.currentLogs.filter(l => l.build_id === b.id).length;
+            builds.appendChild(buildRailItem(b.id, b.name, count, true));
         }
     }
 }
@@ -61,7 +61,7 @@ function buildRailItem(key, name, count, withActions) {
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
                 </button>
-                <button class="rail-delete" title="Delete project">
+                <button class="rail-delete" title="Delete build">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"></path>
@@ -77,19 +77,19 @@ function buildRailItem(key, name, count, withActions) {
     if (withActions) {
         li.querySelector('.rail-rename').addEventListener('click', async (e) => {
             e.stopPropagation();
-            const next = prompt('Rename project:', name);
+            const next = prompt('Rename build:', name);
             if (!next || next.trim() === name) return;
             try {
-                await renameProject(key, next.trim());
+                await renameBuild(key, next.trim());
                 showToast('Build renamed');
                 refreshLogList();
             } catch (err) { showToast(err.message, 'error'); }
         });
         li.querySelector('.rail-delete').addEventListener('click', async (e) => {
             e.stopPropagation();
-            if (!confirm(`Delete project "${name}"? Logs will move back to Unassigned.`)) return;
+            if (!confirm(`Delete build "${name}"? Logs will move back to Unassigned.`)) return;
             try {
-                await deleteProject(key);
+                await deleteBuild(key);
                 if (state.libraryFilter === key) state.libraryFilter = 'all';
                 showToast('Build deleted');
                 refreshLogList();
@@ -104,9 +104,9 @@ function getFilteredLibraryLogs() {
     if (state.libraryFilter === 'all') {
         // no-op
     } else if (state.libraryFilter === 'unassigned') {
-        logs = logs.filter(l => l.project_id == null);
+        logs = logs.filter(l => l.build_id == null);
     } else {
-        logs = logs.filter(l => String(l.project_id) === String(state.libraryFilter));
+        logs = logs.filter(l => String(l.build_id) === String(state.libraryFilter));
     }
 
     const q = (document.getElementById('librarySearch')?.value || '').toLowerCase().trim();
@@ -133,14 +133,14 @@ export function renderLibraryLogs() {
     if (state.libraryFilter === 'all') title.textContent = 'All Logs';
     else if (state.libraryFilter === 'unassigned') title.textContent = 'Unassigned';
     else {
-        const proj = state.currentProjects.find(p => p.id === state.libraryFilter);
-        title.textContent = proj ? proj.name : 'Build';
+        const build = state.currentBuilds.find(b => b.id === state.libraryFilter);
+        title.textContent = build ? build.name : 'Build';
     }
 
     const logs = getFilteredLibraryLogs();
     countPill.textContent = logs.length;
 
-    const btnDetails = document.getElementById('btnProjectDetails');
+    const btnDetails = document.getElementById('btnBuildDetails');
     if (btnDetails) {
         btnDetails.style.display = (state.libraryFilter !== 'all' && state.libraryFilter !== 'unassigned') ? 'flex' : 'none';
     }
@@ -165,7 +165,7 @@ export function renderLibraryLogs() {
 function buildLogCard(log) {
     const card = document.createElement('article');
     card.className = 'log-card' + (state.bulkSelection.has(log.id) ? ' selected' : '');
-    const proj = log.project_id != null ? state.currentProjects.find(p => p.id === log.project_id) : null;
+    const build = log.build_id != null ? state.currentBuilds.find(b => b.id === log.build_id) : null;
     const hasAi = state.hasAnalysisById.get(log.id);
     let timeLabel = '';
     if (log.uploaded_at) {
@@ -184,7 +184,7 @@ function buildLogCard(log) {
                 <span class="log-card-name" title="${log.name}">${log.name}</span>
             </div>
             <div class="log-card-meta">
-                ${proj ? `<span class="log-card-project">${proj.name}</span>` : '<span class="log-card-project muted">Unassigned</span>'}
+                ${build ? `<span class="log-card-build">${build.name}</span>` : '<span class="log-card-build muted">Unassigned</span>'}
                 ${hasAi ? '<span class="analysis-badge">✦ AI</span>' : ''}
                 ${timeLabel ? `<span class="log-card-time">${timeLabel}</span>` : ''}
             </div>
@@ -224,7 +224,7 @@ function buildLogCard(log) {
     });
     card.querySelector('[data-act="move"]').addEventListener('click', (e) => {
         e.stopPropagation();
-        showProjectPicker(e.currentTarget, log.id, log.project_id);
+        showBuildPicker(e.currentTarget, log.id, log.build_id);
     });
     card.querySelector('[data-act="rename"]').addEventListener('click', (e) => {
         e.stopPropagation();
@@ -267,8 +267,8 @@ export function openMoveLogsModal() {
     if (!modal || !select) return;
 
     select.innerHTML = '<option value="unassigned">Unassigned (None)</option>';
-    state.currentProjects.forEach(p => {
-        select.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+    state.currentBuilds.forEach(b => {
+        select.innerHTML += `<option value="${b.id}">${b.name}</option>`;
     });
     select.innerHTML += `<option value="new">+ Create New Build...</option>`;
 
@@ -287,9 +287,9 @@ export async function submitMoveLogs() {
     closeMoveLogsModal();
 
     if (val === 'new') {
-        openNewProjectModal(async (proj) => {
-            await Promise.all(idsToMove.map(id => moveLogToProject(id, proj.id)));
-            showToast(`Moved ${idsToMove.length} log(s) to ${proj.name}`);
+        openNewBuildModal(async (build) => {
+            await Promise.all(idsToMove.map(id => moveLogToBuild(id, build.id)));
+            showToast(`Moved ${idsToMove.length} log(s) to ${build.name}`);
             state.bulkSelection.clear();
             await refreshLogList();
         });
@@ -298,8 +298,8 @@ export async function submitMoveLogs() {
 
     const targetId = val === 'unassigned' ? null : parseInt(val, 10);
     try {
-        await Promise.all(idsToMove.map(id => moveLogToProject(id, targetId)));
-        const targetName = targetId === null ? 'Unassigned' : state.currentProjects.find(p => p.id === targetId)?.name || 'Build';
+        await Promise.all(idsToMove.map(id => moveLogToBuild(id, targetId)));
+        const targetName = targetId === null ? 'Unassigned' : state.currentBuilds.find(b => b.id === targetId)?.name || 'Build';
         showToast(`Moved ${idsToMove.length} log(s) to ${targetName}`);
         state.bulkSelection.clear();
         await refreshLogList();

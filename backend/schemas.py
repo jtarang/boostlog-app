@@ -12,7 +12,7 @@ class LogRename(BaseModel):
     new_name: str
 
 
-class ProjectCreate(BaseModel):
+class BuildCreate(BaseModel):
     name: str
     vin: Optional[str] = None
     vehicle_model: Optional[str] = None
@@ -21,7 +21,7 @@ class ProjectCreate(BaseModel):
     status: Optional[str] = None
 
 
-class ProjectUpdate(BaseModel):
+class BuildUpdate(BaseModel):
     name: Optional[str] = None
     vin: Optional[str] = None
     vehicle_model: Optional[str] = None
@@ -37,7 +37,7 @@ class UserUpdate(BaseModel):
 
 
 class LogMove(BaseModel):
-    project_id: Optional[int] = None
+    build_id: Optional[int] = None
 
 
 class PasswordResetRequest(BaseModel):

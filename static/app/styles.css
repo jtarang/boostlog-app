@@ -545,7 +545,7 @@ body:not(.view-library) .library-view {
     overflow-y: auto;
 }
 
-.btn-new-project-rail {
+.btn-new-build-rail {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -563,7 +563,7 @@ body:not(.view-library) .library-view {
     margin-bottom: 8px;
 }
 
-.btn-new-project-rail:hover {
+.btn-new-build-rail:hover {
     border-color: var(--accent);
     color: var(--text-primary);
     background: rgba(131, 56, 236, 0.06);
@@ -861,7 +861,7 @@ body:not(.view-library) .library-view {
     flex-wrap: wrap;
 }
 
-.log-card-project {
+.log-card-build {
     background: rgba(131, 56, 236, 0.14);
     color: #c8a8ff;
     padding: 2px 8px;
@@ -871,7 +871,7 @@ body:not(.view-library) .library-view {
     letter-spacing: 0.3px;
 }
 
-.log-card-project.muted {
+.log-card-build.muted {
     background: rgba(255, 255, 255, 0.06);
     color: var(--text-secondary);
 }
@@ -927,8 +927,8 @@ body:not(.view-library) .library-view {
     }
 }
 
-/* Project picker popover */
-.project-picker {
+/* Build picker popover */
+.build-picker {
     position: fixed;
     z-index: 1000;
     min-width: 180px;
@@ -944,7 +944,7 @@ body:not(.view-library) .library-view {
     gap: 2px;
 }
 
-.project-picker-item {
+.build-picker-item {
     text-align: left;
     background: transparent;
     border: none;
@@ -957,16 +957,16 @@ body:not(.view-library) .library-view {
     transition: background 0.15s ease;
 }
 
-.project-picker-item:hover {
+.build-picker-item:hover {
     background: rgba(131, 56, 236, 0.15);
 }
 
-.project-picker-item.active {
+.build-picker-item.active {
     background: rgba(131, 56, 236, 0.25);
     color: #fff;
 }
 
-.project-picker-item:last-child {
+.build-picker-item:last-child {
     border-top: 1px solid var(--border-color);
     margin-top: 2px;
     padding-top: 10px;
@@ -2595,8 +2595,8 @@ body.focus-mode .chart-container {
     }
 }
 
-/* Project Details Button in Library */
-.btn-project-details {
+/* Build Details Button in Library */
+.btn-build-details {
     background: transparent;
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
@@ -2612,7 +2612,7 @@ body.focus-mode .chart-container {
     transition: var(--transition);
 }
 
-.btn-project-details:hover {
+.btn-build-details:hover {
     border-color: var(--accent);
     color: var(--accent);
     background: rgba(131, 56, 236, 0.05);
@@ -2660,15 +2660,15 @@ body.focus-mode .chart-container {
 }
 
 
-/* Projects Management View */
-.projects-grid {
+/* Builds Management View */
+.builds-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: 24px;
     margin-top: 20px;
 }
 
-.project-mgr-card {
+.build-mgr-card {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 12px;
@@ -2678,13 +2678,13 @@ body.focus-mode .chart-container {
     transition: var(--transition);
 }
 
-.project-mgr-card:hover {
+.build-mgr-card:hover {
     border-color: var(--accent);
     transform: translateY(-2px);
     box-shadow: 0 8px 32px rgba(131, 56, 236, 0.1);
 }
 
-.project-mgr-header {
+.build-mgr-header {
     padding: 20px;
     border-bottom: 1px solid var(--border-color);
     display: flex;
@@ -2692,29 +2692,29 @@ body.focus-mode .chart-container {
     align-items: flex-start;
 }
 
-.project-mgr-title {
+.build-mgr-title {
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
-.project-mgr-icon {
+.build-mgr-icon {
     font-size: 20px;
 }
 
-.project-mgr-title h3 {
+.build-mgr-title h3 {
     font-size: 16px;
     font-weight: 700;
     color: var(--text-primary);
     margin: 0;
 }
 
-.project-mgr-actions {
+.build-mgr-actions {
     display: flex;
     gap: 8px;
 }
 
-.project-mgr-actions button {
+.build-mgr-actions button {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
@@ -2725,18 +2725,18 @@ body.focus-mode .chart-container {
     transition: var(--transition);
 }
 
-.project-mgr-actions button:hover {
+.build-mgr-actions button:hover {
     background: rgba(255, 255, 255, 0.1);
     color: var(--text-primary);
 }
 
-.project-mgr-actions button.danger:hover {
+.build-mgr-actions button.danger:hover {
     background: rgba(255, 69, 58, 0.15);
     color: #ff453a;
     border-color: #ff453a;
 }
 
-.project-mgr-body {
+.build-mgr-body {
     padding: 20px;
     display: flex;
     flex-direction: column;
@@ -2744,13 +2744,13 @@ body.focus-mode .chart-container {
     flex: 1;
 }
 
-.project-mgr-detail {
+.build-mgr-detail {
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 
-.project-mgr-detail label {
+.build-mgr-detail label {
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -2758,7 +2758,7 @@ body.focus-mode .chart-container {
     font-weight: 700;
 }
 
-.project-mgr-detail span {
+.build-mgr-detail span {
     font-size: 13px;
     color: var(--text-primary);
 }
@@ -2771,13 +2771,13 @@ body.focus-mode .chart-container {
     border-radius: 4px;
 }
 
-.project-mgr-footer {
+.build-mgr-footer {
     padding: 16px 20px;
     background: rgba(0, 0, 0, 0.1);
     border-top: 1px solid var(--border-color);
 }
 
-.project-mgr-footer button {
+.build-mgr-footer button {
     width: 100%;
     background: transparent;
     border: none;
@@ -2791,7 +2791,7 @@ body.focus-mode .chart-container {
     transition: var(--transition);
 }
 
-.project-mgr-footer button:hover {
+.build-mgr-footer button:hover {
     color: var(--text-primary);
     transform: translateX(4px);
 }

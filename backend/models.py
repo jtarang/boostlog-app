@@ -22,7 +22,7 @@ class User(Base):
     password_reset_expiry = Column(DateTime(timezone=True), nullable=True)
 
     datalogs = relationship("Datalog", back_populates="owner", cascade="all, delete-orphan")
-    projects = relationship("Project", back_populates="owner", cascade="all, delete-orphan")
+    builds = relationship("Build", back_populates="owner", cascade="all, delete-orphan")
     credentials = relationship("UserCredential", back_populates="user", cascade="all, delete-orphan")
 
 
@@ -40,8 +40,8 @@ class UserCredential(Base):
     user = relationship("User", back_populates="credentials")
 
 
-class Project(Base):
-    __tablename__ = "projects"
+class Build(Base):
+    __tablename__ = "builds"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
@@ -51,21 +51,21 @@ class Project(Base):
     notes = Column(Text, nullable=True)
     status = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    owner = relationship("User", back_populates="projects")
-    datalogs = relationship("Datalog", back_populates="project", passive_deletes=True)
+    owner = relationship("User", back_populates="builds")
+    datalogs = relationship("Datalog", back_populates="build", passive_deletes=True)
 
 
 class Datalog(Base):
     __tablename__ = "datalogs"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    project_id = Column(Integer, ForeignKey("projects.id", ondelete="SET NULL"), nullable=True)
+    build_id = Column(Integer, ForeignKey("builds.id", ondelete="SET NULL"), nullable=True)
     stored_filename = Column(String, unique=True, nullable=False)
     display_name = Column(String, nullable=False)
     source_filename = Column(String, nullable=False)
     uploaded_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     owner = relationship("User", back_populates="datalogs")
-    project = relationship("Project", back_populates="datalogs")
+    build = relationship("Build", back_populates="datalogs")
     analyses = relationship("Analysis", back_populates="datalog", cascade="all, delete-orphan")
 
 

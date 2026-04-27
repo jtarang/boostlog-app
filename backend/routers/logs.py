@@ -112,7 +112,7 @@ async def list_logs(current_user: User = Depends(get_current_user), db: Session 
             "name": d.display_name,
             "url": f"/api/logs/{d.stored_filename}",
             "uploaded_at": d.uploaded_at.isoformat(),
-            "project_id": d.project_id,
+            "build_id": d.build_id,
         }
         for d in datalogs
     ]}

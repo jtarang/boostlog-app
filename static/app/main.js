@@ -21,10 +21,10 @@ import {
     closeMoveLogsModal, submitMoveLogs,
 } from './modules/library.js';
 import {
-    newProjectPrompt, closeNewProjectModal, submitNewProject,
-    openProjectDetails, closeProjectDetails, saveProjectDetails,
-    renderProjectsView, viewProjectLogs, editProjectFromView, deleteProjectFromView,
-} from './modules/projects.js';
+    newBuildPrompt, closeNewBuildModal, submitNewBuild,
+    openBuildDetails, closeBuildDetails, saveBuildDetails,
+    renderBuildsView, viewBuildLogs, editBuildFromView, deleteBuildFromView,
+} from './modules/builds.js';
 import {
     saveUserSettings, updateUsername, registerPasskey,
     renamePasskey, deletePasskey,
@@ -67,16 +67,16 @@ const actions = {
     submitRename,
     closeDeleteModal,
 
-    // Projects / Garage
-    newProjectPrompt,
-    closeNewProjectModal,
-    submitNewProject,
-    openProjectDetails,
-    closeProjectDetails,
-    saveProjectDetails,
-    viewProjectLogs: (el) => viewProjectLogs(parseInt(el.dataset.id, 10)),
-    editProjectFromView: (el) => editProjectFromView(parseInt(el.dataset.id, 10)),
-    deleteProjectFromView: (el) => deleteProjectFromView(parseInt(el.dataset.id, 10), el.dataset.name),
+    // Builds / Garage
+    newBuildPrompt,
+    closeNewBuildModal,
+    submitNewBuild,
+    openBuildDetails,
+    closeBuildDetails,
+    saveBuildDetails,
+    viewBuildLogs: (el) => viewBuildLogs(parseInt(el.dataset.id, 10)),
+    editBuildFromView: (el) => editBuildFromView(parseInt(el.dataset.id, 10)),
+    deleteBuildFromView: (el) => deleteBuildFromView(parseInt(el.dataset.id, 10), el.dataset.name),
 
     // Library
     bulkMovePrompt,
@@ -121,7 +121,7 @@ document.addEventListener('input', (e) => {
     const id = e.target.id;
     if (id === 'toggleSearch') filterToggles(e.target.value);
     else if (id === 'librarySearch') renderLibraryLogs();
-    else if (id === 'projectsSearch') renderProjectsView();
+    else if (id === 'buildsSearch') renderBuildsView();
 });
 
 document.addEventListener('change', (e) => {

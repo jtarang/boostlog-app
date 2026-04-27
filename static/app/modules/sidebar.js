@@ -4,7 +4,7 @@ import { showToast } from './toast.js';
 import { renameLog } from './modals.js';
 import { switchView } from './view.js';
 import { renderLibrary } from './library.js';
-import { renderProjectsView } from './projects.js';
+import { renderBuildsView } from './builds.js';
 import { processDataForGraph } from './chart.js';
 import { setDownloadLink } from './upload.js';
 
@@ -33,12 +33,12 @@ export function collapseSidebar() {
 
 export async function refreshLogList(selectId = null, initialLoad = false) {
     try {
-        const [logsRes, projectsRes] = await Promise.all([
+        const [logsRes, buildsRes] = await Promise.all([
             fetch('/api/logs', { headers: getAuthHeaders() }),
-            fetch('/api/projects', { headers: getAuthHeaders() })
+            fetch('/api/builds', { headers: getAuthHeaders() })
         ]);
         state.currentLogs = (await logsRes.json()).logs || [];
-        state.currentProjects = (await projectsRes.json()).projects || [];
+        state.currentBuilds = (await buildsRes.json()).builds || [];
 
         const analyses = await Promise.all(state.currentLogs.map(async (log) => {
             try {
@@ -51,13 +51,13 @@ export async function refreshLogList(selectId = null, initialLoad = false) {
 
         renderSidebarLogs(selectId);
         if (state.currentView === 'library') renderLibrary();
-        if (state.currentView === 'projects') renderProjectsView();
+        if (state.currentView === 'builds') renderBuildsView();
 
-        if (initialLoad && state.currentProjects.length > 0 && state.currentView === 'dashboard') {
-            switchView('projects');
+        if (initialLoad && state.currentBuilds.length > 0 && state.currentView === 'dashboard') {
+            switchView('builds');
         }
     } catch (err) {
-        console.error('Error fetching logs/projects:', err);
+        console.error('Error fetching logs/builds:', err);
     }
 }
 
@@ -94,7 +94,7 @@ function renderLogItem(log, hasAnalysis, selectId) {
     const li = document.createElement('li');
     if (state.currentLogId && log.id === state.currentLogId) li.classList.add('active-log');
 
-    const proj = log.project_id != null ? state.currentProjects.find(p => p.id === log.project_id) : null;
+    const proj = log.build_id != null ? state.currentBuilds.find(b => b.id === log.build_id) : null;
 
     li.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">

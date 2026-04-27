@@ -4,7 +4,7 @@ export const state = {
     authMode: 'login',
     currentServerFile: null,
     currentLogId: null,
-    currentProjects: [],
+    currentBuilds: [],
     currentLogs: [],
     hasAnalysisById: new Map(),
     currentView: 'dashboard',
@@ -16,7 +16,7 @@ export const state = {
     analysisRunningName: null,
     currentData: null,
     currentHeaders: [],
-    pendingProjectCallback: null,
+    pendingBuildCallback: null,
     renameOnSave: null,
     autofillStarted: false,
 };
