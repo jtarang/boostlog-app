@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -11,15 +13,9 @@ from backend.auth.core import get_password_hash
 from backend.models import User
 from backend.routers import analyze, logs, projects, users
 
-app = FastAPI(title="Boostlog Web App")
 
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=config.ALLOWED_HOSTS)
-
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-
-@app.on_event("startup")
-def ensure_demo_user():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     session = db.SessionLocal()
     try:
         demo_user = session.query(User).filter(User.username == "demo").first()
@@ -30,6 +26,14 @@ def ensure_demo_user():
             print("Demo user created (demo/demo)")
     finally:
         session.close()
+    yield
+
+
+app = FastAPI(title="Boostlog Web App", lifespan=lifespan)
+
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=config.ALLOWED_HOSTS)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/", response_class=HTMLResponse)

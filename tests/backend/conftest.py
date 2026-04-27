@@ -1,6 +1,7 @@
 import os
 os.environ["AWS_ACCESS_KEY_ID"] = "testing"
 os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
+os.environ["SECRET_KEY"] = "test_secret_key_at_least_32_bytes_long_for_hs256"
 
 import pytest
 import tempfile
@@ -19,7 +20,7 @@ _mock.start()
 _client = boto3.client('secretsmanager', region_name='us-east-1')
 _client.create_secret(
     Name="boostlog.app/prd/secrets",
-    SecretString='{"SECRET_KEY": "mocked_secret_key_from_moto", "GITHUB_CLIENT_ID": "mock_id", "GITHUB_CLIENT_SECRET": "mock_secret"}'
+    SecretString='{"SECRET_KEY": "mocked_secret_key_from_moto_at_least_32b", "GITHUB_CLIENT_ID": "mock_id", "GITHUB_CLIENT_SECRET": "mock_secret"}'
 )
 
 from backend import config as backend_config
