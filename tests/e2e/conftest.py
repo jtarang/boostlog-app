@@ -9,8 +9,9 @@ def start_server():
     # Ensure data directory exists
     os.makedirs("./data", exist_ok=True)
     
-    # Manually create tables for the test DB since main.py no longer calls create_all()
-    from main import Base
+    # Manually create tables for the test DB since the app no longer calls create_all()
+    from backend.db import Base
+    import backend.models  # noqa: F401  ensure models register with Base.metadata
     from sqlalchemy import create_engine
     test_db_url = "sqlite:///./data/test_e2e.db"
     test_engine = create_engine(test_db_url)
@@ -25,7 +26,7 @@ def start_server():
     
     # Start the server
     p = subprocess.Popen(
-        ["uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8001"],
+        ["uvicorn", "backend.main:app", "--host", "127.0.0.1", "--port", "8001"],
         env=env
     )
     

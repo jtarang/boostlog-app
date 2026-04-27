@@ -8,7 +8,7 @@ services:
       - ./data:/app/data
     env_file:
       - .env.dev
-    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     depends_on:
       - db
       - ollama
