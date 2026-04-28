@@ -49,5 +49,5 @@ jobs:
 
       - name: Terraform Apply (Prod)
         run: |
-          terraform workspace select default || terraform workspace new default
+          terraform workspace select prd
           terraform apply -var-file="environments/prd.tfvars" -auto-approve
