@@ -11,3 +11,7 @@ data/
 # Ignore env file since it might contain localized keys
 .env
 .env.*
+# Ignore test artifacts
+.coverage
+.pytest_cache/
+htmlcov/

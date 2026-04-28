@@ -107,7 +107,7 @@ jobs:
               \"sudo chown -R 1000:1000 /app/data\",
               \"which jq > /dev/null || sudo apt-get update -y\",
               \"which jq > /dev/null || sudo apt-get install -y jq\",
-              \"wget -q --header='Authorization: token ${{ secrets.GITHUB_TOKEN }}' -O docker-compose.yml https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/docker-compose.dev.yml\",
+              \"wget -q --header='Authorization: token ${{ secrets.GITHUB_TOKEN }}' -O docker-compose.yml https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/docker/docker-compose.dev.yml\",
               \"echo ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin\",
               \"docker pull ghcr.io/jtarang/boostlog-app:$SHA_TAG\",
               \"docker-compose down\",

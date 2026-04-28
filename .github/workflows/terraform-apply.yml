@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - 'terraform/**'
-      - 'terraform-trigger'
+      - '.github/triggers/terraform-trigger'
 
 permissions:
   id-token: write # Required for AWS OIDC
