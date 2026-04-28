@@ -4,6 +4,27 @@ export function getAuthHeaders() {
     return state.authToken ? { 'Authorization': `Bearer ${state.authToken}` } : {};
 }
 
+export async function downloadFile(url, filename) {
+    try {
+        const response = await fetch(url, {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Download failed');
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename || 'log.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+        console.error('Download error:', err);
+        alert('Failed to download file. Please try again.');
+    }
+}
+
 export function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
