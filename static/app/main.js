@@ -14,6 +14,7 @@ import { toggleAllParams } from './modules/chart.js';
 import {
     openUploadModal, closeUploadModal,
     submitUrlImportModal, handleUrlImport, wireDropZones,
+    downloadLog,
 } from './modules/upload.js';
 import { toggleAiDrawer, triggerAnalysis } from './modules/analysis.js';
 import {
@@ -52,6 +53,7 @@ const actions = {
     closeUploadModal,
     submitUrlImportModal,
     handleUrlImport,
+    downloadLog,
 
     // Chart / metrics
     toggleMetrics,

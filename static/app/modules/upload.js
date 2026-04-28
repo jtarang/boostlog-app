@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { getAuthHeaders } from './utils.js';
+import { getAuthHeaders, downloadFile } from './utils.js';
 import { showToast } from './toast.js';
 import { setActiveLog, refreshLogList } from './sidebar.js';
 import { processDataForGraph } from './chart.js';
@@ -55,8 +55,9 @@ export function setDownloadLink(url, filename) {
     if (url) state.currentServerFile = url.split('/').pop();
     const btnDownload = document.getElementById('btnDownload');
     if (btnDownload && url) {
-        btnDownload.href = url;
-        btnDownload.download = filename || 'log.csv';
+        btnDownload.dataset.url = url;
+        btnDownload.dataset.filename = filename || 'log.csv';
+        btnDownload.dataset.action = 'downloadLog';
         btnDownload.style.display = 'flex';
     }
 
@@ -178,5 +179,13 @@ export function wireDropZones() {
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length) handleFile(e.target.files[0]);
         });
+    }
+}
+
+export function downloadLog(el) {
+    const url = el.dataset.url;
+    const filename = el.dataset.filename;
+    if (url) {
+        downloadFile(url, filename);
     }
 }
