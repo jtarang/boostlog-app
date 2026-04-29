@@ -79,9 +79,12 @@ async def analyze_log(filename: str, current_user: User = Depends(get_current_us
 
     from litellm import completion
 
-    ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
-    model_name = f"ollama/{ollama_model}"
-    api_base = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
+    model_name = os.getenv("LLM_MODEL")
+    api_base = os.getenv("LLM_API_BASE")
+    if not model_name:
+        ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
+        model_name = f"ollama/{ollama_model}"
+        api_base = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
 
     prompt = f"""You are **Moose** — a seasoned, no-nonsense professional automotive tuner with 20+ years of experience on forced-induction engines (turbo, supercharged, E85, pump gas). You have just received an aggregated data summary parsed from a real dyno datalog file. Your job is to give the owner an honest, technically precise, and actionable analysis.
 

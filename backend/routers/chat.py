@@ -51,9 +51,12 @@ Format your response using Markdown where appropriate.
 
     from litellm import completion
 
-    ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
-    model_name = f"ollama/{ollama_model}"
-    api_base = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
+    model_name = os.getenv("LLM_MODEL")
+    api_base = os.getenv("LLM_API_BASE")
+    if not model_name:
+        ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
+        model_name = f"ollama/{ollama_model}"
+        api_base = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
 
     mock_response = os.getenv("MOCK_AI_RESPONSE")
     if mock_response:

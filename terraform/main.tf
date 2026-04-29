@@ -2,11 +2,11 @@ terraform {
   required_version = ">= 1.5.0"
 
   backend "s3" {
-    bucket         = "boostlog-tfstate-jtarang"
-    key            = "boostlog/terraform.tfstate"
-    region         = "us-east-1"
+    bucket = "boostlog-tfstate-jtarang"
+    key    = "boostlog/terraform.tfstate"
+    region = "us-east-1"
     # dynamodb_table = "terraform-locks" # Uncomment to enable state locking
-    encrypt        = true
+    encrypt = true
   }
 
   required_providers {
