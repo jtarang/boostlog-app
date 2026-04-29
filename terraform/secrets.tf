@@ -31,7 +31,7 @@ resource "aws_secretsmanager_secret_version" "boostlog_secrets_version" {
     POSTGRES_PASSWORD       = var.db_password
     POSTGRES_DB             = "boostlog"
     DATABASE_URL            = "postgresql://boostuser:${var.db_password}@db:5432/boostlog"
-    LLM_MODEL               = "bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0"
+    LLM_MODEL               = "bedrock/meta.llama3-1-8b-instruct-v1:0"
     AWS_REGION_NAME         = var.aws_region
   })
 }
