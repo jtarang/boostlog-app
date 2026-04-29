@@ -156,6 +156,7 @@ Provide a **prioritized checklist** of specific actions the tuner or owner must 
                 api_base=api_base,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.3,
+                drop_params=True,
             )
 
         try:

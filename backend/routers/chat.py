@@ -68,6 +68,7 @@ Format your response using Markdown where appropriate.
                 api_base=api_base,
                 messages=messages,
                 temperature=0.3,
+                drop_params=True,
             )
 
         try:
