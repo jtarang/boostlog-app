@@ -16,7 +16,7 @@ import {
     submitUrlImportModal, handleUrlImport, wireDropZones,
     downloadLog,
 } from './modules/upload.js';
-import { toggleAiDrawer, triggerAnalysis } from './modules/analysis.js';
+import { toggleAiDrawer, triggerAnalysis, submitChat } from './modules/analysis.js';
 import {
     renderLibraryLogs, bulkMovePrompt, clearBulkSelection,
     closeMoveLogsModal, submitMoveLogs,
@@ -109,6 +109,10 @@ document.addEventListener('click', dispatch);
 
 document.addEventListener('submit', (e) => {
     if (e.target.id === 'authForm') handleAuth(e);
+    else if (e.target.id === 'chatForm') {
+        e.preventDefault();
+        submitChat();
+    }
 });
 
 document.addEventListener('keydown', (e) => {

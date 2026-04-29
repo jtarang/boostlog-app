@@ -1605,15 +1605,47 @@ body.focus-mode .chart-container {
 .chat-box {
     margin-top: 16px;
     flex: 1;
-    background: var(--bg-main);
+    background: transparent;
     border-radius: 8px;
-    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 1.25rem;
     overflow-y: auto;
     font-size: 14px;
     line-height: 1.5;
+}
+
+.msg-user, .msg-ai {
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    word-break: break-word;
+}
+
+.msg-user {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    align-self: flex-end;
+    max-width: 85%;
+}
+
+.msg-ai {
+    background: rgba(131, 56, 236, 0.08);
+    border: 1px solid rgba(131, 56, 236, 0.22);
+    color: var(--text-primary);
+    align-self: flex-start;
+    max-width: 95%;
+}
+
+.msg-ai strong {
+    color: var(--accent);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 800;
+    border-bottom: 1px dashed rgba(131, 56, 236, 0.3);
 }
 
 .msg.system {
@@ -2226,6 +2258,11 @@ body.focus-mode .chart-container {
     border-color: var(--accent);
     color: var(--accent);
     font-weight: 600;
+}
+
+.history-pill:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* === Mobile Hamburger === */

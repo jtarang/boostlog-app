@@ -20,10 +20,13 @@ export function loadAnalysisHistory(filename) {
         .then(data => {
             const analyses = data.analyses || [];
 
+            const btnRerun = document.getElementById('btnRerunAnalyze');
+
             if (analyses.length === 0) {
                 historySection.style.display = 'none';
                 chatBox.innerHTML = '<div class="msg system">Ready for AI Analysis. Click the turbo button to begin.</div>';
-                if (btnAnalyze) { btnAnalyze.disabled = state.analysisRunning; btnAnalyze.innerHTML = 'Start Analysis'; btnAnalyze.classList.remove('btn-rerun'); }
+                if (btnAnalyze) { btnAnalyze.disabled = state.analysisRunning; btnAnalyze.style.display = 'block'; }
+                if (btnRerun) { btnRerun.style.display = 'none'; }
                 if (fabAi) fabAi.disabled = false;
                 return;
             }
@@ -48,24 +51,85 @@ export function loadAnalysisHistory(filename) {
             });
 
             renderAnalysisContent(analyses[0]);
-            if (btnAnalyze) { btnAnalyze.disabled = state.analysisRunning; btnAnalyze.innerHTML = 'Re-run Analysis'; btnAnalyze.classList.add('btn-rerun'); }
+            if (btnAnalyze) { btnAnalyze.style.display = 'none'; }
+            if (btnRerun) { btnRerun.disabled = state.analysisRunning; btnRerun.style.display = 'inline-block'; }
+            const chatForm = document.getElementById('chatForm');
+            if (chatForm) chatForm.style.display = 'flex';
             if (fabAi) fabAi.disabled = false;
         })
         .catch(() => {
             historySection.style.display = 'none';
             chatBox.innerHTML = '<div class="msg system">Ready for AI Analysis. Click the turbo button to begin.</div>';
-            if (btnAnalyze) { btnAnalyze.disabled = state.analysisRunning; btnAnalyze.innerHTML = 'Start Analysis'; btnAnalyze.classList.remove('btn-rerun'); }
+            if (btnAnalyze) { btnAnalyze.disabled = state.analysisRunning; btnAnalyze.style.display = 'block'; }
+            const btnRerun = document.getElementById('btnRerunAnalyze');
+            if (btnRerun) { btnRerun.style.display = 'none'; }
+            const chatForm = document.getElementById('chatForm');
+            if (chatForm) chatForm.style.display = 'none';
             if (fabAi) fabAi.disabled = false;
         });
 }
 
+let currentChatHistory = [];
+
 function renderAnalysisContent(analysis) {
     const chatBox = document.getElementById('chatBox');
     const when = new Date(analysis.created_at).toLocaleString();
+    currentChatHistory = [];
     chatBox.innerHTML = `
         <div class="msg system" style="margin-bottom: 8px; font-size: 11px;">📋 Analysis from ${when} &nbsp;·&nbsp; <span style="opacity:0.6;">${analysis.model_used}</span></div>
-        <div class="markdown-body" style="padding: 10px; font-size: 14px; text-align: left; color: var(--text-primary);">${marked.parse(analysis.result_markdown)}</div>
+        <div class="markdown-body msg-ai">${marked.parse(analysis.result_markdown)}</div>
     `;
+}
+
+export async function submitChat() {
+    const input = document.getElementById('chatInput');
+    const chatBox = document.getElementById('chatBox');
+    const msg = input.value.trim();
+    if (!msg || !state.currentServerFile) return;
+
+    input.value = '';
+    const btnSend = document.getElementById('btnSendChat');
+    btnSend.disabled = true;
+
+    // Append user message
+    const userDiv = document.createElement('div');
+    userDiv.className = 'msg-user';
+    userDiv.textContent = msg;
+    chatBox.appendChild(userDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    currentChatHistory.push({ role: 'user', content: msg });
+
+    // Append loading indicator
+    const aiDiv = document.createElement('div');
+    aiDiv.className = 'msg-ai markdown-body';
+    aiDiv.innerHTML = '<span style="opacity: 0.6;">Thinking...</span>';
+    chatBox.appendChild(aiDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    try {
+        const res = await fetch(`/api/analyze/${state.currentServerFile}/chat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify({ messages: currentChatHistory })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Failed to send message');
+
+        const aiResponse = data.response;
+        aiDiv.innerHTML = marked.parse(aiResponse);
+        currentChatHistory.push({ role: 'assistant', content: aiResponse });
+    } catch (err) {
+        aiDiv.innerHTML = `<span style="color: var(--danger);">${err.message}</span>`;
+        currentChatHistory.pop(); // Remove the user message from history so they can retry
+    } finally {
+        btnSend.disabled = false;
+        chatBox.scrollTop = chatBox.scrollHeight;
+        input.focus();
+    }
 }
 
 export async function triggerAnalysis() {
@@ -77,11 +141,12 @@ export async function triggerAnalysis() {
     state.analysisRunningName = document.getElementById('pageTitle')?.textContent || analysisFile;
     document.querySelector('#logItems li.active-log')?.classList.add('analyzing-log');
     const btn = document.getElementById('btnAnalyze');
+    const btnRerun = document.getElementById('btnRerunAnalyze');
     const chatBox = document.getElementById('chatBox');
     const fabAi = document.getElementById('fabAi');
 
-    btn.disabled = true;
-    btn.innerHTML = 'Analyzing...';
+    if (btn) { btn.disabled = true; btn.innerHTML = 'Analyzing...'; }
+    if (btnRerun) { btnRerun.disabled = true; btnRerun.innerHTML = '...'; }
     fabAi?.classList.add('analyzing');
     chatBox.innerHTML = `
         <div class="ai-thinking">
@@ -145,7 +210,7 @@ export async function triggerAnalysis() {
         document.querySelector('#logItems li.analyzing-log')?.classList.remove('analyzing-log');
         fabAi?.classList.remove('analyzing');
         chatBox.innerHTML = `<div class="msg" style="color: var(--danger);">Error: ${err.message}</div>`;
-        btn.disabled = false;
-        btn.innerHTML = 'Retry Analysis';
+        if (btn) { btn.disabled = false; btn.innerHTML = 'Retry Analysis'; }
+        if (btnRerun) { btnRerun.disabled = false; btnRerun.innerHTML = 'Re-run'; }
     }
 }
