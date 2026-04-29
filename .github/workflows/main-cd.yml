@@ -51,9 +51,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pytest httpx playwright
           if [ "${{ steps.playwright-cache.outputs.cache-hit }}" != "true" ]; then
-            python -m playwright install chromium --with-deps
+            python -m playwright install --with-deps
           else
-            python -m playwright install-deps chromium
+            python -m playwright install-deps
           fi
           echo "AWS_REGION=us-east-1" > .env
           echo "SKIP_AWS_FETCH=true" >> .env
