@@ -48,7 +48,11 @@ resource "aws_iam_role_policy" "secrets_access_policy" {
 data "aws_iam_policy_document" "bedrock_access" {
   statement {
     actions = [
-      "bedrock:InvokeModel"
+      "bedrock:InvokeModel",
+      "bedrock:InvokeModelWithResponseStream",
+      "bedrock:GetInferenceProfile",
+      "aws-marketplace:ViewSubscriptions",
+      "aws-marketplace:Subscribe"
     ]
     resources = ["*"]
   }
