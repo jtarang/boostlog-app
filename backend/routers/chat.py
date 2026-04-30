@@ -35,13 +35,29 @@ async def chat_about_log(filename: str, request: ChatRequest, current_user: User
     if not latest_analysis:
         raise HTTPException(status_code=400, detail="Please run the initial analysis first.")
 
+    from backend import config
+    file_path = os.path.join(config.UPLOAD_DIR, filename)
+    csv_content = ""
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r") as f:
+                # Limit to 500kb just to be safe with token limits
+                csv_content = f.read(500 * 1024)
+        except Exception:
+            pass
+
     system_prompt = f"""You are **Moose** — a seasoned, no-nonsense professional automotive tuner.
 You recently analyzed a datalog and provided the following report:
 
 {latest_analysis.result_markdown}
 
-Answer the user's follow-up questions concisely and professionally based on this context. 
-If the user asks about something not in the report, use your general tuning knowledge, but remind them it's not in the current data summary.
+Here is the complete raw CSV datalog for your reference:
+```csv
+{csv_content}
+```
+
+Answer the user's follow-up questions concisely and professionally based on this context and the raw data provided. 
+If the user asks about something not in the report or the data, use your general tuning knowledge, but remind them it's not in the current data.
 Format your response using Markdown where appropriate.
 """
 
