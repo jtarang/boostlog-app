@@ -79,6 +79,29 @@ function renderAnalysisContent(analysis) {
         <div class="msg system" style="margin-bottom: 8px; font-size: 11px;">📋 Analysis from ${when} &nbsp;·&nbsp; <span style="opacity:0.6;">${analysis.model_used}</span></div>
         <div class="markdown-body msg-ai">${marked.parse(analysis.result_markdown)}</div>
     `;
+
+    // Fetch and render chat history
+    fetch(`/api/analyze/${state.currentServerFile}/chat`, { headers: getAuthHeaders() })
+        .then(res => res.json())
+        .then(data => {
+            if (data.messages && data.messages.length > 0) {
+                data.messages.forEach(msg => {
+                    currentChatHistory.push({ role: msg.role, content: msg.content });
+                    
+                    const div = document.createElement('div');
+                    div.className = msg.role === 'user' ? 'msg-user' : 'msg-ai markdown-body';
+                    
+                    if (msg.role === 'user') {
+                        div.textContent = msg.content;
+                    } else {
+                        div.innerHTML = marked.parse(msg.content);
+                    }
+                    chatBox.appendChild(div);
+                });
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        })
+        .catch(err => console.error("Failed to load chat history:", err));
 }
 
 export async function submitChat() {

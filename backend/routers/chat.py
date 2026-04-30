@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from backend.auth.core import get_current_user
 from backend.db import get_db
-from backend.models import Analysis, Datalog, User
+from backend.models import Analysis, Datalog, User, ChatHistory
 
 router = APIRouter()
 
@@ -17,6 +17,20 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[ChatMessage]
+
+@router.get("/api/analyze/{filename}/chat")
+async def get_chat_history(filename: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    filename = os.path.basename(filename)
+    datalog = db.query(Datalog).filter(
+        Datalog.stored_filename == filename,
+        Datalog.user_id == current_user.id,
+    ).first()
+    if not datalog:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    chats = db.query(ChatHistory).filter(ChatHistory.datalog_id == datalog.id).order_by(ChatHistory.created_at.asc()).all()
+    return {"messages": [{"role": c.role, "content": c.content, "created_at": c.created_at.isoformat()} for c in chats]}
+
 
 @router.post("/api/analyze/{filename}/chat")
 async def chat_about_log(filename: str, request: ChatRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -92,5 +106,14 @@ Format your response using Markdown where appropriate.
             result_text = response.choices[0].message.content
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")
+
+    # Save to database
+    if request.messages:
+        last_user_msg = request.messages[-1].content
+        user_history = ChatHistory(datalog_id=datalog.id, role="user", content=last_user_msg)
+        ai_history = ChatHistory(datalog_id=datalog.id, role="assistant", content=result_text)
+        db.add(user_history)
+        db.add(ai_history)
+        db.commit()
 
     return {"response": result_text}
