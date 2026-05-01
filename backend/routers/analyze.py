@@ -53,26 +53,67 @@ async def analyze_log(filename: str, current_user: User = Depends(get_current_us
         timing_cols = [c for c in cols if "timing corr" in c.lower()]
         torque_col = find_col(["torque at clutch", "torque (actual)"])
 
-        summary = {"rows_analyzed": len(df)}
+        pedal_col = find_col(["pedal", "accelerator", "accel", "throttle"])
+        afr_col = find_col(["afr", "lambda", "air/fuel"])
+        iat_col = find_col(["iat", "intake air temp", "charge air temp"])
+
+        # Filter to WOT if pedal column exists
+        if pedal_col:
+            # Assuming pedal is 0-100%, check > 80
+            df_wot = df.filter(pl.col(pedal_col) > 80)
+            if len(df_wot) < 10:
+                df_wot = df # Fallback if no WOT pull found
+        else:
+            df_wot = df
+
+        summary = {"total_rows_analyzed": len(df), "wot_rows_analyzed": len(df_wot)}
 
         if rpm_col:
-            summary["max_rpm"] = float(df[rpm_col].max())
+            summary["max_rpm"] = float(df_wot[rpm_col].max())
 
         if boost_tgt_col and boost_act_col:
-            summary["max_boost_target"] = float(df[boost_tgt_col].max())
-            summary["max_boost_actual"] = float(df[boost_act_col].max())
+            summary["max_boost_target"] = float(df_wot[boost_tgt_col].max())
+            summary["max_boost_actual"] = float(df_wot[boost_act_col].max())
+            
+            # Find max overboost and max underboost
+            df_wot = df_wot.with_columns((pl.col(boost_act_col) - pl.col(boost_tgt_col)).alias("boost_error"))
+            summary["max_overboost_psi"] = float(df_wot["boost_error"].max())
+            summary["max_underboost_psi"] = float(df_wot["boost_error"].min())
+            
+            # Find RPM where max boost occurs
+            max_boost_row = df_wot.sort(boost_act_col, descending=True).head(1)
+            if len(max_boost_row) > 0 and rpm_col:
+                summary["rpm_at_max_boost"] = float(max_boost_row[rpm_col][0])
 
         if torque_col:
-            valid_torque = df.filter((pl.col(torque_col) < 10000))
+            valid_torque = df_wot.filter((pl.col(torque_col) < 10000))
             if len(valid_torque) > 0:
                 summary["max_torque_nm"] = float(valid_torque[torque_col].max())
+                max_tq_row = valid_torque.sort(torque_col, descending=True).head(1)
+                if rpm_col:
+                    summary["rpm_at_max_torque"] = float(max_tq_row[rpm_col][0])
+
+        if afr_col:
+            summary["min_afr_lambda"] = float(df_wot[afr_col].min())
+            summary["max_afr_lambda"] = float(df_wot[afr_col].max())
+
+        if iat_col:
+            summary["max_iat"] = float(df_wot[iat_col].max())
 
         worst_timing = 0.0
+        worst_timing_rpm = None
         for tc in timing_cols:
-            min_tc = float(df.select(pl.col(tc).cast(pl.Float64, strict=False)).min().item())
+            min_tc = float(df_wot.select(pl.col(tc).cast(pl.Float64, strict=False)).min().item())
             if min_tc is not None and min_tc < worst_timing:
                 worst_timing = min_tc
+                if rpm_col:
+                    row = df_wot.filter(pl.col(tc) == min_tc).head(1)
+                    if len(row) > 0:
+                        worst_timing_rpm = float(row[rpm_col][0])
+                        
         summary["worst_timing_correction"] = worst_timing
+        if worst_timing_rpm:
+            summary["rpm_at_worst_timing_correction"] = worst_timing_rpm
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to aggregate CSV parameters: {str(e)}")
@@ -86,12 +127,12 @@ async def analyze_log(filename: str, current_user: User = Depends(get_current_us
         model_name = f"ollama/{ollama_model}"
         api_base = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
 
-    prompt = f"""You are **Moose** — a seasoned, no-nonsense professional automotive tuner with 20+ years of experience on forced-induction engines (turbo, supercharged, E85, pump gas). You have just received an aggregated data summary parsed from a real dyno datalog file. Your job is to give the owner an honest, technically precise, and actionable analysis.
+    prompt = f"""You are **Moose** — a seasoned, no-nonsense professional automotive tuner with 20+ years of experience on forced-induction engines (turbo, supercharged, E85, pump gas). You have just received a highly detailed statistical snapshot of a dyno pull from a real datalog file. Your job is to give the owner an honest, technically precise, and actionable analysis based on these metrics.
 
 ---
 
-## Dyno Run Summary Data
-```
+## Dyno Run Statistical Snapshot (WOT Filtered)
+```json
 {summary}
 ```
 
@@ -101,16 +142,16 @@ async def analyze_log(filename: str, current_user: User = Depends(get_current_us
 
 ### 1. 🔥 Peak Performance Snapshot
 - State peak RPM, peak torque (in Nm and estimated whp if possible), and peak boost (actual).
-- Comment on where peak power likely falls in the RPM band based on the data.
+- Note the RPM at which peak boost and peak torque occur.
 - If torque or boost data is missing, clearly flag it.
 
 ### 2. 📈 Boost Behavior & Efficiency
-- Compare **boost target vs boost actual**. Calculate the delta (target − actual).
-- A delta of more than **1.5 psi** is a boost control concern (wastegate, boost solenoid, or plumbing leak).
-- A delta of more than **3.0 psi** is a **serious boost control failure** — flag it clearly.
-- Comment on whether boost builds linearly (healthy) or spikes/drops (tuning concern).
+- Discuss the boost control based on the max overboost and underboost (boost error) metrics.
+- A delta (target - actual) or underboost of more than **-1.5 psi** or overboost of **+1.5 psi** is a boost control concern.
+- An error exceeding **3.0 psi** is a **serious boost control failure** — flag it clearly.
 
 ### 3. ⚡ Ignition Timing & Knock Assessment
+- Review the worst timing correction and the RPM it occurred at.
 Use this severity scale for timing correction values (negative = retard due to knock):
 | Correction Range | Severity | Label |
 |---|---|---|
@@ -118,9 +159,9 @@ Use this severity scale for timing correction values (negative = retard due to k
 | -1.5 to -3.0 deg | Borderline | ⚠️ MONITOR |
 | -3.0 deg or worse | Critical Knock | 🚨 DANGER |
 
-- Report the **worst timing correction observed** and its severity label.
-- If knock is detected mid-pull (not just at peak), flag the RPM window where it occurred.
-- Explain what commonly causes knock at that RPM range (heat soak, lean AFR, octane, charge temp).
+- Report the **worst timing correction observed** and its severity label, and at what RPM it occurred.
+- Explain what commonly causes knock at that specific RPM range.
+- Note any issues with Intake Air Temp (IAT) or Air/Fuel Ratio (AFR/Lambda) if they appear out of bounds.
 
 ### 4. 🛡️ Safety Verdict
 Give an overall run verdict in one of three states:
@@ -132,7 +173,7 @@ Justify the verdict clearly in 2–3 sentences.
 
 ### 5. 🔧 Tuner Action Items
 Provide a **prioritized checklist** of specific actions the tuner or owner must take, ordered from most critical to least:
-- Be specific (e.g., "Reduce boost target by 2 psi between 3500–4500 RPM" not just "reduce boost").
+- Be specific (e.g., "Address knock at 4500 RPM by pulling 1 degree of timing" based on the snapshot).
 - Include fueling, ignition, and mechanical checks where relevant.
 - If data is insufficient for a specific channel, recommend logging it on the next pull.
 
@@ -142,7 +183,6 @@ Provide a **prioritized checklist** of specific actions the tuner or owner must 
 - Use Markdown headers (##, ###), tables, and bullet points.
 - Bold all severity labels and key values.
 - Do not use filler phrases like "great run" or "impressive numbers" — be direct and professional.
-- If the data summary is sparse or missing key channels, state exactly what additional logging is needed.
 """
 
     mock_response = os.getenv("MOCK_AI_RESPONSE")

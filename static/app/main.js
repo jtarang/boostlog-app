@@ -148,6 +148,37 @@ document.addEventListener('DOMContentLoaded', () => {
     if (params.has('token')) {
         document.getElementById('resetPasswordModal').style.display = 'flex';
     }
+
+    const drawer = document.getElementById('aiDrawer');
+    const resizer = document.getElementById('aiDrawerResizer');
+    if (drawer && resizer) {
+        let isResizing = false;
+        let startX, startY, startWidth, startHeight;
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            const rect = drawer.getBoundingClientRect();
+            startWidth = rect.width;
+            startHeight = rect.height;
+            document.body.style.userSelect = 'none';
+            drawer.style.transition = 'none';
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const dx = startX - e.clientX;
+            const dy = startY - e.clientY;
+            drawer.style.width = `${startWidth + dx}px`;
+            drawer.style.height = `${startHeight + dy}px`;
+        });
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.userSelect = '';
+                drawer.style.transition = '';
+            }
+        });
+    }
 });
 
 initAuth();

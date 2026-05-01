@@ -1978,6 +1978,7 @@ body.focus-mode .chart-container {
     box-shadow: none;
     animation: none;
     cursor: not-allowed;
+    pointer-events: auto;
 }
 
 .fab-ai:disabled:hover {
@@ -2114,9 +2115,12 @@ body.focus-mode .chart-container {
     position: fixed;
     bottom: 0;
     right: 0;
-    width: 480px;
+    width: 550px;
+    height: 75vh;
     max-width: 100vw;
-    max-height: 70vh;
+    max-height: 95vh;
+    min-width: 350px;
+    min-height: 400px;
     background: var(--bg-main);
     border: 1px solid var(--border-color);
     border-bottom: none;
@@ -2127,6 +2131,32 @@ body.focus-mode .chart-container {
     transform: translateY(100%);
     transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.ai-drawer-resizer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 24px;
+    height: 24px;
+    cursor: nwse-resize;
+    z-index: 1000;
+}
+
+.ai-drawer-resizer::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 8px;
+    height: 8px;
+    border-top: 2px solid var(--text-secondary);
+    border-left: 2px solid var(--text-secondary);
+    transition: border-color 0.2s ease;
+}
+
+.ai-drawer-resizer:hover::before {
+    border-color: var(--accent);
 }
 
 .ai-drawer.open {

@@ -24,9 +24,11 @@ export function loadAnalysisHistory(filename) {
 
             if (analyses.length === 0) {
                 historySection.style.display = 'none';
-                chatBox.innerHTML = '<div class="msg system">Ready for AI Analysis. Click the turbo button to begin.</div>';
-                if (btnAnalyze) { btnAnalyze.disabled = state.analysisRunning; btnAnalyze.style.display = 'block'; }
+                chatBox.innerHTML = '<div class="msg system">Ready for AI Analysis. Click "Start Analysis" to begin.</div>';
+                if (btnAnalyze) { btnAnalyze.disabled = state.analysisRunning; btnAnalyze.style.display = 'block'; btnAnalyze.innerHTML = 'Start Analysis'; }
                 if (btnRerun) { btnRerun.style.display = 'none'; }
+                const chatForm = document.getElementById('chatForm');
+                if (chatForm) chatForm.style.display = 'none';
                 if (fabAi) fabAi.disabled = false;
                 return;
             }
@@ -59,8 +61,8 @@ export function loadAnalysisHistory(filename) {
         })
         .catch(() => {
             historySection.style.display = 'none';
-            chatBox.innerHTML = '<div class="msg system">Ready for AI Analysis. Click the turbo button to begin.</div>';
-            if (btnAnalyze) { btnAnalyze.disabled = state.analysisRunning; btnAnalyze.style.display = 'block'; }
+            chatBox.innerHTML = '<div class="msg system">Ready for AI Analysis. Click "Start Analysis" to begin.</div>';
+            if (btnAnalyze) { btnAnalyze.disabled = state.analysisRunning; btnAnalyze.style.display = 'block'; btnAnalyze.innerHTML = 'Start Analysis'; }
             const btnRerun = document.getElementById('btnRerunAnalyze');
             if (btnRerun) { btnRerun.style.display = 'none'; }
             const chatForm = document.getElementById('chatForm');
