@@ -1,6 +1,34 @@
 import { state } from './state.js';
 import { getAuthHeaders } from './utils.js';
 import { refreshLogList } from './sidebar.js';
+import { setGraphChannelsByKeywords } from './chart.js';
+
+function handleGraphCommands(text) {
+    const regex = /\[GRAPH:\s*([^\]]+)\]/g;
+    let match;
+    let result = text;
+    while ((match = regex.exec(text)) !== null) {
+        const keywords = match[1].split(',').map(k => k.trim());
+        setGraphChannelsByKeywords(keywords);
+        result = result.replace(match[0], '');
+    }
+    return result;
+}
+
+function scrollToBottom() {
+    const chatBox = document.getElementById('chatBox');
+    if (!chatBox) return;
+
+    const scroll = () => {
+        chatBox.scrollTop = chatBox.scrollHeight;
+    };
+
+    // Call immediately
+    scroll();
+    // And again after a short delay to account for markdown rendering/images
+    setTimeout(scroll, 100);
+    setTimeout(scroll, 300);
+}
 
 export function toggleAiDrawer() {
     document.getElementById('aiDrawer').classList.toggle('open');
@@ -73,14 +101,17 @@ export function loadAnalysisHistory(filename) {
 
 let currentChatHistory = [];
 
-function renderAnalysisContent(analysis) {
+function renderAnalysisContent(a) {
     const chatBox = document.getElementById('chatBox');
-    const when = new Date(analysis.created_at).toLocaleString();
-    currentChatHistory = [];
+    const cleanedMarkdown = handleGraphCommands(a.result_markdown);
     chatBox.innerHTML = `
-        <div class="msg system" style="margin-bottom: 8px; font-size: 11px;">📋 Analysis from ${when} &nbsp;·&nbsp; <span style="opacity:0.6;">${analysis.model_used}</span></div>
-        <div class="markdown-body msg-ai">${marked.parse(analysis.result_markdown)}</div>
+        <div class="msg system" style="text-align: left; font-style: normal; border: 1px solid rgba(131, 56, 236, 0.3); background: rgba(131, 56, 236, 0.05); padding: 16px; border-radius: 12px;">
+            <div class="markdown-body">
+                ${marked.parse(cleanedMarkdown)}
+            </div>
+        </div>
     `;
+    chatBox.scrollTop = 0;
 
     // Fetch and render chat history
     fetch(`/api/analyze/${state.currentServerFile}/chat`, { headers: getAuthHeaders() })
@@ -100,7 +131,7 @@ function renderAnalysisContent(analysis) {
                     }
                     chatBox.appendChild(div);
                 });
-                chatBox.scrollTop = chatBox.scrollHeight;
+                scrollToBottom();
             }
         })
         .catch(err => console.error("Failed to load chat history:", err));
@@ -121,7 +152,7 @@ export async function submitChat() {
     userDiv.className = 'msg-user';
     userDiv.textContent = msg;
     chatBox.appendChild(userDiv);
-    chatBox.scrollTop = chatBox.scrollHeight;
+    scrollToBottom();
 
     currentChatHistory.push({ role: 'user', content: msg });
 
@@ -130,7 +161,7 @@ export async function submitChat() {
     aiDiv.className = 'msg-ai markdown-body';
     aiDiv.innerHTML = '<span style="opacity: 0.6;">Thinking...</span>';
     chatBox.appendChild(aiDiv);
-    chatBox.scrollTop = chatBox.scrollHeight;
+    scrollToBottom();
 
     try {
         const res = await fetch(`/api/analyze/${state.currentServerFile}/chat`, {
@@ -145,14 +176,15 @@ export async function submitChat() {
         if (!res.ok) throw new Error(data.detail || 'Failed to send message');
 
         const aiResponse = data.response;
-        aiDiv.innerHTML = marked.parse(aiResponse);
+        const cleanedResponse = handleGraphCommands(aiResponse);
+        aiDiv.innerHTML = marked.parse(cleanedResponse);
         currentChatHistory.push({ role: 'assistant', content: aiResponse });
     } catch (err) {
         aiDiv.innerHTML = `<span style="color: var(--danger);">${err.message}</span>`;
         currentChatHistory.pop(); // Remove the user message from history so they can retry
     } finally {
         btnSend.disabled = false;
-        chatBox.scrollTop = chatBox.scrollHeight;
+        scrollToBottom();
         input.focus();
     }
 }

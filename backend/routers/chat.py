@@ -60,8 +60,22 @@ async def chat_about_log(filename: str, request: ChatRequest, current_user: User
         except Exception:
             pass
 
+    build_info = {
+        "build_name": datalog.build.name if datalog.build else 'N/A',
+        "vehicle_model": datalog.build.vehicle_model if datalog.build else 'N/A',
+        "vin": datalog.build.vin if datalog.build else 'N/A',
+        "customer": datalog.build.customer_name if datalog.build else 'N/A',
+        "build_notes": datalog.build.notes if datalog.build else 'N/A',
+        "build_status": datalog.build.status if datalog.build else 'N/A'
+    }
+
     system_prompt = f"""You are **Moose** — a seasoned, no-nonsense professional automotive tuner.
-You recently analyzed a datalog and provided the following report:
+You recently analyzed a datalog for the following vehicle build:
+```json
+{build_info}
+```
+
+You previously provided the following report:
 
 {latest_analysis.result_markdown}
 
@@ -73,6 +87,8 @@ Here is the complete raw CSV datalog for your reference:
 Answer the user's follow-up questions concisely and professionally based on this context and the raw data provided. 
 If the user asks about something not in the report or the data, use your general tuning knowledge, but remind them it's not in the current data.
 Format your response using Markdown where appropriate.
+
+**Interactive Graphs**: You can trigger the user's graph to show specific data by including the tag `[GRAPH: keyword1, keyword2]` in your response. For example, if the user asks "show me boost", include `[GRAPH: boost, target]` in your answer.
 """
 
     messages = [{"role": "system", "content": system_prompt}]

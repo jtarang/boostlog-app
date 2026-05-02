@@ -131,6 +131,20 @@ async def analyze_log(filename: str, current_user: User = Depends(get_current_us
 
 ---
 
+## Build/Vehicle Configuration
+```json
+{{
+    "build_name": "{datalog.build.name if datalog.build else 'N/A'}",
+    "vehicle_model": "{datalog.build.vehicle_model if datalog.build else 'N/A'}",
+    "vin": "{datalog.build.vin if datalog.build else 'N/A'}",
+    "customer": "{datalog.build.customer_name if datalog.build else 'N/A'}",
+    "build_notes": "{datalog.build.notes if datalog.build else 'N/A'}",
+    "build_status": "{datalog.build.status if datalog.build else 'N/A'}"
+}}
+```
+
+---
+
 ## Dyno Run Statistical Snapshot (WOT Filtered)
 ```json
 {summary}
@@ -183,6 +197,7 @@ Provide a **prioritized checklist** of specific actions the tuner or owner must 
 - Use Markdown headers (##, ###), tables, and bullet points.
 - Bold all severity labels and key values.
 - Do not use filler phrases like "great run" or "impressive numbers" — be direct and professional.
+- **Interactive Graphs**: You can trigger the user's graph to show specific data by including the tag `[GRAPH: keyword1, keyword2]` in your response. For example, if you are discussing boost, add `[GRAPH: boost, target]` to show boost-related channels. Use this sparingly but effectively to guide the user.
 """
 
     mock_response = os.getenv("MOCK_AI_RESPONSE")

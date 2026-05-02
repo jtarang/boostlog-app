@@ -293,3 +293,43 @@ export function toggleAllParams(checked) {
     renderChart();
     calculateMetrics();
 }
+
+/**
+ * Sets graph channels based on keywords.
+ * @param {string[]} keywords - List of keywords to match against channel names.
+ */
+export function setGraphChannelsByKeywords(keywords) {
+    if (!keywords || keywords.length === 0) return;
+    
+    const checkboxes = document.querySelectorAll('#paramToggles input[type="checkbox"]');
+    const paramToggles = document.getElementById('paramToggles');
+    let matchedAny = false;
+
+    // First pass: uncheck everything and reset styles
+    checkboxes.forEach(cb => {
+        cb.checked = false;
+        const lbl = cb.parentElement;
+        lbl.style.borderColor = 'var(--border-color)';
+        lbl.querySelector('span').style.color = 'inherit';
+    });
+
+    // Second pass: check matches and move to top
+    checkboxes.forEach(cb => {
+        const labelText = cb.value.toLowerCase();
+        const shouldBeChecked = keywords.some(k => labelText.includes(k.toLowerCase()));
+        
+        if (shouldBeChecked) {
+            cb.checked = true;
+            matchedAny = true;
+            const lbl = cb.parentElement;
+            const color = lbl.dataset.color;
+            lbl.style.borderColor = color;
+            lbl.querySelector('span').style.color = color;
+            paramToggles.prepend(lbl);
+        }
+    });
+
+    // Always re-render to reflect the cleared state if we attempted a change
+    renderChart();
+    calculateMetrics();
+}

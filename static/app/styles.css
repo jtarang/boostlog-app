@@ -2203,8 +2203,11 @@ body.focus-mode .chart-container {
 
 .ai-drawer-body {
     flex: 1;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     padding: 16px 20px;
+    gap: 16px;
 }
 
 .ai-drawer-actions {
