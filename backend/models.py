@@ -67,6 +67,7 @@ class Datalog(Base):
     owner = relationship("User", back_populates="datalogs")
     build = relationship("Build", back_populates="datalogs")
     analyses = relationship("Analysis", back_populates="datalog", cascade="all, delete-orphan")
+    chats = relationship("ChatHistory", back_populates="datalog", cascade="all, delete-orphan")
 
 
 class Analysis(Base):
@@ -77,3 +78,13 @@ class Analysis(Base):
     result_markdown = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     datalog = relationship("Datalog", back_populates="analyses")
+
+
+class ChatHistory(Base):
+    __tablename__ = "chat_history"
+    id = Column(Integer, primary_key=True, index=True)
+    datalog_id = Column(Integer, ForeignKey("datalogs.id"), nullable=False)
+    role = Column(String, nullable=False)  # 'user' or 'assistant'
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    datalog = relationship("Datalog", back_populates="chats")

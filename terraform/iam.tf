@@ -45,6 +45,25 @@ resource "aws_iam_role_policy" "secrets_access_policy" {
   policy = data.aws_iam_policy_document.secrets_access.json
 }
 
+data "aws_iam_policy_document" "bedrock_access" {
+  statement {
+    actions = [
+      "bedrock:InvokeModel",
+      "bedrock:InvokeModelWithResponseStream",
+      "bedrock:GetInferenceProfile",
+      "aws-marketplace:ViewSubscriptions",
+      "aws-marketplace:Subscribe"
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "bedrock_access_policy" {
+  name   = "boostlog-bedrock-access-${var.environment}${local.name_suffix}"
+  role   = aws_iam_role.ec2_role.id
+  policy = data.aws_iam_policy_document.bedrock_access.json
+}
+
 resource "aws_iam_role_policy_attachment" "ssm_core" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"

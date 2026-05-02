@@ -11,7 +11,7 @@ from backend.auth import passwords as passwords_router
 from backend.auth import webauthn as webauthn_router
 from backend.auth.core import get_password_hash
 from backend.models import User
-from backend.routers import analyze, logs, builds, users
+from backend.routers import analyze, chat, logs, builds, users
 
 
 @asynccontextmanager
@@ -52,6 +52,7 @@ app.include_router(passwords_router.router)
 app.include_router(webauthn_router.router)
 app.include_router(github_router.router)
 app.include_router(analyze.router)
+app.include_router(chat.router)
 app.include_router(logs.router)
 app.include_router(builds.router)
 app.include_router(users.router)

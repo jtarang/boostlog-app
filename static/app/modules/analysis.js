@@ -1,6 +1,34 @@
 import { state } from './state.js';
 import { getAuthHeaders } from './utils.js';
 import { refreshLogList } from './sidebar.js';
+import { setGraphChannelsByKeywords } from './chart.js';
+
+function handleGraphCommands(text) {
+    const regex = /\[GRAPH:\s*([^\]]+)\]/g;
+    let match;
+    let result = text;
+    while ((match = regex.exec(text)) !== null) {
+        const keywords = match[1].split(',').map(k => k.trim());
+        setGraphChannelsByKeywords(keywords);
+        result = result.replace(match[0], '');
+    }
+    return result;
+}
+
+function scrollToBottom() {
+    const chatBox = document.getElementById('chatBox');
+    if (!chatBox) return;
+
+    const scroll = () => {
+        chatBox.scrollTop = chatBox.scrollHeight;
+    };
+
+    // Call immediately
+    scroll();
+    // And again after a short delay to account for markdown rendering/images
+    setTimeout(scroll, 100);
+    setTimeout(scroll, 300);
+}
 
 export function toggleAiDrawer() {
     document.getElementById('aiDrawer').classList.toggle('open');
@@ -20,10 +48,15 @@ export function loadAnalysisHistory(filename) {
         .then(data => {
             const analyses = data.analyses || [];
 
+            const btnRerun = document.getElementById('btnRerunAnalyze');
+
             if (analyses.length === 0) {
                 historySection.style.display = 'none';
-                chatBox.innerHTML = '<div class="msg system">Ready for AI Analysis. Click the turbo button to begin.</div>';
-                if (btnAnalyze) { btnAnalyze.disabled = state.analysisRunning; btnAnalyze.innerHTML = 'Start Analysis'; btnAnalyze.classList.remove('btn-rerun'); }
+                chatBox.innerHTML = '<div class="msg system">Ready for AI Analysis. Click "Start Analysis" to begin.</div>';
+                if (btnAnalyze) { btnAnalyze.disabled = state.analysisRunning; btnAnalyze.style.display = 'block'; btnAnalyze.innerHTML = 'Start Analysis'; }
+                if (btnRerun) { btnRerun.style.display = 'none'; }
+                const chatForm = document.getElementById('chatForm');
+                if (chatForm) chatForm.style.display = 'none';
                 if (fabAi) fabAi.disabled = false;
                 return;
             }
@@ -48,24 +81,112 @@ export function loadAnalysisHistory(filename) {
             });
 
             renderAnalysisContent(analyses[0]);
-            if (btnAnalyze) { btnAnalyze.disabled = state.analysisRunning; btnAnalyze.innerHTML = 'Re-run Analysis'; btnAnalyze.classList.add('btn-rerun'); }
+            if (btnAnalyze) { btnAnalyze.style.display = 'none'; }
+            if (btnRerun) { btnRerun.disabled = state.analysisRunning; btnRerun.style.display = 'inline-block'; }
+            const chatForm = document.getElementById('chatForm');
+            if (chatForm) chatForm.style.display = 'flex';
             if (fabAi) fabAi.disabled = false;
         })
         .catch(() => {
             historySection.style.display = 'none';
-            chatBox.innerHTML = '<div class="msg system">Ready for AI Analysis. Click the turbo button to begin.</div>';
-            if (btnAnalyze) { btnAnalyze.disabled = state.analysisRunning; btnAnalyze.innerHTML = 'Start Analysis'; btnAnalyze.classList.remove('btn-rerun'); }
+            chatBox.innerHTML = '<div class="msg system">Ready for AI Analysis. Click "Start Analysis" to begin.</div>';
+            if (btnAnalyze) { btnAnalyze.disabled = state.analysisRunning; btnAnalyze.style.display = 'block'; btnAnalyze.innerHTML = 'Start Analysis'; }
+            const btnRerun = document.getElementById('btnRerunAnalyze');
+            if (btnRerun) { btnRerun.style.display = 'none'; }
+            const chatForm = document.getElementById('chatForm');
+            if (chatForm) chatForm.style.display = 'none';
             if (fabAi) fabAi.disabled = false;
         });
 }
 
-function renderAnalysisContent(analysis) {
+let currentChatHistory = [];
+
+function renderAnalysisContent(a) {
     const chatBox = document.getElementById('chatBox');
-    const when = new Date(analysis.created_at).toLocaleString();
+    const cleanedMarkdown = handleGraphCommands(a.result_markdown);
     chatBox.innerHTML = `
-        <div class="msg system" style="margin-bottom: 8px; font-size: 11px;">📋 Analysis from ${when} &nbsp;·&nbsp; <span style="opacity:0.6;">${analysis.model_used}</span></div>
-        <div class="markdown-body" style="padding: 10px; font-size: 14px; text-align: left; color: var(--text-primary);">${marked.parse(analysis.result_markdown)}</div>
+        <div class="msg system" style="text-align: left; font-style: normal; border: 1px solid rgba(131, 56, 236, 0.3); background: rgba(131, 56, 236, 0.05); padding: 16px; border-radius: 12px;">
+            <div class="markdown-body">
+                ${marked.parse(cleanedMarkdown)}
+            </div>
+        </div>
     `;
+    chatBox.scrollTop = 0;
+
+    // Fetch and render chat history
+    fetch(`/api/analyze/${state.currentServerFile}/chat`, { headers: getAuthHeaders() })
+        .then(res => res.json())
+        .then(data => {
+            if (data.messages && data.messages.length > 0) {
+                data.messages.forEach(msg => {
+                    currentChatHistory.push({ role: msg.role, content: msg.content });
+                    
+                    const div = document.createElement('div');
+                    div.className = msg.role === 'user' ? 'msg-user' : 'msg-ai markdown-body';
+                    
+                    if (msg.role === 'user') {
+                        div.textContent = msg.content;
+                    } else {
+                        div.innerHTML = marked.parse(msg.content);
+                    }
+                    chatBox.appendChild(div);
+                });
+                scrollToBottom();
+            }
+        })
+        .catch(err => console.error("Failed to load chat history:", err));
+}
+
+export async function submitChat() {
+    const input = document.getElementById('chatInput');
+    const chatBox = document.getElementById('chatBox');
+    const msg = input.value.trim();
+    if (!msg || !state.currentServerFile) return;
+
+    input.value = '';
+    const btnSend = document.getElementById('btnSendChat');
+    btnSend.disabled = true;
+
+    // Append user message
+    const userDiv = document.createElement('div');
+    userDiv.className = 'msg-user';
+    userDiv.textContent = msg;
+    chatBox.appendChild(userDiv);
+    scrollToBottom();
+
+    currentChatHistory.push({ role: 'user', content: msg });
+
+    // Append loading indicator
+    const aiDiv = document.createElement('div');
+    aiDiv.className = 'msg-ai markdown-body';
+    aiDiv.innerHTML = '<span style="opacity: 0.6;">Thinking...</span>';
+    chatBox.appendChild(aiDiv);
+    scrollToBottom();
+
+    try {
+        const res = await fetch(`/api/analyze/${state.currentServerFile}/chat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify({ messages: currentChatHistory })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Failed to send message');
+
+        const aiResponse = data.response;
+        const cleanedResponse = handleGraphCommands(aiResponse);
+        aiDiv.innerHTML = marked.parse(cleanedResponse);
+        currentChatHistory.push({ role: 'assistant', content: aiResponse });
+    } catch (err) {
+        aiDiv.innerHTML = `<span style="color: var(--danger);">${err.message}</span>`;
+        currentChatHistory.pop(); // Remove the user message from history so they can retry
+    } finally {
+        btnSend.disabled = false;
+        scrollToBottom();
+        input.focus();
+    }
 }
 
 export async function triggerAnalysis() {
@@ -77,11 +198,12 @@ export async function triggerAnalysis() {
     state.analysisRunningName = document.getElementById('pageTitle')?.textContent || analysisFile;
     document.querySelector('#logItems li.active-log')?.classList.add('analyzing-log');
     const btn = document.getElementById('btnAnalyze');
+    const btnRerun = document.getElementById('btnRerunAnalyze');
     const chatBox = document.getElementById('chatBox');
     const fabAi = document.getElementById('fabAi');
 
-    btn.disabled = true;
-    btn.innerHTML = 'Analyzing...';
+    if (btn) { btn.disabled = true; btn.innerHTML = 'Analyzing...'; }
+    if (btnRerun) { btnRerun.disabled = true; btnRerun.innerHTML = '...'; }
     fabAi?.classList.add('analyzing');
     chatBox.innerHTML = `
         <div class="ai-thinking">
@@ -145,7 +267,7 @@ export async function triggerAnalysis() {
         document.querySelector('#logItems li.analyzing-log')?.classList.remove('analyzing-log');
         fabAi?.classList.remove('analyzing');
         chatBox.innerHTML = `<div class="msg" style="color: var(--danger);">Error: ${err.message}</div>`;
-        btn.disabled = false;
-        btn.innerHTML = 'Retry Analysis';
+        if (btn) { btn.disabled = false; btn.innerHTML = 'Retry Analysis'; }
+        if (btnRerun) { btnRerun.disabled = false; btnRerun.innerHTML = 'Re-run'; }
     }
 }
