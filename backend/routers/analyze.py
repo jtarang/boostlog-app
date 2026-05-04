@@ -36,99 +36,99 @@ async def analyze_log(filename: str, current_user: User = Depends(get_current_us
         raise HTTPException(status_code=404, detail="Log file not found")
 
     _analysis_in_progress = True
-
     try:
-        df = pl.read_csv(file_path, ignore_errors=True)
-        cols = df.columns
+        try:
+            df = pl.read_csv(file_path, ignore_errors=True)
+            cols = df.columns
 
-        def find_col(aliases):
-            for c in cols:
-                for a in aliases:
-                    if a.lower() in c.lower():
-                        return c
-            return None
+            def find_col(aliases):
+                for c in cols:
+                    for a in aliases:
+                        if a.lower() in c.lower():
+                            return c
+                return None
 
-        rpm_col = find_col(["engine rpm", "rpm"])
-        boost_act_col = find_col(["boost pressure (actual)", "map", "manifold absolute pressure"])
-        boost_tgt_col = find_col(["boost pressure (target)"])
-        timing_cols = [c for c in cols if "timing corr" in c.lower()]
-        torque_col = find_col(["torque at clutch", "torque (actual)"])
+            rpm_col = find_col(["engine rpm", "rpm"])
+            boost_act_col = find_col(["boost pressure (actual)", "map", "manifold absolute pressure"])
+            boost_tgt_col = find_col(["boost pressure (target)"])
+            timing_cols = [c for c in cols if "timing corr" in c.lower()]
+            torque_col = find_col(["torque at clutch", "torque (actual)"])
 
-        pedal_col = find_col(["pedal", "accelerator", "accel", "throttle"])
-        afr_col = find_col(["afr", "lambda", "air/fuel"])
-        iat_col = find_col(["iat", "intake air temp", "charge air temp"])
+            pedal_col = find_col(["pedal", "accelerator", "accel", "throttle"])
+            afr_col = find_col(["afr", "lambda", "air/fuel"])
+            iat_col = find_col(["iat", "intake air temp", "charge air temp"])
 
-        # Filter to WOT if pedal column exists
-        if pedal_col:
-            # Assuming pedal is 0-100%, check > 80
-            df_wot = df.filter(pl.col(pedal_col) > 80)
-            if len(df_wot) < 10:
-                df_wot = df # Fallback if no WOT pull found
-        else:
-            df_wot = df
+            # Filter to WOT if pedal column exists
+            if pedal_col:
+                # Assuming pedal is 0-100%, check > 80
+                df_wot = df.filter(pl.col(pedal_col) > 80)
+                if len(df_wot) < 10:
+                    df_wot = df # Fallback if no WOT pull found
+            else:
+                df_wot = df
 
-        summary = {"total_rows_analyzed": len(df), "wot_rows_analyzed": len(df_wot)}
+            summary = {"total_rows_analyzed": len(df), "wot_rows_analyzed": len(df_wot)}
 
-        if rpm_col:
-            summary["max_rpm"] = float(df_wot[rpm_col].max())
+            if rpm_col:
+                summary["max_rpm"] = float(df_wot[rpm_col].max())
 
-        if boost_tgt_col and boost_act_col:
-            summary["max_boost_target"] = float(df_wot[boost_tgt_col].max())
-            summary["max_boost_actual"] = float(df_wot[boost_act_col].max())
-            
-            # Find max overboost and max underboost
-            df_wot = df_wot.with_columns((pl.col(boost_act_col) - pl.col(boost_tgt_col)).alias("boost_error"))
-            summary["max_overboost_psi"] = float(df_wot["boost_error"].max())
-            summary["max_underboost_psi"] = float(df_wot["boost_error"].min())
-            
-            # Find RPM where max boost occurs
-            max_boost_row = df_wot.sort(boost_act_col, descending=True).head(1)
-            if len(max_boost_row) > 0 and rpm_col:
-                summary["rpm_at_max_boost"] = float(max_boost_row[rpm_col][0])
+            if boost_tgt_col and boost_act_col:
+                summary["max_boost_target"] = float(df_wot[boost_tgt_col].max())
+                summary["max_boost_actual"] = float(df_wot[boost_act_col].max())
+                
+                # Find max overboost and max underboost
+                df_wot = df_wot.with_columns((pl.col(boost_act_col) - pl.col(boost_tgt_col)).alias("boost_error"))
+                summary["max_overboost_psi"] = float(df_wot["boost_error"].max())
+                summary["max_underboost_psi"] = float(df_wot["boost_error"].min())
+                
+                # Find RPM where max boost occurs
+                max_boost_row = df_wot.sort(boost_act_col, descending=True).head(1)
+                if len(max_boost_row) > 0 and rpm_col:
+                    summary["rpm_at_max_boost"] = float(max_boost_row[rpm_col][0])
 
-        if torque_col:
-            valid_torque = df_wot.filter((pl.col(torque_col) < 10000))
-            if len(valid_torque) > 0:
-                summary["max_torque_nm"] = float(valid_torque[torque_col].max())
-                max_tq_row = valid_torque.sort(torque_col, descending=True).head(1)
-                if rpm_col:
-                    summary["rpm_at_max_torque"] = float(max_tq_row[rpm_col][0])
+            if torque_col:
+                valid_torque = df_wot.filter((pl.col(torque_col) < 10000))
+                if len(valid_torque) > 0:
+                    summary["max_torque_nm"] = float(valid_torque[torque_col].max())
+                    max_tq_row = valid_torque.sort(torque_col, descending=True).head(1)
+                    if rpm_col:
+                        summary["rpm_at_max_torque"] = float(max_tq_row[rpm_col][0])
 
-        if afr_col:
-            summary["min_afr_lambda"] = float(df_wot[afr_col].min())
-            summary["max_afr_lambda"] = float(df_wot[afr_col].max())
+            if afr_col:
+                summary["min_afr_lambda"] = float(df_wot[afr_col].min())
+                summary["max_afr_lambda"] = float(df_wot[afr_col].max())
 
-        if iat_col:
-            summary["max_iat"] = float(df_wot[iat_col].max())
+            if iat_col:
+                summary["max_iat"] = float(df_wot[iat_col].max())
 
-        worst_timing = 0.0
-        worst_timing_rpm = None
-        for tc in timing_cols:
-            min_tc = float(df_wot.select(pl.col(tc).cast(pl.Float64, strict=False)).min().item())
-            if min_tc is not None and min_tc < worst_timing:
-                worst_timing = min_tc
-                if rpm_col:
-                    row = df_wot.filter(pl.col(tc) == min_tc).head(1)
-                    if len(row) > 0:
-                        worst_timing_rpm = float(row[rpm_col][0])
-                        
-        summary["worst_timing_correction"] = worst_timing
-        if worst_timing_rpm:
-            summary["rpm_at_worst_timing_correction"] = worst_timing_rpm
+            worst_timing = 0.0
+            worst_timing_rpm = None
+            for tc in timing_cols:
+                min_tc = float(df_wot.select(pl.col(tc).cast(pl.Float64, strict=False)).min().item())
+                if min_tc is not None and min_tc < worst_timing:
+                    worst_timing = min_tc
+                    if rpm_col:
+                        row = df_wot.filter(pl.col(tc) == min_tc).head(1)
+                        if len(row) > 0:
+                            worst_timing_rpm = float(row[rpm_col][0])
+                            
+            summary["worst_timing_correction"] = worst_timing
+            if worst_timing_rpm:
+                summary["rpm_at_worst_timing_correction"] = worst_timing_rpm
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to aggregate CSV parameters: {str(e)}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to aggregate CSV parameters: {str(e)}")
 
-    from litellm import completion
+        from litellm import completion
 
-    model_name = os.getenv("LLM_MODEL")
-    api_base = os.getenv("LLM_API_BASE")
-    if not model_name:
-        ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
-        model_name = f"ollama/{ollama_model}"
-        api_base = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
+        model_name = os.getenv("LLM_MODEL")
+        api_base = os.getenv("LLM_API_BASE")
+        if not model_name:
+            ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
+            model_name = f"ollama/{ollama_model}"
+            api_base = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
 
-    prompt = f"""You are **Moose** — a seasoned, no-nonsense professional automotive tuner with 20+ years of experience on forced-induction engines (turbo, supercharged, E85, pump gas). You have just received a highly detailed statistical snapshot of a dyno pull from a real datalog file. Your job is to give the owner an honest, technically precise, and actionable analysis based on these metrics.
+        prompt = f"""You are **Moose** — a seasoned, no-nonsense professional automotive tuner with 20+ years of experience on forced-induction engines (turbo, supercharged, E85, pump gas). You have just received a highly detailed statistical snapshot of a dyno pull from a real datalog file. Your job is to give the owner an honest, technically precise, and actionable analysis based on these metrics.
 
 ---
 
@@ -201,39 +201,38 @@ Provide a **prioritized checklist** of specific actions the tuner or owner must 
 - **Interactive Graphs**: You can trigger the user's graph to show specific data by including the tag `[GRAPH: keyword1, keyword2]` in your response. For example, if you are discussing boost, add `[GRAPH: boost, target]` to show boost-related channels. Use this sparingly but effectively to guide the user.
 """
 
-    mock_response = os.getenv("MOCK_AI_RESPONSE")
-    if mock_response:
-        result_text = "## AI Analysis\n\n**Verdict**: ✅ Tuning looks good.\n\nEverything is within safe limits."
-        model_name = "mock/turbo-tuner"
-    else:
-        # Check usage limit before calling LLM
-        check_usage_limit(db, current_user)
+        mock_response = os.getenv("MOCK_AI_RESPONSE")
+        if mock_response:
+            result_text = "## AI Analysis\n\n**Verdict**: ✅ Tuning looks good.\n\nEverything is within safe limits."
+            model_name = "mock/turbo-tuner"
+        else:
+            # Check usage limit before calling LLM
+            check_usage_limit(db, current_user)
 
-        def _run_llm():
-            return completion(
-                model=model_name,
-                api_base=api_base,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.3,
-                drop_params=True,
-            )
+            def _run_llm():
+                return completion(
+                    model=model_name,
+                    api_base=api_base,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.3,
+                    drop_params=True,
+                )
 
-        try:
-            response = await asyncio.to_thread(_run_llm)
-            result_text = response.choices[0].message.content
-            # Record usage after successful call
-            record_usage(db, current_user.id, response)
-        except Exception as e:
-            _analysis_in_progress = False
-            raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")
+            try:
+                response = await asyncio.to_thread(_run_llm)
+                result_text = response.choices[0].message.content
+                # Record usage after successful call
+                record_usage(db, current_user.id, response)
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")
 
-    _analysis_in_progress = False
+        analysis = Analysis(datalog_id=datalog.id, model_used=model_name, result_markdown=result_text)
+        db.add(analysis)
+        db.commit()
 
-    analysis = Analysis(datalog_id=datalog.id, model_used=model_name, result_markdown=result_text)
-    db.add(analysis)
-    db.commit()
-
-    return {"analysis": result_text}
+        return {"analysis": result_text}
+    finally:
+        _analysis_in_progress = False
 
 
 @router.get("/api/analyze/{filename}")

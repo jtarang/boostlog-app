@@ -373,6 +373,46 @@
                         </div>
                     </div>
 
+                    <div class="settings-card">
+                        <h3>Subscription & Usage</h3>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px;">
+                            <span id="currentTierBadge" style="padding: 6px 12px; background: rgba(131, 56, 236, 0.2); border: 1px solid var(--accent); border-radius: 6px; font-weight: 600; font-size: 12px; color: var(--accent);">Free</span>
+                            <span id="tierPriceLabel" style="font-size: 12px; color: var(--text-secondary);"></span>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px;">
+                                <span style="color: var(--text-secondary);">Monthly Token Usage</span>
+                                <span id="usageLabel" style="color: var(--text-primary); font-weight: 600;">-- / --</span>
+                            </div>
+                            <div id="usageBar" style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+                                <div style="height: 100%; background: linear-gradient(to right, #3A86FF, #d400ff, #FF006E); width: 0%; transition: width 0.3s;" id="usageBarFill"></div>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                            <div style="padding: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; text-align: center;">
+                                <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Free</div>
+                                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">$0/month</div>
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 12px;">50k tokens</div>
+                                <button class="btn-primary" data-action="openUpgradeModal" data-tier="free" data-price="0" style="width: 100%; padding: 8px; font-size: 12px; display: none;" id="upgradeFreeBut">Current</button>
+                                <button class="btn-secondary" data-action="downgradeToFree" style="width: 100%; padding: 8px; font-size: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.15);" id="downgradeFreeBut">Downgrade</button>
+                            </div>
+                            <div style="padding: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; text-align: center;">
+                                <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Pro</div>
+                                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">$14/month</div>
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 12px;">5M tokens</div>
+                                <button class="btn-primary" id="upgradeProUpBtn" data-action="openUpgradeModal" data-tier="pro" data-price="14" style="width: 100%; padding: 8px; font-size: 12px;">Upgrade</button>
+                                <button class="btn-primary" id="upgradeProBut" data-action="openUpgradeModal" data-tier="pro" data-price="14" style="width: 100%; padding: 8px; font-size: 12px; display: none;">Current</button>
+                            </div>
+                            <div style="padding: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; text-align: center;">
+                                <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Tuner</div>
+                                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">$29/month</div>
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 12px;">100M tokens</div>
+                                <button class="btn-primary" id="upgradeTunerUpBtn" data-action="openUpgradeModal" data-tier="tuner" data-price="29" style="width: 100%; padding: 8px; font-size: 12px;">Upgrade</button>
+                                <button class="btn-primary" id="upgradeTunerBut" data-action="openUpgradeModal" data-tier="tuner" data-price="29" style="width: 100%; padding: 8px; font-size: 12px; display: none;">Current</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="settings-actions">
                         <button class="btn-primary" data-action="saveUserSettings" style="padding: 12px 32px;">Save All Settings</button>
                     </div>
@@ -781,6 +821,44 @@
             <div class="modal-footer">
                 <button class="btn-secondary" data-action="closeBuildDetails">Cancel</button>
                 <button class="btn-primary" data-action="saveBuildDetails">💾 Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upgrade Subscription Modal -->
+    <div id="upgradeModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card" style="max-width: 420px;">
+            <div class="modal-header">
+                <h3 id="upgradeModalTitle">Upgrade to Pro</h3>
+                <button class="modal-close" data-action="closeUpgradeModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="padding: 16px; background: rgba(131, 56, 236, 0.08); border: 1px solid rgba(131, 56, 236, 0.2); border-radius: 8px; margin-bottom: 16px;">
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Selected Plan</div>
+                    <div style="font-weight: 600; font-size: 16px; color: var(--accent);" id="upgradeModalPlan">Pro</div>
+                    <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-top: 8px;"><span id="upgradeModalPrice">$14</span><span style="font-size: 12px; color: var(--text-secondary); font-weight: 400;">/month</span></div>
+                </div>
+                <form id="upgradeForm" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="input-group">
+                        <label>Card Number</label>
+                        <input type="text" id="cardNumber" class="input-modern" placeholder="4242 4242 4242 4242" maxlength="19">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="input-group">
+                            <label>Expiry (MM/YY)</label>
+                            <input type="text" id="cardExpiry" class="input-modern" placeholder="12/25" maxlength="5">
+                        </div>
+                        <div class="input-group">
+                            <label>CVV</label>
+                            <input type="text" id="cardCvv" class="input-modern" placeholder="123" maxlength="4">
+                        </div>
+                    </div>
+                    <p id="upgradeError" class="auth-error" style="text-align: left;"></p>
+                </form>
+            </div>
+            <div class="modal-footer" style="padding-top: 12px;">
+                <button class="btn-secondary" data-action="closeUpgradeModal">Cancel</button>
+                <button class="btn-primary" id="btnUpgradeConfirm" data-action="submitUpgrade" style="flex: 1;">Pay Now</button>
             </div>
         </div>
     </div>

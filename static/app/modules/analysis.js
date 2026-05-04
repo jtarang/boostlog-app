@@ -48,22 +48,24 @@ async function updateUsageDisplay() {
     try {
         const res = await fetch('/api/user/usage', { headers: getAuthHeaders() });
         const data = await res.json();
-        
+
         const used = data.used || 0;
         const limit = data.limit || 10000;
-        
+
         // Format numbers for display (e.g. 5.2k / 10k)
         const formatNum = (num) => num >= 1000 ? (num/1000).toFixed(1) + 'k' : num;
-        
+
         usageText.textContent = `${formatNum(used)} / ${formatNum(limit)} tokens`;
-        
+
         // Update styling based on percentage
         const pct = used / limit;
         usagePill.classList.remove('limit-near', 'limit-exceeded');
         if (pct >= 1.0) {
             usagePill.classList.add('limit-exceeded');
+            usageText.innerHTML += ' <a href="#" data-action="openUpgradeModal" data-tier="pro" data-price="14" style="color: #FF006E; text-decoration: underline; font-size: 11px; margin-left: 6px;">Upgrade</a>';
         } else if (pct >= 0.8) {
             usagePill.classList.add('limit-near');
+            usageText.innerHTML += ' <a href="#" data-action="openUpgradeModal" data-tier="pro" data-price="14" style="color: #FF006E; text-decoration: underline; font-size: 11px; margin-left: 6px;">Upgrade</a>';
         }
     } catch (err) {
         console.error("Failed to update usage display:", err);

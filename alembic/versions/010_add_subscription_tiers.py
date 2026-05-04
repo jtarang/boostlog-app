@@ -24,6 +24,10 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('name')
     )
 
+    op.execute("INSERT INTO subscription_tiers (name, token_limit) VALUES ('free', 50000)")
+    op.execute("INSERT INTO subscription_tiers (name, token_limit) VALUES ('pro', 5000000)")
+    op.execute("INSERT INTO subscription_tiers (name, token_limit) VALUES ('tuner', 100000000)")
+
 
 def downgrade() -> None:
     op.drop_table('subscription_tiers')

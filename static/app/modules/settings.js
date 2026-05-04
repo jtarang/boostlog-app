@@ -3,9 +3,11 @@ import { showToast } from './toast.js';
 import { openRenameModal, openConfirmDeleteModal } from './modals.js';
 
 export async function loadUserSettings() {
+    console.log('loadUserSettings called');
     try {
         const res = await fetch('/api/user/me', { headers: getAuthHeaders() });
         const data = await res.json();
+        console.log('User data:', data);
         if (res.ok) {
             document.getElementById('setFullName').value = data.full_name || '';
             document.getElementById('setEmail').value = data.email || '';
@@ -13,9 +15,43 @@ export async function loadUserSettings() {
                 document.getElementById('setUnits').value = data.settings.units || 'metric';
                 document.getElementById('setGraphMode').value = data.settings.graph_mode || 'single';
             }
+            console.log('Calling loadSubscriptionInfo with tier:', data.subscription_tier);
+            loadSubscriptionInfo(data.subscription_tier);
         }
     } catch (err) { console.error('Failed to load settings:', err); }
     loadPasskeys();
+}
+
+export async function loadSubscriptionInfo(currentTier) {
+    console.log('loadSubscriptionInfo called with tier:', currentTier);
+    try {
+        console.log('Fetching /api/user/usage...');
+        const res = await fetch('/api/user/usage', { headers: getAuthHeaders() });
+        const data = await res.json();
+        console.log('Subscription usage data:', data, 'Response OK:', res.ok);
+        if (res.ok) {
+            const { used, limit, tier } = data;
+            const percentage = (used / limit) * 100;
+
+            document.getElementById('currentTierBadge').textContent = tier.charAt(0).toUpperCase() + tier.slice(1);
+            document.getElementById('usageLabel').textContent = `${used.toLocaleString()} / ${limit.toLocaleString()}`;
+            document.getElementById('usageBarFill').style.width = Math.min(percentage, 100) + '%';
+
+            const priceMap = { free: '$0', pro: '$14', tuner: '$29' };
+            document.getElementById('tierPriceLabel').textContent = `${priceMap[tier]}/month`;
+
+            document.getElementById('upgradeFreeBut').style.display = tier === 'free' ? 'block' : 'none';
+            document.getElementById('downgradeFreeBut').style.display = tier !== 'free' ? 'block' : 'none';
+
+            document.getElementById('upgradeProUpBtn').style.display = tier === 'pro' ? 'none' : 'block';
+            document.getElementById('upgradeProBut').style.display = tier === 'pro' ? 'block' : 'none';
+
+            document.getElementById('upgradeTunerUpBtn').style.display = tier === 'tuner' ? 'none' : 'block';
+            document.getElementById('upgradeTunerBut').style.display = tier === 'tuner' ? 'block' : 'none';
+        } else {
+            console.error('Usage API returned non-OK status:', res.status, data);
+        }
+    } catch (err) { console.error('Failed to load subscription info:', err); }
 }
 
 async function loadPasskeys() {
@@ -175,4 +211,85 @@ export async function updateUsername() {
             showToast(data.detail || 'Update failed', 'error');
         }
     } catch (err) { showToast(err.message, 'error'); }
+}
+
+let targetUpgradeTier = null;
+let targetUpgradePrice = null;
+
+export function openUpgradeModal(el) {
+    const tier = el.getAttribute('data-tier');
+    const price = el.getAttribute('data-price');
+
+    targetUpgradeTier = tier;
+    targetUpgradePrice = price;
+
+    const tierLabels = { free: 'Free', pro: 'Pro', tuner: 'Tuner' };
+    document.getElementById('upgradeModalTitle').textContent = `Upgrade to ${tierLabels[tier]}`;
+    document.getElementById('upgradeModalPlan').textContent = tierLabels[tier];
+    document.getElementById('upgradeModalPrice').textContent = `$${price}`;
+
+    document.getElementById('cardNumber').value = '';
+    document.getElementById('cardExpiry').value = '';
+    document.getElementById('cardCvv').value = '';
+    document.getElementById('upgradeError').textContent = '';
+
+    document.getElementById('upgradeModal').style.display = 'flex';
+}
+
+export function closeUpgradeModal() {
+    document.getElementById('upgradeModal').style.display = 'none';
+    targetUpgradeTier = null;
+    targetUpgradePrice = null;
+}
+
+export async function submitUpgrade() {
+    if (!targetUpgradeTier) return;
+
+    const cardNum = document.getElementById('cardNumber').value.trim();
+    const expiry = document.getElementById('cardExpiry').value.trim();
+    const cvv = document.getElementById('cardCvv').value.trim();
+
+    if (!cardNum || !expiry || !cvv) {
+        document.getElementById('upgradeError').textContent = 'Please fill in all card details';
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/user/subscription/upgrade', {
+            method: 'POST',
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tier: targetUpgradeTier })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            closeUpgradeModal();
+            showToast(`Plan updated to ${targetUpgradeTier.charAt(0).toUpperCase() + targetUpgradeTier.slice(1)}!`);
+            loadUserSettings();
+        } else {
+            document.getElementById('upgradeError').textContent = data.detail || 'Upgrade failed';
+        }
+    } catch (err) {
+        document.getElementById('upgradeError').textContent = err.message;
+    }
+}
+
+export async function downgradeToFree() {
+    try {
+        const res = await fetch('/api/user/subscription/upgrade', {
+            method: 'POST',
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tier: 'free' })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            showToast('Downgraded to Free plan');
+            loadUserSettings();
+        } else {
+            showToast(data.detail || 'Downgrade failed', 'error');
+        }
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
 }

@@ -55,3 +55,7 @@ class UsernameUpdate(BaseModel):
 
 class PasskeyRename(BaseModel):
     name: str
+
+
+class SubscriptionUpgrade(BaseModel):
+    tier: str

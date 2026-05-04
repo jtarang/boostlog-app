@@ -9,7 +9,7 @@ import litellm
 DEFAULT_LIMITS = {
     "free": 50_000,
     "pro": 5_000_000,
-    "enterprise": 100_000_000,
+    "tuner": 100_000_000,
 }
 
 def get_monthly_usage(db: Session, user_id: int):

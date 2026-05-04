@@ -28,7 +28,7 @@ import {
 } from './modules/builds.js';
 import {
     saveUserSettings, updateUsername, registerPasskey,
-    renamePasskey, deletePasskey,
+    renamePasskey, deletePasskey, openUpgradeModal, closeUpgradeModal, submitUpgrade, downgradeToFree,
 } from './modules/settings.js';
 
 // === Action registry: maps data-action="<name>" → handler(el, event) ===
@@ -92,6 +92,12 @@ const actions = {
     registerPasskey,
     renamePasskey: (el) => renamePasskey(parseInt(el.dataset.id, 10), el.dataset.name),
     deletePasskey: (el) => deletePasskey(parseInt(el.dataset.id, 10), el.dataset.name),
+
+    // Subscription
+    openUpgradeModal,
+    closeUpgradeModal,
+    submitUpgrade,
+    downgradeToFree,
 };
 
 function dispatch(e) {
