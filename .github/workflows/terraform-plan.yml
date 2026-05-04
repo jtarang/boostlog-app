@@ -26,6 +26,9 @@ jobs:
         working-directory: ./terraform
 
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Determine Environment
         id: env
         run: |
@@ -36,9 +39,6 @@ jobs:
             echo "workspace=dev" >> $GITHUB_OUTPUT
             echo "tfvars_file=environments/dev.tfvars" >> $GITHUB_OUTPUT
           fi
-
-      - name: Checkout Repository
-        uses: actions/checkout@v4
 
       - name: Configure AWS Credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
