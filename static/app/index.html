@@ -10,7 +10,7 @@
         rel="stylesheet">
     <link rel="icon" type="image/png" href="/static/turbo_logo_clean.png?v=2.0">
     <link rel="apple-touch-icon" href="/static/turbo_logo_clean.png?v=2.0">
-    <link rel="stylesheet" href="/static/app/styles.css?v=5.3">
+    <link rel="stylesheet" href="/static/app/styles.css?v=5.5">
     <!-- Chart.js for beautiful graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
@@ -373,6 +373,46 @@
                         </div>
                     </div>
 
+                    <div class="settings-card">
+                        <h3>Subscription & Usage</h3>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px;">
+                            <span id="currentTierBadge" style="padding: 6px 12px; background: rgba(131, 56, 236, 0.2); border: 1px solid var(--accent); border-radius: 6px; font-weight: 600; font-size: 12px; color: var(--accent);">Free</span>
+                            <span id="tierPriceLabel" style="font-size: 12px; color: var(--text-secondary);"></span>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px;">
+                                <span style="color: var(--text-secondary);">Monthly Token Usage</span>
+                                <span id="usageLabel" style="color: var(--text-primary); font-weight: 600;">-- / --</span>
+                            </div>
+                            <div id="usageBar" style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+                                <div style="height: 100%; background: linear-gradient(to right, #3A86FF, #d400ff, #FF006E); width: 0%; transition: width 0.3s;" id="usageBarFill"></div>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                            <div style="padding: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; text-align: center;">
+                                <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Free</div>
+                                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">$0/month</div>
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 12px;">50k tokens</div>
+                                <button class="btn-primary" data-action="openUpgradeModal" data-tier="free" data-price="0" style="width: 100%; padding: 8px; font-size: 12px; display: none;" id="upgradeFreeBut">Current</button>
+                                <button class="btn-secondary" data-action="downgradeToFree" style="width: 100%; padding: 8px; font-size: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.15);" id="downgradeFreeBut">Downgrade</button>
+                            </div>
+                            <div style="padding: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; text-align: center;">
+                                <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Pro</div>
+                                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">$14/month</div>
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 12px;">5M tokens</div>
+                                <button class="btn-primary" id="upgradeProUpBtn" data-action="openUpgradeModal" data-tier="pro" data-price="14" style="width: 100%; padding: 8px; font-size: 12px;">Upgrade</button>
+                                <button class="btn-primary" id="upgradeProBut" data-action="openUpgradeModal" data-tier="pro" data-price="14" style="width: 100%; padding: 8px; font-size: 12px; display: none;">Current</button>
+                            </div>
+                            <div style="padding: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; text-align: center;">
+                                <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Tuner</div>
+                                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">$29/month</div>
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 12px;">100M tokens</div>
+                                <button class="btn-primary" id="upgradeTunerUpBtn" data-action="openUpgradeModal" data-tier="tuner" data-price="29" style="width: 100%; padding: 8px; font-size: 12px;">Upgrade</button>
+                                <button class="btn-primary" id="upgradeTunerBut" data-action="openUpgradeModal" data-tier="tuner" data-price="29" style="width: 100%; padding: 8px; font-size: 12px; display: none;">Current</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="settings-actions">
                         <button class="btn-primary" data-action="saveUserSettings" style="padding: 12px 32px;">Save All Settings</button>
                     </div>
@@ -538,27 +578,49 @@
 
     <!-- AI Drawer Panel -->
     <div class="ai-drawer" id="aiDrawer">
+        <div class="ai-drawer-resizer" id="aiDrawerResizer"></div>
         <div class="ai-drawer-header">
             <h3>
                 <img src="/static/turbo_logo_clean.png?v=2.0" style="width: 24px; height: 24px;" alt="">
                 AI Tuning Agent
             </h3>
-            <button class="ai-drawer-close" data-action="toggleAiDrawer">✕</button>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div id="aiUsageContainer" class="ai-usage-pill" title="Monthly Token Usage">
+                    <span id="aiUsageText">...</span>
+                </div>
+                <button class="ai-drawer-close" data-action="toggleAiDrawer">✕</button>
+            </div>
         </div>
         <div class="ai-drawer-body">
             <div id="analysisHistory" style="display: none;">
                 <div class="history-header">
                     <span>Run History</span>
-                    <span id="historyCount" class="history-count"></span>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <span id="historyCount" class="history-count"></span>
+                        <button class="history-pill" id="btnRerunAnalyze" disabled data-action="triggerAnalysis" style="display: flex; align-items: center; gap: 4px; padding-left: 8px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <polyline points="1 20 1 14 7 14"></polyline>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                            Re-run
+                        </button>
+                    </div>
                 </div>
                 <div id="historyPills"></div>
             </div>
-            <div class="chat-box" id="chatBox" style="margin-top: 0; background: transparent; padding: 0;">
+            <div class="chat-box" id="chatBox">
                 <div class="msg system">Awaiting log data for analysis...</div>
             </div>
         </div>
-        <div class="ai-drawer-actions">
-            <button class="btn-primary" id="btnAnalyze" disabled data-action="triggerAnalysis">Start Analysis</button>
+        <div class="ai-drawer-actions" style="border-top: 1px solid var(--border-color); padding: 16px; background: var(--bg-card); position: sticky; bottom: 0; z-index: 10;">
+            <button class="btn-primary" id="btnAnalyze" disabled data-action="triggerAnalysis" style="width: 100%;">Start Analysis</button>
+            <form id="chatForm" style="display: none; width: 100%; gap: 12px; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 4px 4px 4px 16px;">
+                <input type="text" id="chatInput" placeholder="Ask a follow-up question..." autocomplete="off" style="flex: 1; border: none; background: transparent; color: var(--text-primary); font-family: inherit; font-size: 14px; outline: none; padding: 8px 0;">
+                <button type="submit" class="btn-primary" id="btnSendChat" style="padding: 8px; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px; margin-top: 1px;"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </form>
         </div>
     </div>
 
@@ -763,7 +825,45 @@
         </div>
     </div>
 
-    <script type="module" src="/static/app/main.js?v=5.0"></script>
+    <!-- Upgrade Subscription Modal -->
+    <div id="upgradeModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card" style="max-width: 420px;">
+            <div class="modal-header">
+                <h3 id="upgradeModalTitle">Upgrade to Pro</h3>
+                <button class="modal-close" data-action="closeUpgradeModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="padding: 16px; background: rgba(131, 56, 236, 0.08); border: 1px solid rgba(131, 56, 236, 0.2); border-radius: 8px; margin-bottom: 16px;">
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Selected Plan</div>
+                    <div style="font-weight: 600; font-size: 16px; color: var(--accent);" id="upgradeModalPlan">Pro</div>
+                    <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-top: 8px;"><span id="upgradeModalPrice">$14</span><span style="font-size: 12px; color: var(--text-secondary); font-weight: 400;">/month</span></div>
+                </div>
+                <form id="upgradeForm" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="input-group">
+                        <label>Card Number</label>
+                        <input type="text" id="cardNumber" class="input-modern" placeholder="4242 4242 4242 4242" maxlength="19">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="input-group">
+                            <label>Expiry (MM/YY)</label>
+                            <input type="text" id="cardExpiry" class="input-modern" placeholder="12/25" maxlength="5">
+                        </div>
+                        <div class="input-group">
+                            <label>CVV</label>
+                            <input type="text" id="cardCvv" class="input-modern" placeholder="123" maxlength="4">
+                        </div>
+                    </div>
+                    <p id="upgradeError" class="auth-error" style="text-align: left;"></p>
+                </form>
+            </div>
+            <div class="modal-footer" style="padding-top: 12px;">
+                <button class="btn-secondary" data-action="closeUpgradeModal">Cancel</button>
+                <button class="btn-primary" id="btnUpgradeConfirm" data-action="submitUpgrade" style="flex: 1;">Pay Now</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/static/app/main.js?v=5.8"></script>
 </body>
 
 </html>

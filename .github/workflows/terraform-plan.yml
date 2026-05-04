@@ -5,6 +5,12 @@ on:
     paths:
       - 'terraform/**'
       - '.github/triggers/terraform-trigger'
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+      - '.github/triggers/terraform-trigger'
 
 permissions:
   id-token: write      # Required for AWS OIDC
@@ -14,7 +20,7 @@ permissions:
 jobs:
   plan:
     runs-on: ubuntu-latest
-    environment: prd
+    environment: ${{ github.ref == 'refs/heads/main' && 'prd' || 'dev' }}
     defaults:
       run:
         working-directory: ./terraform
@@ -22,6 +28,17 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Determine Environment
+        id: env
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "workspace=prd" >> $GITHUB_OUTPUT
+            echo "tfvars_file=environments/prd.tfvars" >> $GITHUB_OUTPUT
+          else
+            echo "workspace=dev" >> $GITHUB_OUTPUT
+            echo "tfvars_file=environments/dev.tfvars" >> $GITHUB_OUTPUT
+          fi
 
       - name: Configure AWS Credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
@@ -39,12 +56,12 @@ jobs:
 
       - name: Inject GitHub Secrets into tfvars
         run: |
-          echo "github_client_id = \"${{ secrets.GH_CLIENT_ID }}\"" >> environments/prd.tfvars
-          echo "github_client_secret = \"${{ secrets.GH_CLIENT_SECRET }}\"" >> environments/prd.tfvars
-          echo "cloudflare_tunnel_token = \"${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}\"" >> environments/prd.tfvars
-          echo "db_password = \"${{ secrets.DB_PASSWORD }}\"" >> environments/prd.tfvars
+          echo "github_client_id = \"${{ secrets.GH_CLIENT_ID }}\"" >> ${{ steps.env.outputs.tfvars_file }}
+          echo "github_client_secret = \"${{ secrets.GH_CLIENT_SECRET }}\"" >> ${{ steps.env.outputs.tfvars_file }}
+          echo "cloudflare_tunnel_token = \"${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}\"" >> ${{ steps.env.outputs.tfvars_file }}
+          echo "db_password = \"${{ secrets.DB_PASSWORD }}\"" >> ${{ steps.env.outputs.tfvars_file }}
 
       - name: Terraform Plan
         run: |
-          terraform workspace select default || terraform workspace new default
-          terraform plan -var-file="environments/prd.tfvars" -no-color
+          terraform workspace select ${{ steps.env.outputs.workspace }} || terraform workspace new ${{ steps.env.outputs.workspace }}
+          terraform plan -var-file="${{ steps.env.outputs.tfvars_file }}" -no-color

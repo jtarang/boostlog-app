@@ -53,7 +53,7 @@ def test_ai_drawer_and_analysis_flow(authenticated_page: Page):
     expect(page.locator(".markdown-body")).to_contain_text("✅ Tuning looks good")
     
     # 4. Verify history pill appears
-    expect(page.locator(".history-pill")).to_be_visible()
+    expect(page.locator("#historyPills .history-pill")).to_be_visible()
     
     # Clean up
     if os.path.exists(csv_path):

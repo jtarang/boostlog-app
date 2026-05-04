@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from backend.db import Base
@@ -15,6 +15,8 @@ class User(Base):
     hashed_password = Column(String, nullable=True)
     github_id = Column(String, unique=True, index=True, nullable=True)
     settings_json = Column(Text, nullable=True)
+    subscription_tier = Column(String, default="free")
+    ai_usages = relationship("AIUsage", back_populates="user")
 
     webauthn_id = Column(String, unique=True, index=True, nullable=True)
 
@@ -67,6 +69,7 @@ class Datalog(Base):
     owner = relationship("User", back_populates="datalogs")
     build = relationship("Build", back_populates="datalogs")
     analyses = relationship("Analysis", back_populates="datalog", cascade="all, delete-orphan")
+    chats = relationship("ChatHistory", back_populates="datalog", cascade="all, delete-orphan")
 
 
 class Analysis(Base):
@@ -77,3 +80,35 @@ class Analysis(Base):
     result_markdown = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     datalog = relationship("Datalog", back_populates="analyses")
+
+
+class ChatHistory(Base):
+    __tablename__ = "chat_history"
+    id = Column(Integer, primary_key=True, index=True)
+    datalog_id = Column(Integer, ForeignKey("datalogs.id"), nullable=False)
+    role = Column(String, nullable=False)  # 'user' or 'assistant'
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    datalog = relationship("Datalog", back_populates="chats")
+
+
+class AIUsage(Base):
+    __tablename__ = "ai_usage"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    tokens_used = Column(Integer, default=0)
+    prompt_tokens = Column(Integer, default=0)
+    completion_tokens = Column(Integer, default=0)
+    estimated_cost = Column(Float, default=0.0)
+    model_used = Column(String, nullable=True)
+    timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", back_populates="ai_usages")
+
+
+class SubscriptionTier(Base):
+    __tablename__ = "subscription_tiers"
+
+    name = Column(String, primary_key=True)  # e.g., 'free', 'pro'
+    token_limit = Column(Integer, nullable=False)
+
