@@ -544,7 +544,12 @@
                 <img src="/static/turbo_logo_clean.png?v=2.0" style="width: 24px; height: 24px;" alt="">
                 AI Tuning Agent
             </h3>
-            <button class="ai-drawer-close" data-action="toggleAiDrawer">✕</button>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div id="aiUsageContainer" class="ai-usage-pill" title="Monthly Token Usage">
+                    <span id="aiUsageText">...</span>
+                </div>
+                <button class="ai-drawer-close" data-action="toggleAiDrawer">✕</button>
+            </div>
         </div>
         <div class="ai-drawer-body">
             <div id="analysisHistory" style="display: none;">

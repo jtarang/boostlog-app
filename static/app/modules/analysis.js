@@ -31,8 +31,43 @@ function scrollToBottom() {
 }
 
 export function toggleAiDrawer() {
-    document.getElementById('aiDrawer').classList.toggle('open');
+    const drawer = document.getElementById('aiDrawer');
+    drawer.classList.toggle('open');
     document.getElementById('aiDrawerOverlay').classList.toggle('open');
+    
+    if (drawer.classList.contains('open')) {
+        updateUsageDisplay();
+    }
+}
+
+async function updateUsageDisplay() {
+    const usageText = document.getElementById('aiUsageText');
+    const usagePill = document.getElementById('aiUsageContainer');
+    if (!usageText) return;
+
+    try {
+        const res = await fetch('/api/user/usage', { headers: getAuthHeaders() });
+        const data = await res.json();
+        
+        const used = data.used || 0;
+        const limit = data.limit || 10000;
+        
+        // Format numbers for display (e.g. 5.2k / 10k)
+        const formatNum = (num) => num >= 1000 ? (num/1000).toFixed(1) + 'k' : num;
+        
+        usageText.textContent = `${formatNum(used)} / ${formatNum(limit)} tokens`;
+        
+        // Update styling based on percentage
+        const pct = used / limit;
+        usagePill.classList.remove('limit-near', 'limit-exceeded');
+        if (pct >= 1.0) {
+            usagePill.classList.add('limit-exceeded');
+        } else if (pct >= 0.8) {
+            usagePill.classList.add('limit-near');
+        }
+    } catch (err) {
+        console.error("Failed to update usage display:", err);
+    }
 }
 
 export function loadAnalysisHistory(filename) {
@@ -179,6 +214,7 @@ export async function submitChat() {
         const cleanedResponse = handleGraphCommands(aiResponse);
         aiDiv.innerHTML = marked.parse(cleanedResponse);
         currentChatHistory.push({ role: 'assistant', content: aiResponse });
+        updateUsageDisplay(); // Refresh usage after chat message
     } catch (err) {
         aiDiv.innerHTML = `<span style="color: var(--danger);">${err.message}</span>`;
         currentChatHistory.pop(); // Remove the user message from history so they can retry
@@ -255,6 +291,7 @@ export async function triggerAnalysis() {
         document.querySelector('#logItems li.analyzing-log')?.classList.remove('analyzing-log');
         fabAi?.classList.remove('analyzing');
         if (analysisFile === state.currentServerFile) loadAnalysisHistory(state.currentServerFile);
+        updateUsageDisplay(); // Refresh usage after successful analysis
         refreshLogList();
         if (!document.getElementById('aiDrawer').classList.contains('open')) {
             toggleAiDrawer();

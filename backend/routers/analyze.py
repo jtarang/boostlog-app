@@ -9,6 +9,7 @@ from backend import config
 from backend.auth.core import get_current_user
 from backend.db import get_db
 from backend.models import Analysis, Datalog, User
+from backend.usage import check_usage_limit, record_usage
 
 router = APIRouter()
 
@@ -205,6 +206,9 @@ Provide a **prioritized checklist** of specific actions the tuner or owner must 
         result_text = "## AI Analysis\n\n**Verdict**: ✅ Tuning looks good.\n\nEverything is within safe limits."
         model_name = "mock/turbo-tuner"
     else:
+        # Check usage limit before calling LLM
+        check_usage_limit(db, current_user)
+
         def _run_llm():
             return completion(
                 model=model_name,
@@ -217,6 +221,8 @@ Provide a **prioritized checklist** of specific actions the tuner or owner must 
         try:
             response = await asyncio.to_thread(_run_llm)
             result_text = response.choices[0].message.content
+            # Record usage after successful call
+            record_usage(db, current_user.id, response)
         except Exception as e:
             _analysis_in_progress = False
             raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")

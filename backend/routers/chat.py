@@ -1,5 +1,6 @@
 import asyncio
 import os
+import polars as pl
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -8,6 +9,7 @@ from sqlalchemy.orm import Session
 from backend.auth.core import get_current_user
 from backend.db import get_db
 from backend.models import Analysis, Datalog, User, ChatHistory
+from backend.usage import check_usage_limit, record_usage
 
 router = APIRouter()
 
@@ -54,10 +56,30 @@ async def chat_about_log(filename: str, request: ChatRequest, current_user: User
     csv_content = ""
     if os.path.exists(file_path):
         try:
-            with open(file_path, "r") as f:
-                # Limit to 500kb just to be safe with token limits
-                csv_content = f.read(500 * 1024)
-        except Exception:
+            # Use Polars for smart downsampling to save tokens
+            df = pl.read_csv(file_path, ignore_errors=True)
+            
+            # Find pedal column for WOT detection
+            cols = df.columns
+            pedal_col = next((c for c in cols if any(a in c.lower() for a in ["pedal", "accel", "throttle"])), None)
+            
+            if pedal_col:
+                # Keep 100% of WOT rows (> 80% pedal)
+                df_wot = df.filter(pl.col(pedal_col) > 80)
+                # Downsample everything else (keep 1 out of every 10 rows)
+                df_rest = df.filter(pl.col(pedal_col) <= 80).gather_every(10)
+                # Combine them
+                df_optimized = pl.concat([df_wot, df_rest]).sort(df.columns[0]) # Try to keep original order if first col is index/time
+            else:
+                # No pedal data? Just downsample the whole thing
+                df_optimized = df.gather_every(5)
+            
+            # Convert to CSV string, limited to a reasonable length
+            csv_content = df_optimized.write_csv()
+            if len(csv_content) > 100 * 1024:
+                csv_content = csv_content[:100 * 1024] + "\n... (data truncated) ..."
+        except Exception as e:
+            print(f"Downsampling error: {e}")
             pass
 
     build_info = {
@@ -108,6 +130,9 @@ Format your response using Markdown where appropriate.
     if mock_response:
         result_text = "This is a mock response from Moose. Your tuning looks acceptable based on the previous summary."
     else:
+        # Check usage limit before calling LLM
+        check_usage_limit(db, current_user)
+
         def _run_llm():
             return completion(
                 model=model_name,
@@ -115,11 +140,14 @@ Format your response using Markdown where appropriate.
                 messages=messages,
                 temperature=0.3,
                 drop_params=True,
+                caching=True, # Enable LiteLLM caching
             )
 
         try:
             response = await asyncio.to_thread(_run_llm)
             result_text = response.choices[0].message.content
+            # Record usage after successful call
+            record_usage(db, current_user.id, response)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")
 
