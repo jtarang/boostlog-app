@@ -75,7 +75,7 @@ async function loadPasskeys() {
             return `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;">
                     <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
-                        <span style="font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis;">🔑 ${escapeHtml(p.name)}</span>
+                        <span style="font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 6px; overflow: hidden;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="m21 2-9.6 9.6"></path><path d="m15.5 7.5 3 3L22 7l-3-3"></path></svg><span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(p.name)}</span></span>
                         ${meta ? `<span style="color: var(--text-secondary); font-size: 11px;">${escapeHtml(meta)}</span>` : ''}
                     </div>
                     <div style="display: flex; gap: 6px;">

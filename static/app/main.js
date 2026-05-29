@@ -30,6 +30,7 @@ import {
     saveUserSettings, updateUsername, registerPasskey,
     renamePasskey, deletePasskey, openUpgradeModal, closeUpgradeModal, submitUpgrade, downgradeToFree,
 } from './modules/settings.js';
+import { initTheme, toggleTheme, setPalette } from './modules/theme.js';
 
 // === Action registry: maps data-action="<name>" → handler(el, event) ===
 const actions = {
@@ -46,6 +47,8 @@ const actions = {
     // Sidebar / nav
     toggleSidebar,
     collapseSidebar,
+    toggleTheme,
+    setPalette: (el) => setPalette(el.dataset.paletteSwatch),
     switchView: (el) => switchView(el.dataset.view),
 
     // Upload modal & URL import
@@ -187,4 +190,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+initTheme();
 initAuth();
