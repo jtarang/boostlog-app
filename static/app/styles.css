@@ -128,6 +128,16 @@
     border-radius: 50%;
 }
 
+/* ── boostLog logo mark (modular; theme + palette aware) ─────── */
+.bl-mark {
+    display: block;
+    height: 30px;
+    width: auto;
+    aspect-ratio: 60 / 48;
+    color: var(--text-primary);
+    flex-shrink: 0;
+}
+
 /* ── Palette picker (Settings → Appearance) ──────────────────── */
 .palette-picker {
     display: grid;
@@ -346,7 +356,7 @@ h4 {
 }
 
 .btn-upload-sidebar:hover {
-    background: linear-gradient(135deg, #2a76ef, #7228dc);
+    filter: brightness(1.15);
     box-shadow: 0 6px 24px rgba(var(--accent-rgb), 0.45);
     transform: translateY(-1px);
 }
@@ -516,8 +526,8 @@ h4 {
     font-weight: 700;
     padding: 2px 7px;
     border-radius: 20px;
-    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.15), rgba(212, 0, 255, 0.15));
-    border: 1px solid rgba(212, 0, 255, 0.35);
+    background: rgba(var(--accent-rgb), 0.12);
+    border: 1px solid rgba(var(--accent-rgb), 0.35);
     color: var(--accent);
     white-space: nowrap;
     flex-shrink: 0;
@@ -654,6 +664,8 @@ body:not(.view-library) .library-view {
 /* Hero Banner Enhancements */
 .view-hero {
     height: 160px;
+    background-size: cover;
+    background-position: center;
     position: relative;
     display: flex;
     align-items: flex-end;
@@ -661,25 +673,20 @@ body:not(.view-library) .library-view {
     border-bottom: 1px solid rgba(var(--accent-rgb), 0.4) !important;
     margin-bottom: 0 !important;
     overflow: hidden;
-    background:
-        radial-gradient(130% 150% at 12% 8%, rgba(var(--accent-rgb), 0.30), transparent 55%),
-        radial-gradient(120% 160% at 90% 24%, rgba(var(--danger-rgb), 0.20), transparent 55%),
-        radial-gradient(140% 200% at 65% 110%, rgba(58, 134, 255, 0.18), transparent 60%),
-        var(--bg-sidebar);
 }
 
-/* Subtle telemetry grid texture, faded toward the text */
+/* Text always white — the photos are dark cinematic images */
+.view-hero h2,
+.view-hero .hero-icon,
+.view-hero .library-sub { color: #fff !important; -webkit-text-fill-color: #fff !important; }
+
+/* Dark overlay so text stays legible over the photo */
 .view-hero::before {
     content: '';
     position: absolute;
     inset: 0;
-    background-image:
-        linear-gradient(rgba(var(--fg-rgb), 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(var(--fg-rgb), 0.05) 1px, transparent 1px);
-    background-size: 38px 38px;
+    background: linear-gradient(rgba(15, 15, 17, 0.55), rgba(15, 15, 17, 0.82));
     pointer-events: none;
-    -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent 75%);
-    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent 75%);
 }
 
 /* Blend the bottom edge into the page background (theme-aware) */
@@ -1640,7 +1647,7 @@ body.focus-mode .chart-container {
 }
 
 .url-import-btn:hover {
-    background: #2a76ef;
+    filter: brightness(1.15);
 }
 
 .url-import-hint {
@@ -1678,10 +1685,10 @@ body.focus-mode .chart-container {
     background: var(--bg-main);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
-    padding: 8px 12px 8px 12px;
+    padding: 8px 12px;
     border-radius: 20px;
-    font-family: inherit;
-    font-size: 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
     outline: none;
     transition: var(--transition);
 }
@@ -1700,7 +1707,8 @@ body.focus-mode .chart-container {
     background: transparent;
     border: none;
     color: var(--text-secondary);
-    font-size: 11px;
+    font-family: var(--font-mono);
+    font-size: 10px;
     font-weight: 600;
     cursor: pointer;
     padding: 4px;
@@ -1748,7 +1756,8 @@ body.focus-mode .chart-container {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
     cursor: pointer;
     background: rgba(var(--fg-rgb), 0.03);
     padding: 5px 10px;
@@ -2208,7 +2217,7 @@ body.focus-mode .chart-container {
 
 
 
-/* === Floating AI Button (FAB) === */
+/* === Floating Turbo Button (FAB) === */
 .fab-ai {
     position: fixed;
     bottom: 28px;
@@ -2217,21 +2226,26 @@ body.focus-mode .chart-container {
     height: 60px;
     border-radius: 50%;
     border: none;
-    background: var(--brand-grad);
-    color: white;
+    background: var(--accent);
+    color: #fff;
     cursor: pointer;
     z-index: 900;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 6px 24px rgba(212, 0, 255, 0.4), 0 0 0 0 rgba(212, 0, 255, 0.3);
+    box-shadow: 0 6px 24px rgba(var(--accent-rgb), 0.4), 0 0 0 0 rgba(var(--accent-rgb), 0.3);
     transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
     animation: fab-pulse 2.5s ease-in-out infinite;
 }
 
+.fab-mark {
+    width: 30px;
+    height: 24px;
+}
+
 .fab-ai:hover {
     transform: scale(1.12);
-    box-shadow: 0 8px 32px rgba(212, 0, 255, 0.5), 0 0 0 8px rgba(212, 0, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(var(--accent-rgb), 0.5), 0 0 0 8px rgba(var(--accent-rgb), 0.1);
 }
 
 .fab-ai:disabled {
@@ -2254,8 +2268,8 @@ body.focus-mode .chart-container {
 }
 
 @keyframes fab-pulse {
-    0%, 100% { box-shadow: 0 6px 24px rgba(212, 0, 255, 0.4), 0 0 0 0 rgba(212, 0, 255, 0.3); }
-    50% { box-shadow: 0 6px 24px rgba(212, 0, 255, 0.4), 0 0 0 12px rgba(212, 0, 255, 0); }
+    0%, 100% { box-shadow: 0 6px 24px rgba(var(--accent-rgb), 0.4), 0 0 0 0 rgba(var(--accent-rgb), 0.3); }
+    50% { box-shadow: 0 6px 24px rgba(var(--accent-rgb), 0.4), 0 0 0 12px rgba(var(--accent-rgb), 0); }
 }
 
 @keyframes fab-analyzing {
@@ -2297,7 +2311,7 @@ body.focus-mode .chart-container {
 }
 
 .ai-thinking-dots span:nth-child(2) { animation-delay: 0.2s; background: var(--accent); }
-.ai-thinking-dots span:nth-child(3) { animation-delay: 0.4s; background: var(--danger); }
+.ai-thinking-dots span:nth-child(3) { animation-delay: 0.4s; background: var(--accent); opacity: 0.6; }
 
 @keyframes thinking-bounce {
     0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
@@ -2329,7 +2343,7 @@ body.focus-mode .chart-container {
 
 /* Tooltip on FAB */
 .fab-ai::after {
-    content: 'AI Tuner';
+    content: 'Turbo';
     position: absolute;
     right: 72px;
     background: var(--bg-main);
@@ -2507,16 +2521,15 @@ body.focus-mode .chart-container {
 }
 
 .ai-drawer-actions .btn-primary.btn-rerun {
-    background: transparent;
-    border: 1px solid rgba(212, 0, 255, 0.4);
+    border: 1px solid rgba(var(--accent-rgb), 0.4);
     color: var(--accent);
-    background: linear-gradient(135deg, rgba(58,134,255,0.08), rgba(212,0,255,0.08));
+    background: rgba(var(--accent-rgb), 0.08);
 }
 
 .ai-drawer-actions .btn-primary.btn-rerun:hover {
-    background: linear-gradient(135deg, rgba(58,134,255,0.18), rgba(212,0,255,0.18));
+    background: rgba(var(--accent-rgb), 0.18);
     border-color: var(--accent);
-    box-shadow: 0 0 16px rgba(212, 0, 255, 0.25);
+    box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.25);
 }
 
 /* === Analysis History Pills === */

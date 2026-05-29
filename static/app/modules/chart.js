@@ -1,5 +1,9 @@
 import { state, lineColors } from './state.js';
 
+// Match Chart.js canvas font to the app's Inter body font stack.
+Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.font.size   = 12;
+
 // Re-render the chart when the theme flips so canvas colors track CSS.
 window.addEventListener('themechange', () => {
     if (state.currentChart) renderChart();
@@ -258,7 +262,7 @@ export function renderChart() {
             grid: isPrimary ? { color: t.grid } : { drawOnChartArea: false },
             ticks: isPrimary ? { color: meta.color } : { display: false },
             title: isPrimary
-                ? { display: true, text: meta.label, font: { size: 10, weight: 'bold' } }
+                ? { display: true, text: meta.label, font: { size: 10, weight: '700', family: "'Inter', system-ui, sans-serif" } }
                 : { display: false },
             ...(suggestedMin !== undefined ? { suggestedMin, suggestedMax } : {})
         };

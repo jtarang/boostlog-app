@@ -1,0 +1,1 @@
+- [Theme & palette system](theme-palette-system.md) — data-theme/data-palette tokens, shared localStorage keys, and the pending enterprise-palette pick + glow-reduction follow-up

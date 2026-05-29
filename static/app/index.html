@@ -9,9 +9,9 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700&display=swap"
         rel="stylesheet">
-    <link rel="icon" type="image/png" href="/static/turbo_logo_clean.png?v=2.0">
-    <link rel="apple-touch-icon" href="/static/turbo_logo_clean.png?v=2.0">
-    <link rel="stylesheet" href="/static/app/styles.css?v=5.9">
+    <link rel="icon" type="image/png" href="/static/turbo_logo_dark.png?v=3.0">
+    <link rel="apple-touch-icon" href="/static/turbo_logo_dark.png?v=3.0">
+    <link rel="stylesheet" href="/static/app/styles.css?v=6.8">
     <!-- Chart.js for beautiful graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
@@ -23,17 +23,26 @@
 </head>
 
 <body>
+    <!-- Reusable boostLog mark: front bars = currentColor (theme), tall bar = --accent (palette) -->
+    <svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs>
+        <symbol id="bl-mark" viewBox="0 0 60 48">
+            <g transform="translate(12,0) skewX(-12)">
+                <rect x="2" y="28" width="11" height="18" rx="3.5" fill="currentColor"/>
+                <rect x="18" y="16" width="11" height="30" rx="3.5" fill="currentColor"/>
+                <rect x="34" y="2" width="11" height="44" rx="3.5" style="fill:var(--accent)"/>
+            </g>
+        </symbol>
+    </defs></svg>
+
     <!-- Auth Overlay -->
     <div id="authOverlay" class="auth-overlay">
         <div class="auth-card">
             <div class="brand"
-                style="justify-content: center; margin-bottom: 24px; width: 100%; display: flex; align-items: center;">
+                style="justify-content: center; margin-bottom: 24px; width: 100%; display: flex; align-items: center; gap: 12px;">
+                <svg class="bl-mark" style="height: 44px;" aria-hidden="true"><use href="#bl-mark"/></svg>
                 <h1 class="brand-text"
-                    style="font-size: 40px; margin-right: 0; margin-bottom: 0; font-weight: 800; background: var(--brand-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 8px rgba(212,0,255,0.4)); position: relative; z-index: 2;">
+                    style="font-size: 40px; margin: 0; font-weight: 800; background: var(--brand-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; position: relative; z-index: 2;">
                     boostLog</h1>
-                <img src="/static/turbo_logo_clean.png?v=2.0" class="brand-logo"
-                    style="width: 64px; height: auto; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255,0,110,0.5)); flex-shrink: 0; position: relative; z-index: 1; margin-left: -38px;"
-                    alt="Turbo Logo">
             </div>
             <div class="auth-tabs">
                 <button type="button" class="tab active" data-action="switchAuthTab" data-mode="login">Login</button>
@@ -120,12 +129,11 @@
         <button class="hamburger" id="hamburgerBtn" data-action="toggleSidebar">
             <span></span><span></span><span></span>
         </button>
-        <div style="display: flex; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <svg class="bl-mark" style="height: 24px;" aria-hidden="true"><use href="#bl-mark"/></svg>
             <h1
                 style="font-size: 20px; font-weight: 800; background: var(--brand-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                 boostLog</h1>
-            <img src="/static/turbo_logo_clean.png?v=2.0" style="width: 28px; height: auto; margin-left: -16px;"
-                alt="Logo">
         </div>
         <div style="width: 36px;"></div>
     </div>
@@ -137,19 +145,15 @@
         <aside class="sidebar" id="sidebar">
             <div class="brand" style="width: 100%; display: flex; align-items: center; justify-content: space-between;">
                 <!-- Expanded: full lockup -->
-                <div class="sidebar-expanded-only" style="display: flex; align-items: center; margin-left: -4px;">
+                <div class="sidebar-expanded-only" style="display: flex; align-items: center; gap: 10px;">
+                    <svg class="bl-mark" style="height: 30px;" aria-hidden="true"><use href="#bl-mark"/></svg>
                     <h1 class="brand-text sidebar-text"
-                        style="font-size: 28px; margin-right: 0; margin-bottom: 0; font-weight: 800; background: var(--brand-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 6px rgba(212,0,255,0.4)); position: relative; z-index: 2;">
+                        style="font-size: 28px; margin: 0; font-weight: 800; background: var(--brand-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; position: relative; z-index: 2;">
                         boostLog</h1>
-                    <img src="/static/turbo_logo_clean.png?v=2.0" class="brand-logo"
-                        style="width: 44px; height: auto; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255,0,110,0.5)); flex-shrink: 0; position: relative; z-index: 1; margin-left: -26px;"
-                        alt="Turbo Logo">
                 </div>
-                <!-- Collapsed: turbo icon only -->
+                <!-- Collapsed: mark only -->
                 <div class="sidebar-collapsed-only" style="display: none; cursor: pointer;" data-action="collapseSidebar">
-                    <img src="/static/turbo_logo_clean.png?v=2.0"
-                        style="width: 40px; height: auto; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255,0,110,0.5));"
-                        alt="boostLog">
+                    <svg class="bl-mark" style="height: 30px;" aria-hidden="true"><use href="#bl-mark"/></svg>
                 </div>
                 <button class="sidebar-collapse-btn sidebar-expanded-only" id="sidebarCollapseBtn"
                     data-action="collapseSidebar" title="Collapse sidebar">
@@ -262,7 +266,7 @@
         <main class="main-content">
             <!-- Library View -->
             <section class="library-view" id="libraryView">
-                <header class="library-header view-hero">
+                <header class="library-header view-hero" style="background-image: url('/static/datalogs_hero.png');">
                     <div class="hero-text">
                         <div class="hero-title-row">
                             <svg class="hero-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -465,7 +469,7 @@
 
             <!-- Garage View (All Builds) -->
             <section class="builds-view" id="buildsView" style="display: none;">
-                <header class="library-header view-hero">
+                <header class="library-header view-hero" style="background-image: url('/static/garage_hero.png');">
                     <div class="hero-text">
                         <div class="hero-title-row">
                             <svg class="hero-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -614,8 +618,14 @@
     </div>
 
     <!-- Floating AI Button -->
-    <button class="fab-ai" id="fabAi" disabled data-action="toggleAiDrawer">
-        <img src="/static/turbo_logo_clean.png?v=2.0" alt="AI Tuner">
+    <button class="fab-ai" id="fabAi" disabled data-action="toggleAiDrawer" aria-label="Turbo AI">
+        <svg class="fab-mark" viewBox="0 0 60 48" aria-hidden="true">
+            <g transform="translate(12,0) skewX(-12)">
+                <rect x="2"  y="28" width="11" height="18" rx="3.5" fill="currentColor" opacity="0.75"/>
+                <rect x="18" y="16" width="11" height="30" rx="3.5" fill="currentColor" opacity="0.9"/>
+                <rect x="34" y="2"  width="11" height="44" rx="3.5" fill="currentColor"/>
+            </g>
+        </svg>
     </button>
 
     <!-- AI Drawer Overlay -->
@@ -625,9 +635,9 @@
     <div class="ai-drawer" id="aiDrawer">
         <div class="ai-drawer-resizer" id="aiDrawerResizer"></div>
         <div class="ai-drawer-header">
-            <h3>
-                <img src="/static/turbo_logo_clean.png?v=2.0" style="width: 24px; height: 24px;" alt="">
-                AI Tuning Agent
+            <h3 style="display:flex; align-items:center; gap:8px;">
+                <svg class="bl-mark" style="height:22px; color:var(--accent);" aria-hidden="true"><use href="#bl-mark"/></svg>
+                Turbo
             </h3>
             <div style="display: flex; align-items: center; gap: 12px;">
                 <div id="aiUsageContainer" class="ai-usage-pill" title="Monthly Token Usage">
@@ -926,7 +936,7 @@
         </div>
     </div>
 
-    <script type="module" src="/static/app/main.js?v=6.1"></script>
+    <script type="module" src="/static/app/main.js?v=6.2"></script>
 </body>
 
 </html>

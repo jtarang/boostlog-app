@@ -1,6 +1,6 @@
-import { initHeroChart } from './modules/hero.js';
-import { initFaq } from './modules/faq.js';
-import { initTweaks } from './modules/tweaks.js';
+import { initHeroChart } from './modules/hero.js?v=2.1';
+import { initFaq } from './modules/faq.js?v=2.1';
+import { initTweaks } from './modules/tweaks.js?v=2.1';
 
 // ── Theme (light / dark) ──────────────────────────────────────────
 const THEME_KEY = 'bl_theme';

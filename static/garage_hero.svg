@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 130" preserveAspectRatio="xMaxYMid meet">
+
+  <!-- Ground shadow -->
+  <ellipse cx="310" cy="124" rx="198" ry="5" fill="currentColor" opacity="0.07"/>
+
+  <!--
+    Car body — single path with evenodd fill rule.
+    Subpath 1: outer body (clockwise).
+    Subpath 2 & 3: wheel arch circles (counterclockwise) → punched as holes.
+  -->
+  <path fill-rule="evenodd"
+    d="M 108,112
+       L 108,94 C 110,86 118,82 132,80
+       L 196,74 C 202,74 207,68 214,58
+       L 230,48 C 240,44 266,42 302,42
+       L 352,42 C 378,42 394,48 408,58
+       L 428,72 C 436,78 448,83 464,86
+       L 480,88 Q 486,92 486,100 L 486,112 Z
+       M 230,112 A 22 22 0 0 0 186,112 A 22 22 0 0 0 230,112 Z
+       M 434,112 A 22 22 0 0 0 390,112 A 22 22 0 0 0 434,112 Z"
+    fill="currentColor" fill-opacity="0.12"
+    stroke="currentColor" stroke-opacity="0.28" stroke-width="1.5" stroke-linejoin="round"/>
+
+  <!-- Windshield -->
+  <path d="M 198,74 L 232,48 L 260,46 L 258,74 Z"
+    fill="currentColor" fill-opacity="0.08"
+    stroke="currentColor" stroke-opacity="0.15" stroke-width="1" stroke-linejoin="round"/>
+
+  <!-- Rear glass -->
+  <path d="M 350,42 L 406,60 L 404,74 L 348,74 Z"
+    fill="currentColor" fill-opacity="0.08"
+    stroke="currentColor" stroke-opacity="0.15" stroke-width="1" stroke-linejoin="round"/>
+
+  <!-- Accent character line -->
+  <path d="M 130,91 C 192,88 252,87 312,86 C 360,85 402,86 434,88"
+    stroke="var(--accent)" stroke-width="1.5" stroke-opacity="0.65"
+    stroke-linecap="round" fill="none"/>
+
+  <!-- Front wheel ─ tire, rim, hub, 3 visible spokes -->
+  <circle cx="208" cy="112" r="22"
+    fill="none" stroke="currentColor" stroke-opacity="0.3" stroke-width="1.5"/>
+  <circle cx="208" cy="112" r="14"
+    fill="none" stroke="currentColor" stroke-opacity="0.18" stroke-width="1"/>
+  <circle cx="208" cy="112" r="5"
+    fill="currentColor" fill-opacity="0.28"/>
+  <g stroke="currentColor" stroke-opacity="0.22" stroke-width="1.2" stroke-linecap="round">
+    <line x1="208" y1="107" x2="208"   y2="98"/>
+    <line x1="212.8" y1="110.5" x2="221.3" y2="107.7"/>
+    <line x1="203.2" y1="110.5" x2="194.7" y2="107.7"/>
+  </g>
+
+  <!-- Rear wheel ─ tire, rim, hub, 3 visible spokes -->
+  <circle cx="412" cy="112" r="22"
+    fill="none" stroke="currentColor" stroke-opacity="0.3" stroke-width="1.5"/>
+  <circle cx="412" cy="112" r="14"
+    fill="none" stroke="currentColor" stroke-opacity="0.18" stroke-width="1"/>
+  <circle cx="412" cy="112" r="5"
+    fill="currentColor" fill-opacity="0.28"/>
+  <g stroke="currentColor" stroke-opacity="0.22" stroke-width="1.2" stroke-linecap="round">
+    <line x1="412" y1="107" x2="412"   y2="98"/>
+    <line x1="416.8" y1="110.5" x2="425.3" y2="107.7"/>
+    <line x1="407.2" y1="110.5" x2="398.7" y2="107.7"/>
+  </g>
+
+  <!-- Ground line -->
+  <line x1="60" y1="118" x2="540" y2="118"
+    stroke="currentColor" stroke-opacity="0.1" stroke-width="1"/>
+
+</svg>

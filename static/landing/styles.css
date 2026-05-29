@@ -107,6 +107,16 @@
   background: rgba(255, 255, 255, 0.92);
 }
 
+/* boostLog logo mark (modular; theme + palette aware) */
+.bl-mark {
+  display: block;
+  height: 28px;
+  width: auto;
+  aspect-ratio: 60 / 48;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
 /* Theme toggle button (nav) */
 .theme-toggle {
   display: flex;
@@ -221,9 +231,9 @@ nav {
 }
 
 .btn-ghost:hover {
-  border-color: var(--pink);
+  border-color: var(--accent);
   color: var(--text);
-  background: var(--pink-dim);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 .btn-primary {
@@ -774,6 +784,19 @@ h2 {
   border-color: var(--pink);
   box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.3);
   transform: translateY(-2px);
+}
+
+/* Light mode: icon tile needs more contrast; white icon on light hover bg is invisible */
+[data-theme="light"] .feature-icon {
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.1), rgba(37, 99, 235, 0.06));
+  border-color: rgba(var(--accent-rgb), 0.2);
+}
+
+[data-theme="light"] .feature-card:hover .feature-icon {
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.12);
+  border-color: var(--accent);
+  box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.2);
 }
 
 .feature-card h3 {
