@@ -5,13 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>boostlog.app - Boostlog Visualizer</title>
-    <script>try{var d=document.documentElement.dataset;d.theme=localStorage.getItem('bl_theme')||'dark';d.palette=localStorage.getItem('bl_palette')||'original'}catch(e){document.documentElement.dataset.theme='dark'}</script>
+    <script>try{var d=document.documentElement.dataset;d.theme=localStorage.getItem('bl_theme')||'dark';d.palette=localStorage.getItem('bl_palette')||'violet'}catch(e){document.documentElement.dataset.theme='dark'}</script>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700&display=swap"
         rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="apple-touch-icon" href="/static/logo_boostlog.svg">
-    <link rel="stylesheet" href="/static/app/styles.css?v=6.8">
+    <link rel="stylesheet" href="/static/app/styles.css?v=6.9">
     <!-- Chart.js for beautiful graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
@@ -370,7 +370,7 @@
                         </div>
                     </div>
 
-                    <div class="settings-card">
+                    <div class="settings-card" id="appearanceSettingsCard">
                         <h3>Appearance</h3>
                         <div class="input-group">
                             <label>Color Palette</label>

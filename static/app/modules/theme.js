@@ -6,6 +6,19 @@ const THEME_KEY = 'bl_theme';
 const PALETTE_KEY = 'bl_palette';
 const VALID_PALETTES = ['original', 'blue', 'violet', 'graphite'];
 
+// Feature-flag: returns true if the logged-in user's JWT contains the given
+// feature string in its `features` claim. Server controls the claim.
+export function hasFeature(flag) {
+    try {
+        const token = localStorage.getItem('boostlog_token');
+        if (!token) return false;
+        const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        return Array.isArray(payload.features) && payload.features.includes(flag);
+    } catch (e) {
+        return false;
+    }
+}
+
 function updateIcons(theme) {
     document.querySelectorAll('[data-theme-icon]').forEach(el => {
         el.style.display = el.dataset.themeIcon === theme ? '' : 'none';
@@ -31,7 +44,7 @@ export function toggleTheme() {
 }
 
 export function setPalette(palette) {
-    if (!VALID_PALETTES.includes(palette)) palette = 'original';
+    if (!VALID_PALETTES.includes(palette)) palette = 'violet';
     document.documentElement.dataset.palette = palette;
     try { localStorage.setItem(PALETTE_KEY, palette); } catch (e) { /* ignore */ }
     updatePaletteUI(palette);
@@ -47,7 +60,13 @@ export function initTheme() {
 
     const palette = document.documentElement.dataset.palette
         || (() => { try { return localStorage.getItem(PALETTE_KEY); } catch (e) { return null; } })()
-        || 'original';
+        || 'violet';
     document.documentElement.dataset.palette = palette;
     updatePaletteUI(palette);
+
+    // Show the palette-switcher settings card only for accounts with the flag
+    const appearanceCard = document.getElementById('appearanceSettingsCard');
+    if (appearanceCard) {
+        appearanceCard.style.display = hasFeature('palette_switcher') ? '' : 'none';
+    }
 }

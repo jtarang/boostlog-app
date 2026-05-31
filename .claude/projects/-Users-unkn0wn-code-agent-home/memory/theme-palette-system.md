@@ -15,4 +15,8 @@ Both keys are **shared** between app and landing, and both are applied by a no-F
 
 **Logo:** the boostLog mark (three ascending slanted bars) is a reusable inline SVG `<symbol id="bl-mark">` defined once per page (top of `<body>`), used via `<svg class="bl-mark"><use href="#bl-mark"/></svg>`. The two front bars are `fill="currentColor"` (so `.bl-mark { color: var(--text-primary/--text) }` makes them theme-adaptive) and the tall bar is `style="fill:var(--accent)"` (palette-adaptive). Standalone fixed-color file at `static/logo_boostlog.svg` for favicon/OG. Don't put the old `turbo_logo_dark.png` back into brand lockups — it's only retained for the favicon and the FAB / AI-drawer action icons.
 
-**Pending decision (as of 2026-05-29):** user is evaluating the 3 enterprise palettes via the picker in app Settings → Appearance to replace the neon default. Once they pick one, the agreed follow-up is to **tone down the neon glows** (box-shadow bloom, FAB pulse, logo drop-shadows) for an enterprise look — that was promised but not yet done. The switcher only swaps colors, not glow intensity.
+**Default palette: `violet`** (Mature Violet, `#6D28D9`) — set 2026-05-30. Changed from `original` (neon). All three default locations updated: no-FOUC script in both `index.html` files, and `initTheme()` in `theme.js`.
+
+**Feature flag: `palette_switcher`** — the Appearance settings card (`#appearanceSettingsCard`) is hidden by default and only shown when the logged-in user's JWT payload contains `"palette_switcher"` in its `features` array. Implemented in `hasFeature()` in `theme.js`. Server must include the claim in the JWT at token issuance to grant access. The `hasFeature` function is exported for reuse on other flags.
+
+**Pending:** tone down neon glows (box-shadow bloom, FAB pulse, logo drop-shadows) for a fully enterprise feel — the switcher only swaps colors, not glow intensity.
