@@ -5,71 +5,177 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>boostLog — Datalogs that tune themselves</title>
+  <script>try { var d = document.documentElement.dataset; d.theme = localStorage.getItem('bl_theme') || 'dark'; d.palette = localStorage.getItem('bl_palette') || 'violet' } catch (e) { document.documentElement.dataset.theme = 'dark' }</script>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="apple-touch-icon" href="/static/logo_boostlog.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="/static/landing/styles.css?v=6.0">
+  <link rel="stylesheet" href="/static/landing/styles.css?v=6.8">
 </head>
 
 <body>
 
+  <!-- Reusable boostLog mark: front bars = currentColor (theme), tall bar = --accent (palette) -->
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <defs>
+      <symbol id="bl-mark" viewBox="0 0 60 48">
+        <g transform="translate(12,0) skewX(-12)">
+          <rect x="2" y="28" width="11" height="18" rx="3.5" fill="currentColor" />
+          <rect x="18" y="16" width="11" height="30" rx="3.5" fill="currentColor" />
+          <rect x="34" y="2" width="11" height="44" rx="3.5" style="fill:var(--accent)" />
+        </g>
+      </symbol>
+    </defs>
+  </svg>
+
   <!-- NAV -->
   <nav>
-    <a href="#" class="nav-logo" style="display:flex;align-items:center;text-decoration:none;">
+    <a href="#" class="nav-logo" style="display:flex;align-items:center;gap:9px;text-decoration:none;">
+      <svg class="bl-mark" style="height:28px;" aria-hidden="true">
+        <use href="#bl-mark" />
+      </svg>
       <span
-        style="font-family:'Outfit',sans-serif;font-size:1.4rem;font-weight:800;background:linear-gradient(to right,#3A86FF,#d400ff,#FF006E);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 6px rgba(212,0,255,0.3));position:relative;z-index:2;">boostLog</span>
-      <img class="turbo-logo-img" src="/static/turbo_logo_clean.png?v=2.0" alt="boostLog"
-        style="width:36px;height:auto;margin-left:-20px;filter:drop-shadow(0 0 8px rgba(255,0,110,0.5));position:relative;z-index:1;flex-shrink:0;" />
+        style="font-family:'Outfit',sans-serif;font-size:1.4rem;font-weight:800;background:var(--brand-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;position:relative;z-index:2;">boostLog</span>
     </a>
     <ul class="nav-links">
       <li><a href="#features">Features</a></li>
       <li><a href="#how">How it works</a></li>
-      <li><a href="#ai">AI Tuner</a></li>
+      <li><a href="#ai">Turbo</a></li>
       <li><a href="#pricing">Pricing</a></li>
       <li><a href="#faq">FAQ</a></li>
     </ul>
     <div class="nav-cta">
+      <button class="theme-toggle" data-theme-toggle aria-label="Toggle light or dark theme">
+        <svg data-theme-icon="dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4">
+          </path>
+        </svg>
+        <svg data-theme-icon="light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
       <a href="/app" class="btn-ghost">Log in</a>
       <a href="/app" class="btn-primary">Try Demo</a>
     </div>
+    <button class="nav-hamburger" id="navHamburger" aria-label="Open navigation" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
   </nav>
+
+  <!-- Mobile nav -->
+  <div class="mobile-nav-overlay" id="mobileNavOverlay" aria-hidden="true"></div>
+  <div class="mobile-nav" id="mobileNav" role="navigation" aria-label="Mobile navigation">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#ai">Turbo</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#faq">FAQ</a>
+    <div class="mobile-nav-divider"></div>
+    <div class="mobile-nav-ctas">
+      <a href="/app" class="btn-ghost">Log in</a>
+      <a href="/app" class="btn-primary">Try Demo</a>
+      <button class="btn-ghost" data-theme-toggle aria-label="Toggle light or dark theme"
+        style="display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">
+        <svg data-theme-icon="dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4">
+          </path>
+        </svg>
+        <svg data-theme-icon="light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <span data-theme-label>Light mode</span>
+      </button>
+    </div>
+  </div>
 
   <!-- HERO -->
   <section class="hero">
-    <div class="hero-badge">AI Tuning Agent · Now in beta</div>
-    <h1>Telemetry that <br /><span class="accent-pink">tunes itself.</span></h1>
-    <p class="hero-sub">The professional datalog analysis suite for high-performance builds. Organize your Garage, pull insights.</p>
-    <div class="hero-ctas">
+    <div class="hero-aurora" aria-hidden="true">
+      <div class="aurora-blob"></div>
+      <div class="aurora-blob"></div>
+      <div class="aurora-blob"></div>
+    </div>
+    <h1 class="hero-animate" style="animation-delay:0.15s">Telemetry that <br /><span class="accent-pink">tunes
+        itself.</span></h1>
+    <p class="hero-sub hero-animate" style="animation-delay:0.3s">The professional datalog analysis suite for
+      high-performance builds. Organize your Garage, pull insights.</p>
+    <div class="hero-ctas hero-animate" style="animation-delay:0.4s">
       <a href="/app" class="btn-primary btn-large">Upload your first log</a>
       <a href="/app" class="btn-ghost btn-large">See live demo</a>
     </div>
-    <p class="hero-footnote">Free forever for personal use. Demo account: demo/demo</p>
+    <p class="hero-footnote hero-animate" style="animation-delay:0.48s">Free forever for personal use. Demo account:
+      demo/demo</p>
 
-    <div class="chart-wrapper">
+    <div class="chart-wrapper hero-animate" style="animation-delay:0.55s">
       <div class="chart-glow"></div>
       <div class="chart-frame">
         <div class="chart-titlebar">
-          <div class="chart-dots">
-            <div class="chart-dot" style="background:#ff5f57"></div>
-            <div class="chart-dot" style="background:#febc2e"></div>
-            <div class="chart-dot" style="background:#28c840"></div>
+          <div class="chart-titlebar-left">
+            <div class="chart-dots">
+              <div class="chart-dot" style="background:#ff5f57"></div>
+              <div class="chart-dot" style="background:#febc2e"></div>
+              <div class="chart-dot" style="background:#28c840"></div>
+            </div>
+            <span class="chart-title">datalog_695d8fd8.csv</span>
           </div>
-          <span class="chart-title">datalog_695d8fd8.csv</span>
         </div>
         <div class="chart-legend">
-          <div class="legend-item"><div class="legend-dot" style="background:#3A86FF"></div>Boost [Pre-Throttle]</div>
-          <div class="legend-item"><div class="legend-dot" style="background:rgba(232,49,122,0.7)"></div>Boost Target</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>Lambda / AFR</div>
-          <div class="legend-item"><div class="legend-dot" style="background:rgba(131,56,236,0.8)"></div>Torque clutch</div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#3A86FF"></div>Boost [Pre-Throttle]
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:rgba(232,49,122,0.7)"></div>Boost Target
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#f97316"></div>Lambda / AFR
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:rgba(131,56,236,0.8)"></div>Torque clutch
+          </div>
         </div>
-        <canvas id="heroChart"></canvas>
+        <div class="chart-canvas-wrap">
+          <canvas id="heroChart"></canvas>
+          <div class="chart-hud" id="chartHud">
+            <span class="chart-hud-rpm" id="hudRpm">—</span>
+            <div class="chart-hud-rows" id="hudRows"></div>
+          </div>
+          <div class="chart-redline" id="chartRedline">REDLINE</div>
+        </div>
         <div class="chart-metrics">
-          <div class="metric-cell"><div class="metric-label">Max Boost</div><div class="metric-value">18.4</div><div class="metric-unit">psi</div></div>
-          <div class="metric-cell"><div class="metric-label">Peak RPM</div><div class="metric-value">6800</div><div class="metric-unit">rpm</div></div>
-          <div class="metric-cell"><div class="metric-label">Timing Cor.</div><div class="metric-value" style="color:var(--pink)">-1.4</div><div class="metric-unit">deg</div></div>
-          <div class="metric-cell"><div class="metric-label">Torque</div><div class="metric-value">412</div><div class="metric-unit">Nm</div></div>
-          <div class="metric-cell"><div class="metric-label">Speed</div><div class="metric-value">94</div><div class="metric-unit">mph</div></div>
+          <div class="metric-cell">
+            <div class="metric-label">Max Boost</div>
+            <div class="metric-value" data-count-target="18.4" data-count-decimals="1">18.4</div>
+            <div class="metric-unit">psi</div>
+          </div>
+          <div class="metric-cell">
+            <div class="metric-label">Peak RPM</div>
+            <div class="metric-value" data-count-target="6800">6800</div>
+            <div class="metric-unit">rpm</div>
+          </div>
+          <div class="metric-cell">
+            <div class="metric-label">Timing Cor.</div>
+            <div class="metric-value" style="color:var(--pink)" data-count-target="-1.4" data-count-decimals="1">-1.4
+            </div>
+            <div class="metric-unit">deg</div>
+          </div>
+          <div class="metric-cell">
+            <div class="metric-label">Torque</div>
+            <div class="metric-value" data-count-target="412">412</div>
+            <div class="metric-unit">Nm</div>
+          </div>
+          <div class="metric-cell">
+            <div class="metric-label">Speed</div>
+            <div class="metric-value" data-count-target="94">94</div>
+            <div class="metric-unit">mph</div>
+          </div>
         </div>
       </div>
     </div>
@@ -94,15 +200,81 @@
     <div class="features-header">
       <p class="section-label" style="display: inline-block;">Features</p>
       <h2>Everything in your log,<br />finally readable.</h2>
-      <p class="section-sub">Extract every bit of horsepower using data, not guesswork. Built for professional tuners and serious enthusiasts.</p>
+      <p class="section-sub">Extract every bit of horsepower using data, not guesswork. Built for professional tuners
+        and serious enthusiasts.</p>
     </div>
     <div class="features-grid">
-      <div class="feature-card"><div class="feature-icon">📈</div><h3>Interactive Plots</h3><p>Toggle every PID and overlay them on a fast, scrubbable chart. Isolate pulls with precision.</p></div>
-      <div class="feature-card"><div class="feature-icon">🤖</div><h3>AI Tuning Agent</h3><p>Get plain-English analysis and concrete map suggestions based on your specific run geometry.</p></div>
-      <div class="feature-card"><div class="feature-icon">⚡</div><h3>Session Metrics</h3><p>Auto-extracted Max Boost, Peak RPM, Timing Corrections, Fueling Deviations & more.</p></div>
-      <div class="feature-card"><div class="feature-icon">🔔</div><h3>Anomalies</h3><p>Instantly see knock events, lean spikes and WGDC oscillations colour-coded by severity.</p></div>
-      <div class="feature-card"><div class="feature-icon">📄</div><h3>Universal CSV</h3><p>Proprietary parser supports MHD, Bootmod3, EcuTek, HP Tuners, COBB and AEM.</p></div>
-      <div class="feature-card"><div class="feature-icon">🔗</div><h3>Share & Sync</h3><p>Send a secure link to your tuner. Compare current runs against your baseline in one click.</p></div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 12h3l2.5-7 4 14 2.5-7H21"></path>
+          </svg>
+        </div>
+        <h3>Interactive Plots</h3>
+        <p>Toggle every PID and overlay them on a fast, scrubbable chart. Isolate pulls with precision.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+            <path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"></path>
+            <circle cx="12" cy="12" r="2.2"></circle>
+          </svg>
+        </div>
+        <h3>Turbo</h3>
+        <p>Get plain-English analysis and concrete map suggestions based on your specific run geometry.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M3.5 18a9 9 0 1 1 17 0"></path>
+            <path d="M12 13l4-3.5"></path>
+            <circle cx="12" cy="13" r="1.4" fill="currentColor" stroke="none"></circle>
+          </svg>
+        </div>
+        <h3>Session Metrics</h3>
+        <p>Auto-extracted Max Boost, Peak RPM, Timing Corrections, Fueling Deviations &amp; more.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path>
+            <path d="M12 9v4"></path>
+            <path d="M12 17h.01"></path>
+          </svg>
+        </div>
+        <h3>Anomalies</h3>
+        <p>Instantly see knock events, lean spikes and WGDC oscillations colour-coded by severity.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path>
+            <path d="M14 2v6h6"></path>
+            <path d="M8 13h2M8 17h2M14 13h2M14 17h2"></path>
+          </svg>
+        </div>
+        <h3>Universal CSV</h3>
+        <p>Proprietary parser supports MHD, Bootmod3, EcuTek, HP Tuners, COBB and AEM.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <circle cx="18" cy="5" r="3"></circle>
+            <circle cx="6" cy="12" r="3"></circle>
+            <circle cx="18" cy="19" r="3"></circle>
+            <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"></path>
+          </svg>
+        </div>
+        <h3>Share &amp; Sync</h3>
+        <p>Send a secure link to your tuner. Compare current runs against your baseline in one click.</p>
+      </div>
     </div>
   </section>
 
@@ -138,7 +310,7 @@
         <div class="step">
           <span class="step-num">03 — ANALYZE</span>
           <h3>Get AI insights</h3>
-          <p>The Tuning Agent recommends map changes — boost target, fuel pressure, and timing cells.</p>
+          <p>Turbo recommends map changes — boost target, fuel pressure, and timing cells.</p>
           <div class="step-visual">
             <span class="hi2">→ Timing pull 2° @ 5800</span><br />
             <span class="hi3">Suggest +1.5% LPFP correction</span><br />
@@ -153,9 +325,10 @@
   <section id="ai">
     <div class="ai-wrapper">
       <div>
-        <p class="section-label">AI Tuning Agent</p>
+        <p class="section-label">Turbo</p>
         <h2>A tuner in<br />your pocket.</h2>
-        <p class="section-sub">Ask questions in plain English. The agent reads your datalog, correlates parameters and gives you actionable map recommendations.</p>
+        <p class="section-sub">Ask questions in plain English. The agent reads your datalog, correlates parameters and
+          gives you actionable map recommendations.</p>
         <ul class="ai-bullets">
           <li>Knock detection across RPM cells</li>
           <li>Fueling drift & LPFP/HPFP correlation</li>
@@ -166,16 +339,18 @@
       </div>
       <div class="ai-chat">
         <div class="ai-chat-header">
-          <span class="ai-chat-title">AI Tuning Agent · Now in beta</span>
+          <span class="ai-chat-title">Turbo · Turbo</span>
           <span class="ai-status">live</span>
         </div>
         <div class="ai-messages">
           <div class="msg-user">Analyze datalog_695d8fd8.csv — focus on the WOT pull at 5800 RPM.</div>
           <div class="msg-ai">
             <strong>boostLog AI</strong><br />
-            Boost target tracking is clean (−0.1 psi avg deviation). I'm seeing <strong style="color:#fbbf24">2° of timing pull at 5800 RPM</strong>. AFR drifts to 11.4 — slightly rich.
+            Boost target tracking is clean (−0.1 psi avg deviation). I'm seeing <strong style="color:#fbbf24">2° of
+              timing pull at 5800 RPM</strong>. AFR drifts to 11.4 — slightly rich.
             <br /><br />
-            Recommend <strong style="color:var(--success)">+1.5% LPFP correction</strong> and pull WGDC by 2% in the 5500–6200 cell.
+            Recommend <strong style="color:var(--success)">+1.5% LPFP correction</strong> and pull WGDC by 2% in the
+            5500–6200 cell.
             <div class="msg-tags">
               <span class="msg-tag">timing-pull</span>
               <span class="msg-tag">afr-rich</span>
@@ -185,7 +360,8 @@
           <div class="msg-user">What about the cold start idle quality?</div>
           <div class="msg-ai">
             <strong>boostLog AI</strong><br />
-            IAT at log start: 14°C. STFT oscillating ±4% for the first 40s — normal cold enrichment. IAC duty cycle stabilises at 2:12. No cold start misfire signatures detected.
+            IAT at log start: 14°C. STFT oscillating ±4% for the first 40s — normal cold enrichment. IAC duty cycle
+            stabilises at 2:12. No cold start misfire signatures detected.
           </div>
         </div>
       </div>
@@ -263,7 +439,8 @@
     <p class="section-label" style="justify-content:center; display:flex">Get started</p>
     <h2>Ready to unlock<br />your tune?</h2>
     <p>Drop your first datalog and let boostLog handle the analysis. Free forever for personal use.</p>
-    <div style="display:flex; gap:0.875rem; justifyContent:center; flexWrap:wrap; justify-content:center; margin-top:2rem">
+    <div
+      style="display:flex; gap:0.875rem; justifyContent:center; flexWrap:wrap; justify-content:center; margin-top:2rem">
       <a href="/app" class="btn-primary btn-large">Upload your first log</a>
       <a href="/app" class="btn-ghost btn-large">See live demo</a>
     </div>
@@ -278,27 +455,33 @@
       </div>
       <div class="faq-item">
         <div class="faq-q"><span>Which dataloggers are supported?</span><span class="faq-icon">+</span></div>
-        <div class="faq-a">We support MHD, Bootmod3, EcuTek, HP Tuners, COBB, AEM and any CSV with standard headers.</div>
+        <div class="faq-a">We support MHD, Bootmod3, EcuTek, HP Tuners, COBB, AEM and any CSV with standard headers.
+        </div>
       </div>
       <div class="faq-item">
         <div class="faq-q"><span>Can I compare multiple logs side-by-side?</span><span class="faq-icon">+</span></div>
-        <div class="faq-a">Yes. Pro users can overlay multiple runs to see exactly how map changes or hardware upgrades affected performance curves.</div>
+        <div class="faq-a">Yes. Pro users can overlay multiple runs to see exactly how map changes or hardware upgrades
+          affected performance curves.</div>
       </div>
       <div class="faq-item">
         <div class="faq-q"><span>Is my tuning data private?</span><span class="faq-icon">+</span></div>
-        <div class="faq-a">Yes. Your logs are private to your account. We never share or sell any tune configurations.</div>
+        <div class="faq-a">Yes. Your logs are private to your account. We never share or sell any tune configurations.
+        </div>
       </div>
       <div class="faq-item">
         <div class="faq-q"><span>Do you support custom PID mapping?</span><span class="faq-icon">+</span></div>
-        <div class="faq-a">Our proprietary parser handles 400+ standard PIDs. Custom PIDs can be mapped via our Tuner Garage API.</div>
+        <div class="faq-a">Our proprietary parser handles 400+ standard PIDs. Custom PIDs can be mapped via our Tuner
+          Garage API.</div>
       </div>
       <div class="faq-item">
-        <div class="faq-q"><span>Does the AI Tuner replace a human?</span><span class="faq-icon">+</span></div>
-        <div class="faq-a">No. It's a second pair of eyes that correlates data faster than a human, but map changes should always be verified by a professional.</div>
+        <div class="faq-q"><span>Does the Turbo replace a human?</span><span class="faq-icon">+</span></div>
+        <div class="faq-a">No. It's a second pair of eyes that correlates data faster than a human, but map changes
+          should always be verified by a professional.</div>
       </div>
       <div class="faq-item">
         <div class="faq-q"><span>Is there a mobile app?</span><span class="faq-icon">+</span></div>
-        <div class="faq-a">We are a mobile-first web app. You can upload and analyze logs directly from your phone's browser at the track.</div>
+        <div class="faq-a">We are a mobile-first web app. You can upload and analyze logs directly from your phone's
+          browser at the track.</div>
       </div>
     </div>
   </section>
@@ -315,28 +498,33 @@
       </div>
     </div>
     <div class="tweak-row">
-       <span class="tweak-label">Grid Spacing</span>
-       <div class="tweak-options">
-         <div class="tweak-opt" data-key="density" data-value="compact">Compact</div>
-         <div class="tweak-opt" data-key="density" data-value="comfortable">Comfortable</div>
-       </div>
+      <span class="tweak-label">Grid Spacing</span>
+      <div class="tweak-options">
+        <div class="tweak-opt" data-key="density" data-value="compact">Compact</div>
+        <div class="tweak-opt" data-key="density" data-value="comfortable">Comfortable</div>
+      </div>
     </div>
     <div class="tweak-toggle">
-       <span class="tweak-label">Show Badges</span>
-       <div class="toggle-switch"><div class="toggle-knob"></div></div>
+      <span class="tweak-label">Show Badges</span>
+      <div class="toggle-switch">
+        <div class="toggle-knob"></div>
+      </div>
     </div>
   </div>
 
   <footer>
-    <div class="footer-logo" style="display:flex; align-items:center">
-      <span style="font-family:'Outfit',sans-serif; fontSize:1.1rem; font-weight:800; background:linear-gradient(to right,#3A86FF,#d400ff,#FF006E); -webkit-background-clip:text; -webkit-text-fill-color:transparent; position:relative; z-index:2">boostLog</span>
-      <img class="turbo-logo-img" src="/static/turbo_logo_clean.png?v=2.0" alt="boostLog" style="width:28px; height:auto; margin-left:-16px; filter:drop-shadow(0 0 6px rgba(255,0,110,0.5)); position:relative; z-index:1; flex-shrink:0" />
-      <span style="color:var(--muted); font-size:0.75rem; margin-left:0.5rem">// datalogs that tune themselves</span>
+    <div class="footer-logo" style="display:flex; align-items:center; gap:8px">
+      <svg class="bl-mark" style="height:24px;" aria-hidden="true">
+        <use href="#bl-mark" />
+      </svg>
+      <span
+        style="font-family:'Outfit',sans-serif; font-size:1.1rem; font-weight:800; background:var(--brand-grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; position:relative; z-index:2">boostLog</span>
+      <span style="color:var(--muted); font-size:0.75rem; margin-left:0.25rem">// datalogs that tune themselves</span>
     </div>
     <div class="footer-links">
       <a href="#features">Features</a>
       <a href="#how">How it works</a>
-      <a href="#ai">AI Tuner</a>
+      <a href="#ai">Turbo</a>
       <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
       <a href="/app">Login</a>
@@ -344,7 +532,7 @@
     <span class="footer-copy">© 2026 boostLog</span>
   </footer>
 
-  <script type="module" src="/static/landing/main.js"></script>
+  <script type="module" src="/static/landing/main.js?v=2.1"></script>
 </body>
 
 </html>

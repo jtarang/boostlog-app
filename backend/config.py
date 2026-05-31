@@ -48,3 +48,10 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
 
 GITHUB_CLIENT_ID = aws_secrets.get("GITHUB_CLIENT_ID") or os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = aws_secrets.get("GITHUB_CLIENT_SECRET") or os.getenv("GITHUB_CLIENT_SECRET")
+
+# Feature flags per username. Add a username → list[str] entry to grant flags.
+# The list is embedded in the JWT so no extra DB call is needed on each request.
+# Supported flags: "palette_switcher"
+FEATURE_FLAGS: dict[str, list[str]] = {
+    "jtarang": ["palette_switcher"],
+}

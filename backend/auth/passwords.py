@@ -10,6 +10,7 @@ from backend.auth.core import (
     create_access_token,
     get_current_user,
     get_password_hash,
+    get_user_features,
     verify_password,
 )
 from backend.config import RP_ID
@@ -44,7 +45,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     if not user or not user.hashed_password or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect username or password")
 
-    access_token = create_access_token(data={"sub": user.username})
+    access_token = create_access_token(data={"sub": user.username, "features": get_user_features(user.username)})
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -98,5 +99,5 @@ def change_username(payload: UsernameUpdate, current_user: User = Depends(get_cu
     current_user.username = new_username
     db.commit()
 
-    access_token = create_access_token(data={"sub": current_user.username})
+    access_token = create_access_token(data={"sub": current_user.username, "features": get_user_features(current_user.username)})
     return {"status": "success", "access_token": access_token}

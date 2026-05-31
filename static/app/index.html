@@ -5,12 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>boostlog.app - Boostlog Visualizer</title>
+    <script>try{var d=document.documentElement.dataset;d.theme=localStorage.getItem('bl_theme')||'dark';d.palette=localStorage.getItem('bl_palette')||'violet'}catch(e){document.documentElement.dataset.theme='dark'}</script>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700&display=swap"
         rel="stylesheet">
-    <link rel="icon" type="image/png" href="/static/turbo_logo_clean.png?v=2.0">
-    <link rel="apple-touch-icon" href="/static/turbo_logo_clean.png?v=2.0">
-    <link rel="stylesheet" href="/static/app/styles.css?v=5.5">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="apple-touch-icon" href="/static/logo_boostlog.svg">
+    <link rel="stylesheet" href="/static/app/styles.css?v=6.9">
     <!-- Chart.js for beautiful graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
@@ -22,17 +23,26 @@
 </head>
 
 <body>
+    <!-- Reusable boostLog mark: front bars = currentColor (theme), tall bar = --accent (palette) -->
+    <svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs>
+        <symbol id="bl-mark" viewBox="0 0 60 48">
+            <g transform="translate(12,0) skewX(-12)">
+                <rect x="2" y="28" width="11" height="18" rx="3.5" fill="currentColor"/>
+                <rect x="18" y="16" width="11" height="30" rx="3.5" fill="currentColor"/>
+                <rect x="34" y="2" width="11" height="44" rx="3.5" style="fill:var(--accent)"/>
+            </g>
+        </symbol>
+    </defs></svg>
+
     <!-- Auth Overlay -->
     <div id="authOverlay" class="auth-overlay">
         <div class="auth-card">
             <div class="brand"
-                style="justify-content: center; margin-bottom: 24px; width: 100%; display: flex; align-items: center;">
+                style="justify-content: center; margin-bottom: 24px; width: 100%; display: flex; align-items: center; gap: 12px;">
+                <svg class="bl-mark" style="height: 44px;" aria-hidden="true"><use href="#bl-mark"/></svg>
                 <h1 class="brand-text"
-                    style="font-size: 40px; margin-right: 0; margin-bottom: 0; font-weight: 800; background: linear-gradient(to right, #3A86FF, #d400ff, #FF006E); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 8px rgba(212,0,255,0.4)); position: relative; z-index: 2;">
+                    style="font-size: 40px; margin: 0; font-weight: 800; background: var(--brand-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; position: relative; z-index: 2;">
                     boostLog</h1>
-                <img src="/static/turbo_logo_clean.png?v=2.0" class="brand-logo"
-                    style="width: 64px; height: auto; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255,0,110,0.5)); flex-shrink: 0; position: relative; z-index: 1; margin-left: -38px;"
-                    alt="Turbo Logo">
             </div>
             <div class="auth-tabs">
                 <button type="button" class="tab active" data-action="switchAuthTab" data-mode="login">Login</button>
@@ -69,8 +79,9 @@
                 
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
                     <button type="submit" class="btn-primary" id="authSubmitBtn">Login</button>
-                    <button type="button" id="btnPasskeyLogin" class="btn-secondary" data-action="loginWithPasskey" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: var(--text-primary); font-size: 13px; font-weight: 600;">
-                        🔑 Sign in with Passkey
+                    <button type="button" id="btnPasskeyLogin" class="btn-secondary" data-action="loginWithPasskey" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: var(--text-primary); font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="m21 2-9.6 9.6"></path><path d="m15.5 7.5 3 3L22 7l-3-3"></path></svg>
+                        Sign in with Passkey
                     </button>
                     <a href="#" data-action="openForgotPassword" style="text-align: center; font-size: 12px; color: var(--accent); text-decoration: none;">Forgot password?</a>
                 </div>
@@ -118,12 +129,11 @@
         <button class="hamburger" id="hamburgerBtn" data-action="toggleSidebar">
             <span></span><span></span><span></span>
         </button>
-        <div style="display: flex; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <svg class="bl-mark" style="height: 24px;" aria-hidden="true"><use href="#bl-mark"/></svg>
             <h1
-                style="font-size: 20px; font-weight: 800; background: linear-gradient(to right, #3A86FF, #d400ff, #FF006E); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                style="font-size: 20px; font-weight: 800; background: var(--brand-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                 boostLog</h1>
-            <img src="/static/turbo_logo_clean.png?v=2.0" style="width: 28px; height: auto; margin-left: -16px;"
-                alt="Logo">
         </div>
         <div style="width: 36px;"></div>
     </div>
@@ -135,19 +145,15 @@
         <aside class="sidebar" id="sidebar">
             <div class="brand" style="width: 100%; display: flex; align-items: center; justify-content: space-between;">
                 <!-- Expanded: full lockup -->
-                <div class="sidebar-expanded-only" style="display: flex; align-items: center; margin-left: -4px;">
+                <div class="sidebar-expanded-only" style="display: flex; align-items: center; gap: 10px;">
+                    <svg class="bl-mark" style="height: 30px;" aria-hidden="true"><use href="#bl-mark"/></svg>
                     <h1 class="brand-text sidebar-text"
-                        style="font-size: 28px; margin-right: 0; margin-bottom: 0; font-weight: 800; background: linear-gradient(to right, #3A86FF, #d400ff, #FF006E); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 6px rgba(212,0,255,0.4)); position: relative; z-index: 2;">
+                        style="font-size: 28px; margin: 0; font-weight: 800; background: var(--brand-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; position: relative; z-index: 2;">
                         boostLog</h1>
-                    <img src="/static/turbo_logo_clean.png?v=2.0" class="brand-logo"
-                        style="width: 44px; height: auto; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255,0,110,0.5)); flex-shrink: 0; position: relative; z-index: 1; margin-left: -26px;"
-                        alt="Turbo Logo">
                 </div>
-                <!-- Collapsed: turbo icon only -->
+                <!-- Collapsed: mark only -->
                 <div class="sidebar-collapsed-only" style="display: none; cursor: pointer;" data-action="collapseSidebar">
-                    <img src="/static/turbo_logo_clean.png?v=2.0"
-                        style="width: 40px; height: auto; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255,0,110,0.5));"
-                        alt="boostLog">
+                    <svg class="bl-mark" style="height: 30px;" aria-hidden="true"><use href="#bl-mark"/></svg>
                 </div>
                 <button class="sidebar-collapse-btn sidebar-expanded-only" id="sidebarCollapseBtn"
                     data-action="collapseSidebar" title="Collapse sidebar">
@@ -232,6 +238,17 @@
                     </div>
                 </div>
 
+                <button type="button" class="theme-toggle" data-action="toggleTheme" title="Toggle light / dark">
+                    <svg data-theme-icon="dark" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="4"></circle>
+                        <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+                    </svg>
+                    <svg data-theme-icon="light" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <span class="sidebar-expanded-only">Theme</span>
+                </button>
+
                 <button type="button" class="logout-btn" data-action="logout" title="Logout" style="width: 100%; justify-content: center; background: rgba(255, 0, 110, 0.08); border: 1px solid rgba(255, 0, 110, 0.2);">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -249,7 +266,7 @@
         <main class="main-content">
             <!-- Library View -->
             <section class="library-view" id="libraryView">
-                <header class="library-header view-hero" style="background-image: linear-gradient(rgba(15, 15, 17, 0.7), rgba(15, 15, 17, 0.9)), url('/static/datalogs_hero.png');">
+                <header class="library-header view-hero" style="background-image: url('/static/datalogs_hero.png');">
                     <div class="hero-text">
                         <div class="hero-title-row">
                             <svg class="hero-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -353,6 +370,36 @@
                         </div>
                     </div>
 
+                    <div class="settings-card" id="appearanceSettingsCard">
+                        <h3>Appearance</h3>
+                        <div class="input-group">
+                            <label>Color Palette</label>
+                            <p style="font-size: 12px; color: var(--text-secondary); margin: -2px 0 8px;">Applies instantly across the app. Try each with light and dark mode.</p>
+                            <div class="palette-picker">
+                                <button type="button" class="palette-swatch" data-action="setPalette" data-palette-swatch="original">
+                                    <span class="palette-swatch-bar" style="background: linear-gradient(to right, #3A86FF, #d400ff, #FF006E);"></span>
+                                    <span class="palette-swatch-name">Original</span>
+                                    <span class="palette-swatch-tag">Neon</span>
+                                </button>
+                                <button type="button" class="palette-swatch" data-action="setPalette" data-palette-swatch="blue">
+                                    <span class="palette-swatch-bar" style="background: linear-gradient(to right, #2563EB, #4F46E5);"></span>
+                                    <span class="palette-swatch-name">Instrument Blue</span>
+                                    <span class="palette-swatch-tag">Enterprise</span>
+                                </button>
+                                <button type="button" class="palette-swatch" data-action="setPalette" data-palette-swatch="violet">
+                                    <span class="palette-swatch-bar" style="background: linear-gradient(to right, #6D28D9, #4F46E5);"></span>
+                                    <span class="palette-swatch-name">Mature Violet</span>
+                                    <span class="palette-swatch-tag">Enterprise</span>
+                                </button>
+                                <button type="button" class="palette-swatch" data-action="setPalette" data-palette-swatch="graphite">
+                                    <span class="palette-swatch-bar" style="background: linear-gradient(to right, #4F46E5, #6366F1);"></span>
+                                    <span class="palette-swatch-name">Graphite</span>
+                                    <span class="palette-swatch-tag">Minimal</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="settings-card">
                         <h3>Account & Security</h3>
                         <div class="settings-grid">
@@ -365,8 +412,9 @@
                             </div>
                             <div class="input-group">
                                 <label>Passkeys / Biometrics</label>
-                                <button class="btn-secondary" data-action="registerPasskey" style="background: rgba(131, 56, 236, 0.1); border: 1px solid var(--accent); color: var(--accent); font-weight: 600;">
-                                    ➕ Add a Passkey
+                                <button class="btn-secondary" data-action="registerPasskey" style="background: rgba(131, 56, 236, 0.1); border: 1px solid var(--accent); color: var(--accent); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    Add a Passkey
                                 </button>
                                 <div id="passkeyList" style="margin-top: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 6px;"></div>
                             </div>
@@ -385,7 +433,7 @@
                                 <span id="usageLabel" style="color: var(--text-primary); font-weight: 600;">-- / --</span>
                             </div>
                             <div id="usageBar" style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
-                                <div style="height: 100%; background: linear-gradient(to right, #3A86FF, #d400ff, #FF006E); width: 0%; transition: width 0.3s;" id="usageBarFill"></div>
+                                <div style="height: 100%; background: var(--brand-grad); width: 0%; transition: width 0.3s;" id="usageBarFill"></div>
                             </div>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
@@ -421,7 +469,7 @@
 
             <!-- Garage View (All Builds) -->
             <section class="builds-view" id="buildsView" style="display: none;">
-                <header class="library-header view-hero" style="background-image: linear-gradient(rgba(15, 15, 17, 0.7), rgba(15, 15, 17, 0.9)), url('/static/garage_hero.png');">
+                <header class="library-header view-hero" style="background-image: url('/static/garage_hero.png');">
                     <div class="hero-text">
                         <div class="hero-title-row">
                             <svg class="hero-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -484,6 +532,7 @@
                             </button>
                         </div>
                     </div>
+                    <div class="chart-legend" id="chartLegend"></div>
                     <div class="chart-container" id="chartContainer">
                         <canvas id="mainChart"></canvas>
                         <div class="empty-chart-overlay" id="chartOverlay">
@@ -569,8 +618,14 @@
     </div>
 
     <!-- Floating AI Button -->
-    <button class="fab-ai" id="fabAi" disabled data-action="toggleAiDrawer">
-        <img src="/static/turbo_logo_clean.png?v=2.0" alt="AI Tuner">
+    <button class="fab-ai" id="fabAi" disabled data-action="toggleAiDrawer" aria-label="Turbo AI">
+        <svg class="fab-mark" viewBox="0 0 60 48" aria-hidden="true">
+            <g transform="translate(12,0) skewX(-12)">
+                <rect x="2"  y="28" width="11" height="18" rx="3.5" fill="currentColor" opacity="0.75"/>
+                <rect x="18" y="16" width="11" height="30" rx="3.5" fill="currentColor" opacity="0.9"/>
+                <rect x="34" y="2"  width="11" height="44" rx="3.5" fill="currentColor"/>
+            </g>
+        </svg>
     </button>
 
     <!-- AI Drawer Overlay -->
@@ -580,9 +635,9 @@
     <div class="ai-drawer" id="aiDrawer">
         <div class="ai-drawer-resizer" id="aiDrawerResizer"></div>
         <div class="ai-drawer-header">
-            <h3>
-                <img src="/static/turbo_logo_clean.png?v=2.0" style="width: 24px; height: 24px;" alt="">
-                AI Tuning Agent
+            <h3 style="display:flex; align-items:center; gap:8px;">
+                <svg class="bl-mark" style="height:22px; color:var(--accent);" aria-hidden="true"><use href="#bl-mark"/></svg>
+                Turbo
             </h3>
             <div style="display: flex; align-items: center; gap: 12px;">
                 <div id="aiUsageContainer" class="ai-usage-pill" title="Monthly Token Usage">
@@ -629,7 +684,10 @@
         <div class="modal-content modal-large garage-modal">
             <div class="modal-header garage-modal-header">
                 <div>
-                    <h2>🏁 New Build</h2>
+                    <h2 style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+                        New Build
+                    </h2>
                     <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Add a vehicle to your Garage</p>
                 </div>
                 <button class="btn-close-modal" data-action="closeNewBuildModal">×</button>
@@ -644,10 +702,10 @@
                         <label>Status</label>
                         <select id="newBuildStatus" class="select-modern">
                             <option value="">Auto-detect</option>
-                            <option value="active">🟢 Active</option>
-                            <option value="in_progress">🟡 In Progress</option>
-                            <option value="on_hold">⏸️ On Hold</option>
-                            <option value="completed">🟣 Completed</option>
+                            <option value="active">Active</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="on_hold">On Hold</option>
+                            <option value="completed">Completed</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -670,7 +728,10 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" data-action="closeNewBuildModal">Cancel</button>
-                <button class="btn-primary" data-action="submitNewBuild">🏁 Add to Garage</button>
+                <button class="btn-primary" data-action="submitNewBuild" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+                    Add to Garage
+                </button>
             </div>
         </div>
     </div>
@@ -754,7 +815,10 @@
         <div class="modal-content modal-small garage-modal">
             <div class="modal-header garage-modal-header">
                 <div>
-                    <h2>📦 Move to Build</h2>
+                    <h2 style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4 7.5 4.21"></path><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><path d="M3.27 6.96 12 12.01l8.73-5.05"></path><path d="M12 22.08V12"></path></svg>
+                        Move to Build
+                    </h2>
                     <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Assign log(s) to a different build</p>
                 </div>
                 <button class="btn-close-modal" data-action="closeMoveLogsModal">×</button>
@@ -768,7 +832,10 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" data-action="closeMoveLogsModal">Cancel</button>
-                <button class="btn-primary" data-action="submitMoveLogs">🚀 Execute Move</button>
+                <button class="btn-primary" data-action="submitMoveLogs" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    Execute Move
+                </button>
             </div>
         </div>
     </div>
@@ -779,7 +846,10 @@
         <div class="modal-content modal-large garage-modal">
             <div class="modal-header garage-modal-header">
                 <div>
-                    <h2>🔧 Build Details</h2>
+                    <h2 style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                        Build Details
+                    </h2>
                     <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Edit vehicle info and tuning notes</p>
                 </div>
                 <button class="btn-close-modal" data-action="closeBuildDetails">×</button>
@@ -794,10 +864,10 @@
                         <label>Status Override</label>
                         <select id="detStatus" class="select-modern">
                             <option value="">Auto-detect</option>
-                            <option value="active">🟢 Active</option>
-                            <option value="in_progress">🟡 In Progress</option>
-                            <option value="on_hold">⏸️ On Hold</option>
-                            <option value="completed">🟣 Completed</option>
+                            <option value="active">Active</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="on_hold">On Hold</option>
+                            <option value="completed">Completed</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -820,7 +890,10 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" data-action="closeBuildDetails">Cancel</button>
-                <button class="btn-primary" data-action="saveBuildDetails">💾 Save Changes</button>
+                <button class="btn-primary" data-action="saveBuildDetails" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Save Changes
+                </button>
             </div>
         </div>
     </div>
@@ -863,7 +936,7 @@
         </div>
     </div>
 
-    <script type="module" src="/static/app/main.js?v=5.8"></script>
+    <script type="module" src="/static/app/main.js?v=6.2"></script>
 </body>
 
 </html>

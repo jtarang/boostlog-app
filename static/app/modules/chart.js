@@ -1,5 +1,56 @@
 import { state, lineColors } from './state.js';
 
+// Match Chart.js canvas font to the app's Inter body font stack.
+Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.font.size   = 12;
+
+// Re-render the chart when the theme flips so canvas colors track CSS.
+window.addEventListener('themechange', () => {
+    if (state.currentChart) renderChart();
+});
+
+// Theme-aware colors for the canvas (grid / ticks / tooltip / crosshair)
+function chartTheme() {
+    const light = document.documentElement.dataset.theme === 'light';
+    return {
+        grid: light ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.04)',
+        ticks: light ? 'rgba(15, 23, 42, 0.55)' : 'rgba(255, 255, 255, 0.3)',
+        crosshair: light ? 'rgba(15, 23, 42, 0.45)' : 'rgba(255, 255, 255, 0.4)',
+        tooltipBg: light ? 'rgba(255, 255, 255, 0.97)' : 'rgba(15, 15, 17, 0.95)',
+        tooltipBody: light ? '#0f172a' : '#ffffff',
+        tooltipBorder: light ? 'rgba(15, 23, 42, 0.12)' : 'rgba(255,255,255,0.08)',
+    };
+}
+
+// Builds the custom HTML legend under the chart header. Clicking an item
+// removes that series (unchecks the matching parameter toggle).
+function renderLegend(items) {
+    const legend = document.getElementById('chartLegend');
+    if (!legend) return;
+    if (!items.length) { legend.innerHTML = ''; return; }
+
+    legend.innerHTML = items.map(it => `
+        <button class="chart-legend-item" data-header="${it.header.replace(/"/g, '&quot;')}">
+            <span class="chart-legend-dot" style="background:${it.color}; --dot-glow:${it.color}66"></span>
+            ${it.header}${it.val !== null ? ` <span class="chart-legend-val">${it.val}</span>` : ''}
+        </button>
+    `).join('') + '<span class="chart-legend-hint">click to hide</span>';
+
+    legend.querySelectorAll('.chart-legend-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const header = btn.dataset.header;
+            const cb = document.querySelector(`#paramToggles input[value="${CSS.escape(header)}"]`);
+            if (!cb) return;
+            cb.checked = false;
+            const lbl = cb.parentElement;
+            lbl.style.borderColor = 'var(--border-color)';
+            lbl.querySelector('span').style.color = 'inherit';
+            document.getElementById('paramToggles').appendChild(lbl);
+            renderChart();
+        });
+    });
+}
+
 export function processDataForGraph() {
     const chartOverlay = document.getElementById('chartOverlay');
     const xAxisSelect = document.getElementById('xAxisSelect');
@@ -156,11 +207,14 @@ export function renderChart() {
         'y-hp':     { color: '#FF7000', label: 'FUEL (HIGH)',    position: 'right' },
     };
 
+    const t = chartTheme();
+    const legendItems = [];
+
     const stackPrimaryAxis = {};
     const scalesConfig = {
         x: {
-            grid: { color: 'rgba(255, 255, 255, 0.04)' },
-            ticks: { color: 'rgba(255, 255, 255, 0.3)', maxTicksLimit: 12 }
+            grid: { color: t.grid },
+            ticks: { color: t.ticks, maxTicksLimit: 12 }
         }
     };
 
@@ -205,20 +259,24 @@ export function renderChart() {
             type: 'linear',
             display: isPrimary,
             position: meta.position,
-            grid: isPrimary ? { color: 'rgba(255, 255, 255, 0.04)' } : { drawOnChartArea: false },
+            grid: isPrimary ? { color: t.grid } : { drawOnChartArea: false },
             ticks: isPrimary ? { color: meta.color } : { display: false },
             title: isPrimary
-                ? { display: true, text: meta.label, font: { size: 10, weight: 'bold' } }
+                ? { display: true, text: meta.label, font: { size: 10, weight: '700', family: "'Inter', system-ui, sans-serif" } }
                 : { display: false },
             ...(suggestedMin !== undefined ? { suggestedMin, suggestedMax } : {})
         };
 
         const isWhole = lh.includes('rpm') || isHighPress || lh.includes('speed');
+        let peakLabel = null;
         if (validVals.length > 0) {
             const maxVal = Math.max(...validVals);
+            peakLabel = maxVal.toFixed(isWhole ? 0 : 1);
             const span = cb.parentElement.querySelector('span');
-            if (span) span.textContent = `${header} ↗ ${maxVal.toFixed(isWhole ? 0 : 1)}`;
+            if (span) span.textContent = `${header} ↗ ${peakLabel}`;
         }
+
+        legendItems.push({ header, color, val: peakLabel });
 
         datasets.push({
             label: header,
@@ -247,7 +305,7 @@ export function renderChart() {
                 ctx.moveTo(x, chart.chartArea.top);
                 ctx.lineTo(x, chart.chartArea.bottom);
                 ctx.lineWidth = 1;
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.strokeStyle = t.crosshair;
                 ctx.stroke();
                 ctx.restore();
             }
@@ -265,10 +323,11 @@ export function renderChart() {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: 'rgba(15, 15, 17, 0.95)',
+                    backgroundColor: t.tooltipBg,
                     titleColor: '#8338EC',
+                    bodyColor: t.tooltipBody,
                     padding: 12,
-                    borderColor: 'rgba(255,255,255,0.08)',
+                    borderColor: t.tooltipBorder,
                     borderWidth: 1,
                     bodySpacing: 4
                 },
@@ -277,6 +336,8 @@ export function renderChart() {
             scales: scalesConfig
         }
     });
+
+    renderLegend(legendItems);
 }
 
 export function toggleAllParams(checked) {

@@ -6,12 +6,16 @@ from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from backend.config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
+from backend.config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, FEATURE_FLAGS, SECRET_KEY
 from backend.db import get_db
 from backend.models import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+def get_user_features(username: str) -> list[str]:
+    return FEATURE_FLAGS.get(username, [])
 
 
 def verify_password(plain_password, hashed_password):

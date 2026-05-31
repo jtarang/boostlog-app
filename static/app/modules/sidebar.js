@@ -99,7 +99,7 @@ function renderLogItem(log, hasAnalysis, selectId) {
     li.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
             <span style="display:flex; align-items:center; gap:6px; overflow:hidden; flex: 1;">
-                <span>📊</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M3 12h3l2.5-7 4 14 2.5-7H21"></path></svg>
                 <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${log.name}</span>
             </span>
             <div style="display:flex; align-items:center; gap:4px;">

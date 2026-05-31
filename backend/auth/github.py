@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from backend import config
-from backend.auth.core import create_access_token
+from backend.auth.core import create_access_token, get_user_features
 from backend.db import get_db
 from backend.models import User
 
@@ -64,7 +64,7 @@ async def github_callback(code: str, db: Session = Depends(get_db)):
             db.commit()
             db.refresh(user)
 
-        local_token = create_access_token(data={"sub": user.username})
+        local_token = create_access_token(data={"sub": user.username, "features": get_user_features(user.username)})
 
         html_content = f'''
         <html>

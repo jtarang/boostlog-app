@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 130" preserveAspectRatio="xMaxYMid meet">
+  <!-- Grid lines -->
+  <g stroke="currentColor" stroke-width="1" fill="none">
+    <line x1="0" y1="26" x2="560" y2="26" opacity="0.08"/>
+    <line x1="0" y1="52" x2="560" y2="52" opacity="0.08"/>
+    <line x1="0" y1="78" x2="560" y2="78" opacity="0.08"/>
+    <line x1="0" y1="104" x2="560" y2="104" opacity="0.08"/>
+    <line x1="112" y1="0" x2="112" y2="130" opacity="0.06"/>
+    <line x1="224" y1="0" x2="224" y2="130" opacity="0.06"/>
+    <line x1="336" y1="0" x2="336" y2="130" opacity="0.06"/>
+    <line x1="448" y1="0" x2="448" y2="130" opacity="0.06"/>
+  </g>
+
+  <!-- Boost target — dashed flat line -->
+  <path d="M0,44 L120,43 L560,40" stroke="currentColor" stroke-width="1" stroke-dasharray="5 4" stroke-opacity="0.2" fill="none" stroke-linecap="round"/>
+
+  <!-- Torque clutch trace -->
+  <path d="M0,128 C50,126 88,120 126,106 C156,94 172,72 200,56 C220,44 242,38 268,36 C298,34 332,38 372,46 C410,54 460,68 560,88"
+    stroke="currentColor" stroke-width="1.5" stroke-opacity="0.28" stroke-linecap="round" fill="none"/>
+
+  <!-- Lambda / AFR trace -->
+  <path d="M0,122 C40,120 75,115 108,105 C136,96 150,88 172,82 C196,76 216,76 240,78 C268,80 296,84 330,86 C368,88 420,88 560,90"
+    stroke="currentColor" stroke-width="1" stroke-opacity="0.18" stroke-linecap="round" fill="none"/>
+
+  <!-- Boost spool — accent colour -->
+  <path d="M0,128 C44,127 82,124 118,114 C148,106 165,86 192,62 C212,44 234,34 262,30 C290,26 320,28 358,32 C396,36 454,40 560,44"
+    stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Area fill under boost -->
+  <path d="M0,128 C44,127 82,124 118,114 C148,106 165,86 192,62 C212,44 234,34 262,30 C290,26 320,28 358,32 C396,36 454,40 560,44 L560,130 L0,130 Z"
+    fill="var(--accent)" opacity="0.06"/>
+
+  <!-- Peak highlight dot -->
+  <circle cx="262" cy="30" r="10" fill="var(--accent)" opacity="0.12"/>
+  <circle cx="262" cy="30" r="4.5" fill="var(--accent)" opacity="0.9"/>
+
+  <!-- Scan crosshair at peak -->
+  <line x1="262" y1="0" x2="262" y2="130" stroke="var(--accent)" stroke-width="1" stroke-opacity="0.25" stroke-dasharray="3 3"/>
+</svg>
