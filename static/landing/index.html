@@ -4,20 +4,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>boostLog — Datalogs that tune themselves</title>
-  <script>try { var d = document.documentElement.dataset; d.theme = localStorage.getItem('bl_theme') || 'dark'; d.palette = localStorage.getItem('bl_palette') || 'violet' } catch (e) { document.documentElement.dataset.theme = 'dark' }</script>
+  <title>boostLog — Telemetry that tunes itself</title>
+  <meta name="description"
+    content="The professional datalog analysis suite for high-performance builds. Upload a CSV, explore every channel, get AI map recommendations.">
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   <link rel="apple-touch-icon" href="/static/logo_boostlog.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@700;800&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="/static/landing/styles.css?v=6.8">
+  <link rel="stylesheet" href="/static/landing/styles.css?v=7.3">
+  <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
 </head>
 
 <body>
 
-  <!-- Reusable boostLog mark: front bars = currentColor (theme), tall bar = --accent (palette) -->
+  <!-- Reusable boostLog mark: front bars = currentColor, tall bar = --accent -->
   <svg width="0" height="0" aria-hidden="true" style="position:absolute">
     <defs>
       <symbol id="bl-mark" viewBox="0 0 60 48">
@@ -30,509 +34,564 @@
     </defs>
   </svg>
 
-  <!-- NAV -->
-  <nav>
-    <a href="#" class="nav-logo" style="display:flex;align-items:center;gap:9px;text-decoration:none;">
-      <svg class="bl-mark" style="height:28px;" aria-hidden="true">
-        <use href="#bl-mark" />
-      </svg>
-      <span
-        style="font-family:'Outfit',sans-serif;font-size:1.4rem;font-weight:800;background:var(--brand-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;position:relative;z-index:2;">boostLog</span>
+  <div class="noise" aria-hidden="true"></div>
+
+  <!-- ── NAV ─────────────────────────────────────────────────────── -->
+  <header class="nav" id="nav">
+    <a href="#top" class="nav-logo" aria-label="boostLog home">
+      <svg class="bl-mark" aria-hidden="true"><use href="#bl-mark" /></svg>
+      <span class="nav-wordmark">boost<em>Log</em></span>
     </a>
-    <ul class="nav-links">
-      <li><a href="#features">Features</a></li>
-      <li><a href="#how">How it works</a></li>
-      <li><a href="#ai">Turbo</a></li>
-      <li><a href="#pricing">Pricing</a></li>
-      <li><a href="#faq">FAQ</a></li>
-    </ul>
-    <div class="nav-cta">
-      <button class="theme-toggle" data-theme-toggle aria-label="Toggle light or dark theme">
-        <svg data-theme-icon="dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="4"></circle>
-          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4">
-          </path>
-        </svg>
-        <svg data-theme-icon="light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-        </svg>
-      </button>
-      <a href="/app" class="btn-ghost">Log in</a>
-      <a href="/app" class="btn-primary">Try Demo</a>
+
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#system"><sup>01</sup>System</a>
+      <a href="#features"><sup>02</sup>Features</a>
+      <a href="#how"><sup>03</sup>Workflow</a>
+      <a href="#ai"><sup>04</sup>Turbo</a>
+      <a href="#pricing"><sup>05</sup>Pricing</a>
+      <a href="#faq"><sup>06</sup>FAQ</a>
+    </nav>
+
+    <div class="nav-right">
+      <div class="gearbox" id="gearbox" aria-hidden="true" title="Scroll progress">
+        <span class="gearbox-gear" id="gearLabel">N</span>
+        <span class="gearbox-bar"><span class="gearbox-fill" id="gearFill"></span></span>
+      </div>
+      <a href="/app" class="btn btn-ghost btn-sm"><span>Sign in</span></a>
+      <a href="/app" class="btn btn-primary btn-sm"><span>Launch app</span></a>
     </div>
-    <button class="nav-hamburger" id="navHamburger" aria-label="Open navigation" aria-expanded="false">
-      <span></span><span></span><span></span>
+
+    <button class="nav-burger" id="navBurger" aria-label="Open navigation" aria-expanded="false">
+      <span></span><span></span>
     </button>
-  </nav>
+  </header>
 
   <!-- Mobile nav -->
-  <div class="mobile-nav-overlay" id="mobileNavOverlay" aria-hidden="true"></div>
-  <div class="mobile-nav" id="mobileNav" role="navigation" aria-label="Mobile navigation">
-    <a href="#features">Features</a>
-    <a href="#how">How it works</a>
-    <a href="#ai">Turbo</a>
-    <a href="#pricing">Pricing</a>
-    <a href="#faq">FAQ</a>
-    <div class="mobile-nav-divider"></div>
+  <div class="mobile-nav" id="mobileNav" aria-hidden="true">
+    <nav aria-label="Mobile">
+      <a href="#system"><sup>01</sup>System</a>
+      <a href="#features"><sup>02</sup>Features</a>
+      <a href="#how"><sup>03</sup>Workflow</a>
+      <a href="#ai"><sup>04</sup>Turbo</a>
+      <a href="#pricing"><sup>05</sup>Pricing</a>
+      <a href="#faq"><sup>06</sup>FAQ</a>
+    </nav>
     <div class="mobile-nav-ctas">
-      <a href="/app" class="btn-ghost">Log in</a>
-      <a href="/app" class="btn-primary">Try Demo</a>
-      <button class="btn-ghost" data-theme-toggle aria-label="Toggle light or dark theme"
-        style="display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">
-        <svg data-theme-icon="dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="4"></circle>
-          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4">
-          </path>
-        </svg>
-        <svg data-theme-icon="light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-        </svg>
-        <span data-theme-label>Light mode</span>
-      </button>
+      <a href="/app" class="btn btn-ghost"><span>Sign in</span></a>
+      <a href="/app" class="btn btn-primary"><span>Launch app</span></a>
     </div>
   </div>
 
-  <!-- HERO -->
-  <section class="hero">
-    <div class="hero-aurora" aria-hidden="true">
-      <div class="aurora-blob"></div>
-      <div class="aurora-blob"></div>
-      <div class="aurora-blob"></div>
-    </div>
-    <h1 class="hero-animate" style="animation-delay:0.15s">Telemetry that <br /><span class="accent-pink">tunes
-        itself.</span></h1>
-    <p class="hero-sub hero-animate" style="animation-delay:0.3s">The professional datalog analysis suite for
-      high-performance builds. Organize your Garage, pull insights.</p>
-    <div class="hero-ctas hero-animate" style="animation-delay:0.4s">
-      <a href="/app" class="btn-primary btn-large">Upload your first log</a>
-      <a href="/app" class="btn-ghost btn-large">See live demo</a>
-    </div>
-    <p class="hero-footnote hero-animate" style="animation-delay:0.48s">Free forever for personal use. Demo account:
-      demo/demo</p>
+  <main id="top">
 
-    <div class="chart-wrapper hero-animate" style="animation-delay:0.55s">
-      <div class="chart-glow"></div>
-      <div class="chart-frame">
-        <div class="chart-titlebar">
-          <div class="chart-titlebar-left">
-            <div class="chart-dots">
-              <div class="chart-dot" style="background:#ff5f57"></div>
-              <div class="chart-dot" style="background:#febc2e"></div>
-              <div class="chart-dot" style="background:#28c840"></div>
-            </div>
-            <span class="chart-title">datalog_695d8fd8.csv</span>
-          </div>
+    <!-- ── HERO ──────────────────────────────────────────────────── -->
+    <section class="hero" id="hero">
+      <canvas class="hero-canvas" id="apexScene" aria-hidden="true"></canvas>
+      <div class="hero-fade" aria-hidden="true"></div>
+
+      <div class="hero-hud" aria-hidden="true">
+        <span class="hud-corner hud-tl"></span>
+        <span class="hud-corner hud-tr"></span>
+        <span class="hud-corner hud-bl"></span>
+        <span class="hud-corner hud-br"></span>
+        <div class="hud-item hud-pos-tl"><span class="hud-led"></span>REC — RUN_695D8FD8.CSV</div>
+        <div class="hud-item hud-pos-tr">100 HZ / 48 CH</div>
+        <div class="hud-item hud-pos-bl">SURFACE: BOOST_TARGET_3D</div>
+        <div class="hud-item hud-pos-br">DYNO CELL 02 — NIGHT SESSION</div>
+      </div>
+
+      <div class="hero-core">
+        <div class="start-lights" id="startLights" aria-hidden="true">
+          <span class="start-light"></span>
+          <span class="start-light"></span>
+          <span class="start-light"></span>
+          <span class="start-light"></span>
+          <span class="start-light"></span>
         </div>
-        <div class="chart-legend">
-          <div class="legend-item">
-            <div class="legend-dot" style="background:#3A86FF"></div>Boost [Pre-Throttle]
-          </div>
-          <div class="legend-item">
-            <div class="legend-dot" style="background:rgba(232,49,122,0.7)"></div>Boost Target
-          </div>
-          <div class="legend-item">
-            <div class="legend-dot" style="background:#f97316"></div>Lambda / AFR
-          </div>
-          <div class="legend-item">
-            <div class="legend-dot" style="background:rgba(131,56,236,0.8)"></div>Torque clutch
-          </div>
+        <p class="hero-eyebrow mono" data-flicker>[ DATALOG ANALYSIS SUITE ]</p>
+        <h1 class="hero-title">
+          <span class="line" data-split>Telemetry that</span>
+          <span class="line t-accent" data-split>tunes itself.</span>
+        </h1>
+        <p class="hero-sub" data-rise>The professional datalog suite for high-performance builds.
+          Upload a pull, read every channel, and let Turbo hand you the map changes.</p>
+        <div class="hero-ctas" data-rise>
+          <a href="/app" class="btn btn-primary btn-lg"><span>Upload your first log</span></a>
+          <a href="/app" class="btn btn-ghost btn-lg"><span>See live demo</span></a>
         </div>
-        <div class="chart-canvas-wrap">
-          <canvas id="heroChart"></canvas>
-          <div class="chart-hud" id="chartHud">
+        <p class="hero-note mono" data-rise>FREE FOREVER FOR PERSONAL USE — DEMO LOGIN: demo / demo</p>
+      </div>
+
+      <div class="hero-strip" id="heroStrip">
+        <div class="strip-cell">
+          <span class="strip-label mono">Boost</span>
+          <span class="strip-value mono" id="tickBoost">18.4</span>
+          <span class="strip-unit mono">psi</span>
+        </div>
+        <div class="strip-cell">
+          <span class="strip-label mono">AFR</span>
+          <span class="strip-value mono" id="tickAfr">11.8</span>
+          <span class="strip-unit mono">λ·14.7</span>
+        </div>
+        <div class="strip-cell">
+          <span class="strip-label mono">Engine</span>
+          <span class="strip-value mono" id="tickRpm">6 240</span>
+          <span class="strip-unit mono">rpm</span>
+        </div>
+        <div class="strip-cell">
+          <span class="strip-label mono">IAT</span>
+          <span class="strip-value mono" id="tickIat">31.5</span>
+          <span class="strip-unit mono">°C</span>
+        </div>
+        <div class="strip-cell strip-scroll mono">
+          <span class="scroll-cue">Scroll to spool</span>
+          <span class="scroll-arrow" aria-hidden="true">↓</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── MARQUEE ───────────────────────────────────────────────── -->
+    <div class="marquee" aria-label="Works with every major logger">
+      <div class="marquee-track" id="marqueeTrack">
+        <span class="marquee-set">
+          <i>Works with</i> MHD Tuning <b>//</b> Bootmod3 <b>//</b> EcuTek <b>//</b> HP Tuners <b>//</b>
+          COBB Accessport <b>//</b> AEM <b>//</b> Haltech <b>//</b> Link ECU <b>//</b> Motec <b>//</b>
+        </span>
+      </div>
+    </div>
+
+    <!-- ── SYSTEM / LIVE INSTRUMENT ──────────────────────────────── -->
+    <section id="system" class="sec">
+      <header class="sec-head">
+        <p class="sec-tag mono">SEC.01 — LIVE TELEMETRY</p>
+        <h2 class="sec-title">Every channel.<br>One instrument.</h2>
+        <p class="sec-sub">A fast, scrubbable trace of your entire run — boost, target, lambda and torque
+          overlaid at 100 Hz. Hover the pull to read the cells.</p>
+      </header>
+
+      <div class="instrument ticks" data-rise>
+        <div class="instrument-bar mono">
+          <span class="instrument-id"><span class="hud-led"></span>RUN_695D8FD8.CSV</span>
+          <span class="instrument-meta">48 PARAMS — WOT 02:14 → 02:39</span>
+        </div>
+        <div class="instrument-legend mono" id="telemetryLegend">
+          <span class="leg" style="--c:var(--accent)">Boost [pre-throttle]</span>
+          <span class="leg" style="--c:var(--t-ghost)">Boost target</span>
+          <span class="leg" style="--c:var(--amber)">Lambda / AFR</span>
+          <span class="leg" style="--c:var(--cyan)">Torque @ clutch</span>
+        </div>
+        <div class="instrument-canvas">
+          <canvas id="telemetry"></canvas>
+          <div class="chart-hud mono" id="chartHud">
             <span class="chart-hud-rpm" id="hudRpm">—</span>
             <div class="chart-hud-rows" id="hudRows"></div>
           </div>
-          <div class="chart-redline" id="chartRedline">REDLINE</div>
+          <div class="chart-redline mono" id="chartRedline">REDLINE</div>
         </div>
-        <div class="chart-metrics">
-          <div class="metric-cell">
-            <div class="metric-label">Max Boost</div>
-            <div class="metric-value" data-count-target="18.4" data-count-decimals="1">18.4</div>
-            <div class="metric-unit">psi</div>
+        <div class="instrument-metrics">
+          <div class="metric">
+            <span class="metric-label mono">Max boost</span>
+            <span class="metric-value mono" data-count="18.4" data-decimals="1">0.0</span>
+            <span class="metric-unit mono">psi</span>
           </div>
-          <div class="metric-cell">
-            <div class="metric-label">Peak RPM</div>
-            <div class="metric-value" data-count-target="6800">6800</div>
-            <div class="metric-unit">rpm</div>
+          <div class="metric">
+            <span class="metric-label mono">Peak RPM</span>
+            <span class="metric-value mono" data-count="6800">0</span>
+            <span class="metric-unit mono">rpm</span>
           </div>
-          <div class="metric-cell">
-            <div class="metric-label">Timing Cor.</div>
-            <div class="metric-value" style="color:var(--pink)" data-count-target="-1.4" data-count-decimals="1">-1.4
+          <div class="metric">
+            <span class="metric-label mono">Timing corr.</span>
+            <span class="metric-value mono t-red" data-count="-1.4" data-decimals="1">0.0</span>
+            <span class="metric-unit mono">deg</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label mono">Torque</span>
+            <span class="metric-value mono" data-count="412">0</span>
+            <span class="metric-unit mono">Nm</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label mono">Speed</span>
+            <span class="metric-value mono" data-count="94">0</span>
+            <span class="metric-unit mono">mph</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FEATURES ──────────────────────────────────────────────── -->
+    <section id="features" class="sec">
+      <header class="sec-head">
+        <p class="sec-tag mono">SEC.02 — FEATURES</p>
+        <h2 class="sec-title">Everything in your log,<br>finally readable.</h2>
+        <p class="sec-sub">Extract every bit of horsepower using data, not guesswork.
+          Built for professional tuners and serious enthusiasts.</p>
+      </header>
+
+      <div class="features-grid">
+        <article class="feature ticks span-4" data-card>
+          <span class="feature-num mono">F.01</span>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 12h3l2.5-7 4 14 2.5-7H21"></path>
+            </svg>
+          </div>
+          <h3>Interactive plots</h3>
+          <p>Toggle every PID and overlay them on a fast, scrubbable chart. Isolate pulls with precision and
+            zoom to the exact cell where the run went sideways.</p>
+        </article>
+
+        <article class="feature ticks span-2" data-card>
+          <span class="feature-num mono">F.02</span>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+              <path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"></path>
+              <circle cx="12" cy="12" r="2.2"></circle>
+            </svg>
+          </div>
+          <h3>Turbo</h3>
+          <p>Plain-English analysis and concrete map suggestions based on your specific run geometry.</p>
+        </article>
+
+        <article class="feature ticks span-2" data-card>
+          <span class="feature-num mono">F.03</span>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path d="M3.5 18a9 9 0 1 1 17 0"></path>
+              <path d="M12 13l4-3.5"></path>
+              <circle cx="12" cy="13" r="1.4" fill="currentColor" stroke="none"></circle>
+            </svg>
+          </div>
+          <h3>Session metrics</h3>
+          <p>Auto-extracted max boost, peak RPM, timing corrections, fueling deviations &amp; more.</p>
+        </article>
+
+        <article class="feature ticks span-2" data-card>
+          <span class="feature-num mono">F.04</span>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path>
+              <path d="M12 9v4"></path>
+              <path d="M12 17h.01"></path>
+            </svg>
+          </div>
+          <h3>Anomalies</h3>
+          <p>Knock events, lean spikes and WGDC oscillations colour-coded by severity, the instant the log lands.</p>
+        </article>
+
+        <article class="feature ticks span-2" data-card>
+          <span class="feature-num mono">F.05</span>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path>
+              <path d="M14 2v6h6"></path>
+              <path d="M8 13h2M8 17h2M14 13h2M14 17h2"></path>
+            </svg>
+          </div>
+          <h3>Universal CSV</h3>
+          <p>Proprietary parser supports MHD, Bootmod3, EcuTek, HP Tuners, COBB and AEM out of the box.</p>
+        </article>
+
+        <article class="feature ticks span-4" data-card>
+          <span class="feature-num mono">F.06</span>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"></path>
+            </svg>
+          </div>
+          <h3>Share &amp; sync</h3>
+          <p>Send a secure link to your tuner. Compare current runs against your baseline in one click and
+            keep every build in the Garage.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ── WORKFLOW ──────────────────────────────────────────────── -->
+    <section id="how" class="sec">
+      <header class="sec-head">
+        <p class="sec-tag mono">SEC.03 — WORKFLOW</p>
+        <h2 class="sec-title">From CSV to calibration<br>in 60 seconds.</h2>
+      </header>
+
+      <div class="how">
+        <div class="how-rail" aria-hidden="true"><span class="how-rail-fill" id="howRail"></span></div>
+        <ol class="steps">
+          <li class="step" data-step>
+            <span class="step-ghost mono" aria-hidden="true">01</span>
+            <div class="step-body">
+              <p class="step-tag mono">01 — UPLOAD</p>
+              <h3>Drop your CSV</h3>
+              <p>Drag a datalog from any platform. We parse headers automatically, no manual mapping required.</p>
             </div>
-            <div class="metric-unit">deg</div>
-          </div>
-          <div class="metric-cell">
-            <div class="metric-label">Torque</div>
-            <div class="metric-value" data-count-target="412">412</div>
-            <div class="metric-unit">Nm</div>
-          </div>
-          <div class="metric-cell">
-            <div class="metric-label">Speed</div>
-            <div class="metric-value" data-count-target="94">94</div>
-            <div class="metric-unit">mph</div>
-          </div>
-        </div>
+            <div class="term mono" aria-hidden="true">
+              <div class="term-bar"><span class="term-led"></span>upload.sh</div>
+              <div class="term-body">
+                <span class="t-accent">▲ drop csv</span> or click to browse<br>
+                <span class="t-dim">────────────────────</span><br>
+                <span class="t-accent">✓ datalog_695d8fd8.csv</span><br>
+                <span class="t-dim">48 parameters extracted</span><span class="caret"></span>
+              </div>
+            </div>
+          </li>
+          <li class="step" data-step>
+            <span class="step-ghost mono" aria-hidden="true">02</span>
+            <div class="step-body">
+              <p class="step-tag mono">02 — EXPLORE</p>
+              <h3>Explore the run</h3>
+              <p>Toggle parameters and isolate WOT events. Scrub through the pull with 100 Hz precision.</p>
+            </div>
+            <div class="term mono" aria-hidden="true">
+              <div class="term-bar"><span class="term-led"></span>channels.cfg</div>
+              <div class="term-body">
+                <span class="t-accent">● boost [pre-throttle]</span><br>
+                <span class="t-ghosted">● boost target</span><br>
+                <span class="t-amber">● lambda actual [afr]</span><br>
+                <span class="t-cyan">● torque @ clutch</span><span class="caret"></span>
+              </div>
+            </div>
+          </li>
+          <li class="step" data-step>
+            <span class="step-ghost mono" aria-hidden="true">03</span>
+            <div class="step-body">
+              <p class="step-tag mono">03 — ANALYZE</p>
+              <h3>Get AI insights</h3>
+              <p>Turbo recommends map changes: boost target, fuel pressure, and timing cells.</p>
+            </div>
+            <div class="term mono" aria-hidden="true">
+              <div class="term-bar"><span class="term-led"></span>turbo.out</div>
+              <div class="term-body">
+                <span class="t-amber">→ timing pull 2° @ 5800</span><br>
+                <span class="t-accent">suggest +1.5% lpfp correction</span><br>
+                <span class="t-dim">pull wgdc 2% @ 5500–6200</span><span class="caret"></span>
+              </div>
+            </div>
+          </li>
+        </ol>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- PLATFORMS -->
-  <div class="platforms-bar">
-    <p class="platforms-label">Works with every major logger</p>
-    <div class="platforms-list">
-      <div class="platform-pill">MHD Tuning</div>
-      <div class="platform-pill">Bootmod3</div>
-      <div class="platform-pill">EcuTek</div>
-      <div class="platform-pill">HP Tuners</div>
-      <div class="platform-pill">COBB</div>
-      <div class="platform-pill">AEM</div>
-      <div class="platform-pill">Haltech</div>
-    </div>
-  </div>
+    <!-- ── TURBO AI ──────────────────────────────────────────────── -->
+    <section id="ai" class="sec">
+      <div class="ai-grid">
+        <div class="ai-copy">
+          <p class="sec-tag mono">SEC.04 — TURBO</p>
+          <h2 class="sec-title">A tuner in<br>your pocket.</h2>
+          <p class="sec-sub">Ask questions in plain English. The agent reads your datalog, correlates
+            parameters and gives you actionable map recommendations.</p>
+          <ul class="ai-bullets">
+            <li>Knock detection across RPM cells</li>
+            <li>Fueling drift &amp; LPFP/HPFP correlation</li>
+            <li>WGDC vs target boost analysis</li>
+            <li>Plain-English tuning recommendations</li>
+            <li>Compare before/after map changes</li>
+          </ul>
+        </div>
 
-  <!-- FEATURES -->
-  <section id="features">
-    <div class="features-header">
-      <p class="section-label" style="display: inline-block;">Features</p>
-      <h2>Everything in your log,<br />finally readable.</h2>
-      <p class="section-sub">Extract every bit of horsepower using data, not guesswork. Built for professional tuners
-        and serious enthusiasts.</p>
-    </div>
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round" aria-hidden="true">
-            <path d="M3 12h3l2.5-7 4 14 2.5-7H21"></path>
-          </svg>
-        </div>
-        <h3>Interactive Plots</h3>
-        <p>Toggle every PID and overlay them on a fast, scrubbable chart. Isolate pulls with precision.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round" aria-hidden="true">
-            <rect x="6" y="6" width="12" height="12" rx="2"></rect>
-            <path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"></path>
-            <circle cx="12" cy="12" r="2.2"></circle>
-          </svg>
-        </div>
-        <h3>Turbo</h3>
-        <p>Get plain-English analysis and concrete map suggestions based on your specific run geometry.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round" aria-hidden="true">
-            <path d="M3.5 18a9 9 0 1 1 17 0"></path>
-            <path d="M12 13l4-3.5"></path>
-            <circle cx="12" cy="13" r="1.4" fill="currentColor" stroke="none"></circle>
-          </svg>
-        </div>
-        <h3>Session Metrics</h3>
-        <p>Auto-extracted Max Boost, Peak RPM, Timing Corrections, Fueling Deviations &amp; more.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round" aria-hidden="true">
-            <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path>
-            <path d="M12 9v4"></path>
-            <path d="M12 17h.01"></path>
-          </svg>
-        </div>
-        <h3>Anomalies</h3>
-        <p>Instantly see knock events, lean spikes and WGDC oscillations colour-coded by severity.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round" aria-hidden="true">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path>
-            <path d="M14 2v6h6"></path>
-            <path d="M8 13h2M8 17h2M14 13h2M14 17h2"></path>
-          </svg>
-        </div>
-        <h3>Universal CSV</h3>
-        <p>Proprietary parser supports MHD, Bootmod3, EcuTek, HP Tuners, COBB and AEM.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round" aria-hidden="true">
-            <circle cx="18" cy="5" r="3"></circle>
-            <circle cx="6" cy="12" r="3"></circle>
-            <circle cx="18" cy="19" r="3"></circle>
-            <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"></path>
-          </svg>
-        </div>
-        <h3>Share &amp; Sync</h3>
-        <p>Send a secure link to your tuner. Compare current runs against your baseline in one click.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- HOW IT WORKS -->
-  <section id="how">
-    <div class="how-wrapper">
-      <div class="how-header" style="text-align: center; margin-bottom: 4rem;">
-        <p class="section-label" style="display: inline-block;">How it works</p>
-        <h2 style="margin: 1rem auto;">From CSV to calibration<br />in 60 seconds.</h2>
-      </div>
-      <div class="steps">
-        <div class="step">
-          <span class="step-num">01 — UPLOAD</span>
-          <h3>Drop your CSV</h3>
-          <p>Drag a datalog from any platform. We parse headers automatically — no manual mapping required.</p>
-          <div class="step-visual">
-            <span class="hi">▲ Drop CSV</span> or click to browse<br />
-            <span style="color:var(--muted2)">────────────────────</span><br />
-            <span class="hi">✓ datalog_695d8fd8.csv</span><br />
-            <span style="color:var(--muted2)">48 parameters extracted</span>
+        <div class="ai-term ticks" id="aiTerm" data-rise>
+          <div class="ai-term-bar mono">
+            <span>TURBO // SESSION_042</span>
+            <span class="ai-status"><span class="hud-led"></span>ONLINE</span>
           </div>
-        </div>
-        <div class="step">
-          <span class="step-num">02 — EXPLORE</span>
-          <h3>Explore the run</h3>
-          <p>Toggle parameters and isolate WOT events. Scrub through the pull with 100Hz precision.</p>
-          <div class="step-visual">
-            <span class="hi3">● Boost [Pre-Throttle]</span><br />
-            <span class="hi">● Boost Target</span><br />
-            <span class="hi2">● Lambda Actual [AFR]</span>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">03 — ANALYZE</span>
-          <h3>Get AI insights</h3>
-          <p>Turbo recommends map changes — boost target, fuel pressure, and timing cells.</p>
-          <div class="step-visual">
-            <span class="hi2">→ Timing pull 2° @ 5800</span><br />
-            <span class="hi3">Suggest +1.5% LPFP correction</span><br />
-            <span style="color:var(--muted2)">Pull WGDC 2% @ 5500–6200</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- AI SECTION -->
-  <section id="ai">
-    <div class="ai-wrapper">
-      <div>
-        <p class="section-label">Turbo</p>
-        <h2>A tuner in<br />your pocket.</h2>
-        <p class="section-sub">Ask questions in plain English. The agent reads your datalog, correlates parameters and
-          gives you actionable map recommendations.</p>
-        <ul class="ai-bullets">
-          <li>Knock detection across RPM cells</li>
-          <li>Fueling drift & LPFP/HPFP correlation</li>
-          <li>WGDC vs target boost analysis</li>
-          <li>Plain-English tuning recommendations</li>
-          <li>Compare before/after map changes</li>
-        </ul>
-      </div>
-      <div class="ai-chat">
-        <div class="ai-chat-header">
-          <span class="ai-chat-title">Turbo · Turbo</span>
-          <span class="ai-status">live</span>
-        </div>
-        <div class="ai-messages">
-          <div class="msg-user">Analyze datalog_695d8fd8.csv — focus on the WOT pull at 5800 RPM.</div>
-          <div class="msg-ai">
-            <strong>boostLog AI</strong><br />
-            Boost target tracking is clean (−0.1 psi avg deviation). I'm seeing <strong style="color:#fbbf24">2° of
-              timing pull at 5800 RPM</strong>. AFR drifts to 11.4 — slightly rich.
-            <br /><br />
-            Recommend <strong style="color:var(--success)">+1.5% LPFP correction</strong> and pull WGDC by 2% in the
-            5500–6200 cell.
-            <div class="msg-tags">
-              <span class="msg-tag">timing-pull</span>
-              <span class="msg-tag">afr-rich</span>
-              <span class="msg-tag">wgdc</span>
+          <div class="ai-messages" id="aiMessages">
+            <div class="msg-user" data-type>Analyze datalog_695d8fd8.csv, focus on the WOT pull at 5800 RPM.</div>
+            <div class="msg-ai" data-type>
+              Boost target tracking is clean (−0.1 psi avg deviation). I'm seeing <em class="t-amber">2° of timing
+              pull at 5800 RPM</em>. AFR drifts to 11.4, slightly rich. Recommend <em class="t-accent">+1.5% LPFP
+              correction</em> and pull WGDC by 2% in the 5500–6200 cell.
+              <span class="msg-tags mono"><span>timing-pull</span><span>afr-rich</span><span>wgdc</span></span>
+            </div>
+            <div class="msg-user" data-type>What about the cold start idle quality?</div>
+            <div class="msg-ai" data-type>
+              IAT at log start: 14°C. STFT oscillating ±4% for the first 40s (normal cold enrichment).
+              IAC duty stabilises at 2:12. No cold-start misfire signatures detected.
             </div>
           </div>
-          <div class="msg-user">What about the cold start idle quality?</div>
-          <div class="msg-ai">
-            <strong>boostLog AI</strong><br />
-            IAT at log start: 14°C. STFT oscillating ±4% for the first 40s — normal cold enrichment. IAC duty cycle
-            stabilises at 2:12. No cold start misfire signatures detected.
+          <div class="ai-input mono" aria-hidden="true">
+            <span class="ai-prompt">&gt;</span> ask turbo anything<span class="caret"></span>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- PRICING -->
-  <section id="pricing">
-    <div class="pricing-header" style="text-align: center; margin-bottom: 4rem;">
-      <p class="section-label" style="display: inline-block;">Pricing</p>
-      <h2 style="margin: 1rem auto;">Simple pricing.<br />Serious gains.</h2>
-      <p class="section-sub" style="margin:0 auto">Start free. Upgrade when you're ready to chase numbers.</p>
-    </div>
-    <div class="pricing-grid">
-      <div class="price-card">
-        <div class="price-tier">Free</div>
-        <p style="font-size:0.85rem; color:var(--muted); line-height:1.5">Personal tunes & weekend pulls</p>
-        <div class="price-amount">
-          <span class="price-num">$0</span>
-          <span class="price-period">/ forever</span>
+    <!-- ── PRICING ───────────────────────────────────────────────── -->
+    <section id="pricing" class="sec">
+      <header class="sec-head">
+        <p class="sec-tag mono">SEC.05 — PRICING</p>
+        <h2 class="sec-title">Simple pricing.<br>Serious gains.</h2>
+        <p class="sec-sub">Start free. Upgrade when you're ready to chase numbers.</p>
+      </header>
+
+      <div class="pricing-grid">
+        <article class="price ticks" data-card>
+          <p class="price-tier mono">TIER.01 — FREE</p>
+          <p class="price-for">Personal tunes &amp; weekend pulls</p>
+          <p class="price-amount mono">$0<span>/ forever</span></p>
+          <ul class="price-list">
+            <li>Unlimited CSV uploads</li>
+            <li>Interactive plots &amp; metrics</li>
+            <li>5 AI analyses / month</li>
+            <li>7-day log history</li>
+            <li class="dim">Run comparison</li>
+            <li class="dim">Unlimited history</li>
+          </ul>
+          <a href="/app" class="btn btn-ghost btn-block"><span>Get started free</span></a>
+        </article>
+
+        <article class="price price-featured ticks" data-card>
+          <p class="price-badge mono">★ POLE POSITION</p>
+          <p class="price-tier mono">TIER.02 — PRO</p>
+          <p class="price-for">Enthusiasts chasing every last hp</p>
+          <p class="price-amount mono">$9<span>/ month</span></p>
+          <ul class="price-list">
+            <li>Everything in Free</li>
+            <li>Unlimited AI analyses</li>
+            <li>Compare runs side-by-side</li>
+            <li>Unlimited log history</li>
+            <li>Priority support</li>
+            <li class="dim">Multi-vehicle Garage</li>
+          </ul>
+          <a href="/app" class="btn btn-primary btn-block"><span>Start 14-day trial</span></a>
+        </article>
+
+        <article class="price ticks" data-card>
+          <p class="price-tier mono">TIER.03 — TUNER</p>
+          <p class="price-for">Pro tuners with multiple clients</p>
+          <p class="price-amount mono">$29<span>/ month</span></p>
+          <ul class="price-list">
+            <li>Everything in Pro</li>
+            <li>Multi-vehicle Garage</li>
+            <li>Shared map library</li>
+            <li>API &amp; webhook access</li>
+            <li>White-label sharing</li>
+            <li>Volume discounts</li>
+          </ul>
+          <a href="/app" class="btn btn-ghost btn-block"><span>Talk to sales</span></a>
+        </article>
+      </div>
+    </section>
+
+    <!-- ── FAQ ───────────────────────────────────────────────────── -->
+    <section id="faq" class="sec sec-narrow">
+      <header class="sec-head">
+        <p class="sec-tag mono">SEC.06 — FAQ</p>
+        <h2 class="sec-title">Common questions.</h2>
+      </header>
+
+      <div class="faq-list" id="faqList">
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            <span class="faq-num mono">Q.01</span>
+            <span class="faq-text">Which dataloggers are supported?</span>
+            <span class="faq-icon" aria-hidden="true"></span>
+          </button>
+          <div class="faq-a">
+            <p>We support MHD, Bootmod3, EcuTek, HP Tuners, COBB, AEM and any CSV with standard headers.</p>
+          </div>
         </div>
-        <ul class="price-features" style="margin-top:1.5rem">
-          <li>Unlimited CSV uploads</li>
-          <li>Interactive plots & metrics</li>
-          <li>5 AI analyses / month</li>
-          <li>7-day log history</li>
-          <li class="dim">Run comparison</li>
-          <li class="dim">Unlimited history</li>
-        </ul>
-        <a href="/app" class="btn-outline">Get started free</a>
-      </div>
-
-      <div class="price-card featured">
-        <div class="price-badge">MOST POPULAR</div>
-        <div class="price-tier">Pro</div>
-        <p style="font-size:0.85rem; color:var(--muted); line-height:1.5">Enthusiasts chasing every last hp</p>
-        <div class="price-amount">
-          <span class="price-num">$9</span>
-          <span class="price-period">/ month</span>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            <span class="faq-num mono">Q.02</span>
+            <span class="faq-text">Can I compare multiple logs side-by-side?</span>
+            <span class="faq-icon" aria-hidden="true"></span>
+          </button>
+          <div class="faq-a">
+            <p>Yes. Pro users can overlay multiple runs to see exactly how map changes or hardware upgrades
+              affected performance curves.</p>
+          </div>
         </div>
-        <ul class="price-features" style="margin-top:1.5rem">
-          <li>Everything in Free</li>
-          <li>Unlimited AI analyses</li>
-          <li>Compare runs side-by-side</li>
-          <li>Unlimited log history</li>
-          <li>Priority support</li>
-          <li class="dim">Multi-vehicle Garage</li>
-        </ul>
-        <a href="/app" class="btn-full">Start 14-day trial</a>
-      </div>
-
-      <div class="price-card">
-        <div class="price-tier">Tuner</div>
-        <p style="font-size:0.85rem; color:var(--muted); line-height:1.5">Pro tuners with multiple clients</p>
-        <div class="price-amount">
-          <span class="price-num">$29</span>
-          <span class="price-period">/ month</span>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            <span class="faq-num mono">Q.03</span>
+            <span class="faq-text">Is my tuning data private?</span>
+            <span class="faq-icon" aria-hidden="true"></span>
+          </button>
+          <div class="faq-a">
+            <p>Yes. Your logs are private to your account. We never share or sell any tune configurations.</p>
+          </div>
         </div>
-        <ul class="price-features" style="margin-top:1.5rem">
-          <li>Everything in Pro</li>
-          <li>Multi-vehicle Garage</li>
-          <li>Shared map library</li>
-          <li>API & webhook access</li>
-          <li>White-label sharing</li>
-          <li>Volume discounts</li>
-        </ul>
-        <a href="/app" class="btn-outline">Talk to sales</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA -->
-  <section id="cta" class="cta-section">
-    <div class="cta-glow"></div>
-    <p class="section-label" style="justify-content:center; display:flex">Get started</p>
-    <h2>Ready to unlock<br />your tune?</h2>
-    <p>Drop your first datalog and let boostLog handle the analysis. Free forever for personal use.</p>
-    <div
-      style="display:flex; gap:0.875rem; justifyContent:center; flexWrap:wrap; justify-content:center; margin-top:2rem">
-      <a href="/app" class="btn-primary btn-large">Upload your first log</a>
-      <a href="/app" class="btn-ghost btn-large">See live demo</a>
-    </div>
-  </section>
-
-  <!-- FAQ -->
-  <section id="faq">
-    <div id="faqContainer" class="faq-wrapper">
-      <div class="faq-header" style="text-align: center; margin-bottom: 4rem;">
-        <p class="section-label" style="display: inline-block;">FAQ</p>
-        <h2 style="margin: 1rem auto;">Common Questions</h2>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q"><span>Which dataloggers are supported?</span><span class="faq-icon">+</span></div>
-        <div class="faq-a">We support MHD, Bootmod3, EcuTek, HP Tuners, COBB, AEM and any CSV with standard headers.
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            <span class="faq-num mono">Q.04</span>
+            <span class="faq-text">Do you support custom PID mapping?</span>
+            <span class="faq-icon" aria-hidden="true"></span>
+          </button>
+          <div class="faq-a">
+            <p>Our proprietary parser handles 400+ standard PIDs. Custom PIDs can be mapped via the Tuner
+              Garage API.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            <span class="faq-num mono">Q.05</span>
+            <span class="faq-text">Does Turbo replace a human tuner?</span>
+            <span class="faq-icon" aria-hidden="true"></span>
+          </button>
+          <div class="faq-a">
+            <p>No. It's a second pair of eyes that correlates data faster than a human, but map changes should
+              always be verified by a professional.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            <span class="faq-num mono">Q.06</span>
+            <span class="faq-text">Is there a mobile app?</span>
+            <span class="faq-icon" aria-hidden="true"></span>
+          </button>
+          <div class="faq-a">
+            <p>We are a mobile-first web app. You can upload and analyze logs directly from your phone's browser
+              at the track.</p>
+          </div>
         </div>
       </div>
-      <div class="faq-item">
-        <div class="faq-q"><span>Can I compare multiple logs side-by-side?</span><span class="faq-icon">+</span></div>
-        <div class="faq-a">Yes. Pro users can overlay multiple runs to see exactly how map changes or hardware upgrades
-          affected performance curves.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q"><span>Is my tuning data private?</span><span class="faq-icon">+</span></div>
-        <div class="faq-a">Yes. Your logs are private to your account. We never share or sell any tune configurations.
-        </div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q"><span>Do you support custom PID mapping?</span><span class="faq-icon">+</span></div>
-        <div class="faq-a">Our proprietary parser handles 400+ standard PIDs. Custom PIDs can be mapped via our Tuner
-          Garage API.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q"><span>Does the Turbo replace a human?</span><span class="faq-icon">+</span></div>
-        <div class="faq-a">No. It's a second pair of eyes that correlates data faster than a human, but map changes
-          should always be verified by a professional.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q"><span>Is there a mobile app?</span><span class="faq-icon">+</span></div>
-        <div class="faq-a">We are a mobile-first web app. You can upload and analyze logs directly from your phone's
-          browser at the track.</div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- TWEAKS -->
-  <div id="tweaksPanel" class="tweaks-panel">
-    <div class="tweaks-title">Design Tweaks</div>
-    <div class="tweak-row">
-      <span class="tweak-label">Accent Color</span>
-      <div class="tweak-options">
-        <div class="tweak-opt" data-key="accent" data-value="blue">Blue</div>
-        <div class="tweak-opt" data-key="accent" data-value="purple">Purple</div>
-        <div class="tweak-opt" data-key="accent" data-value="pink">Pink</div>
+    <!-- ── CTA ───────────────────────────────────────────────────── -->
+    <section id="cta" class="sec cta">
+      <h2 class="cta-title" id="ctaTitle">Ready to unlock<br><span class="t-accent">your tune?</span></h2>
+      <p class="cta-sub">Drop your first datalog and let boostLog handle the analysis.
+        Free forever for personal use.</p>
+      <div class="cta-btns">
+        <a href="/app" class="btn btn-primary btn-lg"><span>Upload your first log</span></a>
+        <a href="/app" class="btn btn-ghost btn-lg"><span>See live demo</span></a>
       </div>
-    </div>
-    <div class="tweak-row">
-      <span class="tweak-label">Grid Spacing</span>
-      <div class="tweak-options">
-        <div class="tweak-opt" data-key="density" data-value="compact">Compact</div>
-        <div class="tweak-opt" data-key="density" data-value="comfortable">Comfortable</div>
-      </div>
-    </div>
-    <div class="tweak-toggle">
-      <span class="tweak-label">Show Badges</span>
-      <div class="toggle-switch">
-        <div class="toggle-knob"></div>
-      </div>
-    </div>
-  </div>
+    </section>
 
-  <footer>
-    <div class="footer-logo" style="display:flex; align-items:center; gap:8px">
-      <svg class="bl-mark" style="height:24px;" aria-hidden="true">
-        <use href="#bl-mark" />
-      </svg>
-      <span
-        style="font-family:'Outfit',sans-serif; font-size:1.1rem; font-weight:800; background:var(--brand-grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; position:relative; z-index:2">boostLog</span>
-      <span style="color:var(--muted); font-size:0.75rem; margin-left:0.25rem">// datalogs that tune themselves</span>
+  </main>
+
+  <!-- ── FOOTER ──────────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="footer-ghost mono" aria-hidden="true">BOOSTLOG</div>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#top" class="nav-logo" aria-label="Back to top">
+          <svg class="bl-mark" aria-hidden="true"><use href="#bl-mark" /></svg>
+          <span class="nav-wordmark">boost<em>Log</em></span>
+        </a>
+        <p class="mono t-dim">// DATALOGS THAT TUNE THEMSELVES</p>
+      </div>
+      <nav class="footer-links mono" aria-label="Footer">
+        <a href="#system">System</a>
+        <a href="#features">Features</a>
+        <a href="#how">Workflow</a>
+        <a href="#ai">Turbo</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+        <a href="/app">Sign in</a>
+      </nav>
+      <p class="footer-copy mono">© 2026 BOOSTLOG — BUILT FOR BOOST</p>
     </div>
-    <div class="footer-links">
-      <a href="#features">Features</a>
-      <a href="#how">How it works</a>
-      <a href="#ai">Turbo</a>
-      <a href="#pricing">Pricing</a>
-      <a href="#faq">FAQ</a>
-      <a href="/app">Login</a>
-    </div>
-    <span class="footer-copy">© 2026 boostLog</span>
   </footer>
 
-  <script type="module" src="/static/landing/main.js?v=2.1"></script>
+  <script type="module" src="/static/landing/main.js?v=7.2"></script>
 </body>
 
 </html>

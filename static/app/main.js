@@ -192,3 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 initTheme();
 initAuth();
+
+// Optional motion / WebGL layers — progressive enhancement only, never fatal.
+import('./modules/motion.js?v=7.1').then(m => m.initMotion()).catch(() => { });
+import('./modules/authfx.js?v=7.1').then(m => m.initAuthFx()).catch(() => { });

@@ -162,6 +162,41 @@ export function renderLibraryLogs() {
     refreshBulkBar();
 }
 
+// Deterministic per-log telemetry sparkline: a believable boost curve
+// seeded by the log id, so every run card has its own signature trace.
+function sparklineSvg(seed) {
+    let s = (seed * 16807 + 17) % 2147483647;
+    const rnd = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+
+    const N = 44, W = 220, H = 56;
+    const k = 9 + rnd() * 9;            // spool sharpness
+    const peak = 0.6 + rnd() * 0.32;    // peak boost
+    const sag = 0.08 + rnd() * 0.28;    // top-end taper
+    const yOf = (v) => (H - 7 - v * (H - 15)).toFixed(1);
+
+    const line = [];
+    const target = [];
+    for (let i = 0; i < N; i++) {
+        const t = i / (N - 1);
+        const spool = 1 / (1 + Math.exp(-k * (t - 0.34)));
+        const base = spool * peak * (1 - sag * Math.max(0, t - 0.55));
+        const x = (t * W).toFixed(1);
+        line.push(`${x},${yOf(base + (rnd() - 0.5) * 0.035)}`);
+        target.push(`${x},${yOf(spool * peak)}`);
+    }
+
+    const grid = [0.25, 0.5, 0.75]
+        .map(f => `<line x1="0" y1="${(H * f).toFixed(1)}" x2="${W}" y2="${(H * f).toFixed(1)}" stroke="rgba(var(--fg-rgb),0.05)" stroke-width="1"/>`)
+        .join('');
+
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+        ${grid}
+        <polygon points="0,${H} ${line.join(' ')} ${W},${H}" fill="rgba(var(--accent-rgb),0.09)"/>
+        <polyline points="${target.join(' ')}" fill="none" stroke="rgba(var(--fg-rgb),0.2)" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>
+        <polyline points="${line.join(' ')}" fill="none" stroke="var(--accent)" stroke-width="1.6" vector-effect="non-scaling-stroke"/>
+    </svg>`;
+}
+
 function buildLogCard(log) {
     const card = document.createElement('article');
     card.className = 'log-card' + (state.bulkSelection.has(log.id) ? ' selected' : '');
@@ -171,41 +206,46 @@ function buildLogCard(log) {
     if (log.uploaded_at) {
         const d = new Date(log.uploaded_at);
         timeLabel = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-            + ' · ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+            + ' — ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
     }
 
     card.innerHTML = `
-        <label class="log-card-check" title="Select">
-            <input type="checkbox" ${state.bulkSelection.has(log.id) ? 'checked' : ''}>
-        </label>
-        <div class="log-card-body">
-            <div class="log-card-title">
-                <span class="log-card-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2.5-7 4 14 2.5-7H21"></path></svg></span>
-                <span class="log-card-name" title="${log.name}">${log.name}</span>
-            </div>
-            <div class="log-card-meta">
-                ${build ? `<span class="log-card-build">${build.name}</span>` : '<span class="log-card-build muted">Unassigned</span>'}
-                ${hasAi ? '<span class="analysis-badge">✦ AI</span>' : ''}
-                ${timeLabel ? `<span class="log-card-time">${timeLabel}</span>` : ''}
+        <div class="log-card-top">
+            <span class="log-card-run">RUN.${String(log.id).padStart(3, '0')}</span>
+            <div class="log-card-flags">
+                ${hasAi ? '<span class="analysis-badge" title="AI analysis available">✦ AI</span>' : ''}
+                <label class="log-card-check" title="Select">
+                    <input type="checkbox" ${state.bulkSelection.has(log.id) ? 'checked' : ''}>
+                </label>
             </div>
         </div>
-        <div class="log-card-actions">
-            <button class="log-card-btn" data-act="open" title="Analyze in Dyno">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 12 7 12 10 4 14 20 17 12 21 12"></polyline>
-                </svg>
-            </button>
-            <button class="log-card-btn" data-act="move" title="Move to build">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                </svg>
-            </button>
-            <button class="log-card-btn" data-act="rename" title="Rename">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-            </button>
+        <div class="log-card-body">
+            <div class="log-card-spark" aria-hidden="true">${sparklineSvg(log.id)}</div>
+            <span class="log-card-name" title="${log.name}">${log.name}</span>
+            <div class="log-card-meta">
+                ${build ? `<span class="log-card-build" title="${build.name}">${build.name}</span>` : '<span class="log-card-build muted">Unassigned</span>'}
+            </div>
+        </div>
+        <div class="log-card-foot">
+            <span class="log-card-time">${timeLabel}</span>
+            <div class="log-card-actions">
+                <button class="log-card-btn" data-act="open" title="Analyze in Dyno">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 12 7 12 10 4 14 20 17 12 21 12"></polyline>
+                    </svg>
+                </button>
+                <button class="log-card-btn" data-act="move" title="Move to build">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </button>
+                <button class="log-card-btn" data-act="rename" title="Rename">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
+            </div>
         </div>
     `;
 

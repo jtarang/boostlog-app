@@ -5,13 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>boostlog.app - Boostlog Visualizer</title>
-    <script>try{var d=document.documentElement.dataset;d.theme=localStorage.getItem('bl_theme')||'dark';d.palette=localStorage.getItem('bl_palette')||'violet'}catch(e){document.documentElement.dataset.theme='dark'}</script>
+    <script>try{var d=document.documentElement.dataset;d.theme=localStorage.getItem('bl_theme')||'dark';d.palette=localStorage.getItem('bl_palette')||'original'}catch(e){document.documentElement.dataset.theme='dark'}</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@300;400;500;600;800&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;700;800&display=swap"
         rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="apple-touch-icon" href="/static/logo_boostlog.svg">
-    <link rel="stylesheet" href="/static/app/styles.css?v=6.9">
+    <link rel="stylesheet" href="/static/app/styles.css?v=7.4">
     <!-- Chart.js for beautiful graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
@@ -36,13 +38,14 @@
 
     <!-- Auth Overlay -->
     <div id="authOverlay" class="auth-overlay">
+        <canvas id="authFx" class="auth-fx" aria-hidden="true"></canvas>
         <div class="auth-card">
             <div class="brand"
                 style="justify-content: center; margin-bottom: 24px; width: 100%; display: flex; align-items: center; gap: 12px;">
                 <svg class="bl-mark" style="height: 44px;" aria-hidden="true"><use href="#bl-mark"/></svg>
                 <h1 class="brand-text"
-                    style="font-size: 40px; margin: 0; font-weight: 800; background: var(--brand-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; position: relative; z-index: 2;">
-                    boostLog</h1>
+                    style="font-size: 40px; margin: 0; font-weight: 800; position: relative; z-index: 2;">
+                    boost<span>Log</span></h1>
             </div>
             <div class="auth-tabs">
                 <button type="button" class="tab active" data-action="switchAuthTab" data-mode="login">Login</button>
@@ -131,9 +134,8 @@
         </button>
         <div style="display: flex; align-items: center; gap: 8px;">
             <svg class="bl-mark" style="height: 24px;" aria-hidden="true"><use href="#bl-mark"/></svg>
-            <h1
-                style="font-size: 20px; font-weight: 800; background: var(--brand-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                boostLog</h1>
+            <h1 class="brand-text" style="font-size: 20px; font-weight: 800;">
+                boost<span>Log</span></h1>
         </div>
         <div style="width: 36px;"></div>
     </div>
@@ -148,8 +150,8 @@
                 <div class="sidebar-expanded-only" style="display: flex; align-items: center; gap: 10px;">
                     <svg class="bl-mark" style="height: 30px;" aria-hidden="true"><use href="#bl-mark"/></svg>
                     <h1 class="brand-text sidebar-text"
-                        style="font-size: 28px; margin: 0; font-weight: 800; background: var(--brand-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; position: relative; z-index: 2;">
-                        boostLog</h1>
+                        style="font-size: 28px; margin: 0; font-weight: 800; position: relative; z-index: 2;">
+                        boost<span>Log</span></h1>
                 </div>
                 <!-- Collapsed: mark only -->
                 <div class="sidebar-collapsed-only" style="display: none; cursor: pointer;" data-action="collapseSidebar">
@@ -378,8 +380,13 @@
                             <div class="palette-picker">
                                 <button type="button" class="palette-swatch" data-action="setPalette" data-palette-swatch="original">
                                     <span class="palette-swatch-bar" style="background: linear-gradient(to right, #3A86FF, #d400ff, #FF006E);"></span>
-                                    <span class="palette-swatch-name">Original</span>
-                                    <span class="palette-swatch-tag">Neon</span>
+                                    <span class="palette-swatch-name">Original Violet</span>
+                                    <span class="palette-swatch-tag">Default</span>
+                                </button>
+                                <button type="button" class="palette-swatch" data-action="setPalette" data-palette-swatch="apex">
+                                    <span class="palette-swatch-bar" style="background: linear-gradient(to right, #c8f31e, #54e2ff);"></span>
+                                    <span class="palette-swatch-name">Apex</span>
+                                    <span class="palette-swatch-tag">Signature</span>
                                 </button>
                                 <button type="button" class="palette-swatch" data-action="setPalette" data-palette-swatch="blue">
                                     <span class="palette-swatch-bar" style="background: linear-gradient(to right, #2563EB, #4F46E5);"></span>
@@ -936,7 +943,7 @@
         </div>
     </div>
 
-    <script type="module" src="/static/app/main.js?v=6.2"></script>
+    <script type="module" src="/static/app/main.js?v=7.1"></script>
 </body>
 
 </html>

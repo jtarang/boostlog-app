@@ -4,7 +4,7 @@
 // this module syncs the controls and broadcasts changes so the canvas redraws.
 const THEME_KEY = 'bl_theme';
 const PALETTE_KEY = 'bl_palette';
-const VALID_PALETTES = ['original', 'blue', 'violet', 'graphite'];
+const VALID_PALETTES = ['apex', 'original', 'blue', 'violet', 'graphite'];
 
 // Feature-flag: returns true if the logged-in user's JWT contains the given
 // feature string in its `features` claim. Server controls the claim.
@@ -44,7 +44,7 @@ export function toggleTheme() {
 }
 
 export function setPalette(palette) {
-    if (!VALID_PALETTES.includes(palette)) palette = 'violet';
+    if (!VALID_PALETTES.includes(palette)) palette = 'original';
     document.documentElement.dataset.palette = palette;
     try { localStorage.setItem(PALETTE_KEY, palette); } catch (e) { /* ignore */ }
     updatePaletteUI(palette);
@@ -60,7 +60,7 @@ export function initTheme() {
 
     const palette = document.documentElement.dataset.palette
         || (() => { try { return localStorage.getItem(PALETTE_KEY); } catch (e) { return null; } })()
-        || 'violet';
+        || 'original';
     document.documentElement.dataset.palette = palette;
     updatePaletteUI(palette);
 
