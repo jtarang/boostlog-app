@@ -440,7 +440,7 @@ em {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: calc(var(--nav-h) + 44px) 0 0;
+  padding: calc(var(--nav-h) + 44px) 0 76px;
   overflow: hidden;
 }
 
@@ -464,9 +464,13 @@ em {
 }
 
 .hero > .marquee {
-  flex-shrink: 0;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   width: 100%;
   border-bottom: none;
+  z-index: 4;
 }
 
 .hero-canvas {
@@ -559,7 +563,7 @@ em {
 }
 
 .hero-instrument .instrument-canvas {
-  height: clamp(180px, 22vh, 280px);
+  height: clamp(150px, 18vh, 240px);
 }
 
 /* Race start: the lights live at the top of the page now */
@@ -579,11 +583,11 @@ em {
   font-weight: 500;
   letter-spacing: 0.42em;
   color: var(--accent);
-  margin-bottom: 26px;
+  margin-bottom: 14px;
 }
 
 .hero-title {
-  font-size: clamp(2.35rem, 7.4vw, 6.1rem);
+  font-size: clamp(2.1rem, 5.2vw, 4.6rem);
   line-height: 0.98;
   letter-spacing: -0.012em;
 }
@@ -613,7 +617,7 @@ em {
   color: var(--muted);
   font-size: clamp(0.98rem, 1.4vw, 1.12rem);
   max-width: 56ch;
-  margin: 1.6rem auto 0;
+  margin: 1rem auto 0;
 }
 
 .hero-ctas {
@@ -621,14 +625,14 @@ em {
   justify-content: center;
   flex-wrap: wrap;
   gap: 16px;
-  margin-top: 2.3rem;
+  margin-top: 1.4rem;
 }
 
 .hero-note {
   font-size: 0.62rem;
   letter-spacing: 0.22em;
   color: var(--dim);
-  margin-top: 1.8rem;
+  margin-top: 1rem;
 }
 
 /* Live readout strip */
@@ -962,7 +966,7 @@ em {
 }
 
 .metric {
-  padding: 16px 18px 14px;
+  padding: 10px 18px 10px;
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
