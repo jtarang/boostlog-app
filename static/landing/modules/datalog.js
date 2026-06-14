@@ -254,7 +254,6 @@ export function initTelemetry() {
             loopIndex = hoverIndex;
         }
         hoverIndex = null;
-        if (hud) hud.classList.remove('active');
         setRedline(false);
     }
 
@@ -272,6 +271,8 @@ export function initTelemetry() {
             loopIndex = (loopIndex + 1) % N;
             draw(1, loopIndex);
             updateStripValues(loopIndex);
+            updateHud(loopIndex);
+            if (hud) hud.classList.add('active');
             setRedline(Math.abs(loopIndex - peakBoostIndex) < N * 0.05);
         }
         scanAnimFrame = requestAnimationFrame(runScanLoop);
@@ -300,6 +301,7 @@ export function initTelemetry() {
         if (t < 1) {
             requestAnimationFrame(animate);
         } else {
+            if (hud) hud.classList.add('active');
             startScanLoop();
         }
     }

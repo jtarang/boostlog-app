@@ -87,127 +87,92 @@
       <canvas class="hero-canvas" id="apexScene" aria-hidden="true"></canvas>
       <div class="hero-fade" aria-hidden="true"></div>
 
-      <div class="hero-hud" aria-hidden="true">
-        <span class="hud-corner hud-tl"></span>
-        <span class="hud-corner hud-tr"></span>
-        <span class="hud-corner hud-bl"></span>
-        <span class="hud-corner hud-br"></span>
-        <div class="hud-item hud-pos-tl"><span class="hud-led"></span>REC — RUN_695D8FD8.CSV</div>
-        <div class="hud-item hud-pos-tr">100 HZ / 48 CH</div>
-        <div class="hud-item hud-pos-bl">SURFACE: BOOST_TARGET_3D</div>
-        <div class="hud-item hud-pos-br">DYNO CELL 02 — NIGHT SESSION</div>
-      </div>
 
-      <div class="hero-core">
-        <div class="start-lights" id="startLights" aria-hidden="true">
-          <span class="start-light"></span>
-          <span class="start-light"></span>
-          <span class="start-light"></span>
-          <span class="start-light"></span>
-          <span class="start-light"></span>
+      <div class="hero-content">
+        <!-- The product, front and center: a live telemetry pull -->
+        <div class="hero-instrument" data-rise>
+          <div class="instrument ticks">
+            <div class="instrument-bar mono">
+              <span class="instrument-id"><span class="hud-led"></span>RUN_695D8FD8.CSV</span>
+              <span class="instrument-meta">48 PARAMS — WOT 02:14 → 02:39</span>
+            </div>
+            <div class="instrument-legend mono" id="telemetryLegend">
+              <span class="leg" style="--c:var(--accent)">Boost [pre-throttle]</span>
+              <span class="leg" style="--c:var(--t-ghost)">Boost target</span>
+              <span class="leg" style="--c:var(--amber)">Lambda / AFR</span>
+              <span class="leg" style="--c:var(--cyan)">Torque @ clutch</span>
+            </div>
+            <div class="instrument-canvas">
+              <canvas id="telemetry"></canvas>
+              <div class="chart-hud mono" id="chartHud">
+                <span class="chart-hud-rpm" id="hudRpm">—</span>
+                <div class="chart-hud-rows" id="hudRows"></div>
+              </div>
+              <div class="chart-redline mono" id="chartRedline">REDLINE</div>
+            </div>
+            <div class="instrument-metrics">
+              <div class="metric">
+                <span class="metric-label mono">Max boost</span>
+                <span class="metric-value mono" data-count="18.4" data-decimals="1">0.0</span>
+                <span class="metric-unit mono">psi</span>
+              </div>
+              <div class="metric">
+                <span class="metric-label mono">Peak RPM</span>
+                <span class="metric-value mono" data-count="6800">0</span>
+                <span class="metric-unit mono">rpm</span>
+              </div>
+              <div class="metric">
+                <span class="metric-label mono">Timing corr.</span>
+                <span class="metric-value mono t-red" data-count="-1.4" data-decimals="1">0.0</span>
+                <span class="metric-unit mono">deg</span>
+              </div>
+              <div class="metric">
+                <span class="metric-label mono">Torque</span>
+                <span class="metric-value mono" data-count="412">0</span>
+                <span class="metric-unit mono">Nm</span>
+              </div>
+              <div class="metric">
+                <span class="metric-label mono">Speed</span>
+                <span class="metric-value mono" data-count="94">0</span>
+                <span class="metric-unit mono">mph</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <p class="hero-eyebrow mono" data-flicker>[ DATALOG ANALYSIS SUITE ]</p>
-        <h1 class="hero-title">
-          <span class="line" data-split>Telemetry that</span>
-          <span class="line t-accent" data-split>tunes itself.</span>
-        </h1>
-        <p class="hero-sub" data-rise>The professional datalog suite for high-performance builds.
-          Upload a pull, read every channel, and let Turbo hand you the map changes.</p>
-        <div class="hero-ctas" data-rise>
-          <a href="/app" class="btn btn-primary btn-lg"><span>Upload your first log</span></a>
-          <a href="/app" class="btn btn-ghost btn-lg"><span>See live demo</span></a>
-        </div>
-        <p class="hero-note mono" data-rise>FREE FOREVER FOR PERSONAL USE — DEMO LOGIN: demo / demo</p>
-      </div>
 
-      <!-- The product, front and center: a live telemetry pull -->
-      <div class="hero-instrument" data-rise>
-        <div class="instrument ticks">
-          <div class="instrument-bar mono">
-            <span class="instrument-id"><span class="hud-led"></span>RUN_695D8FD8.CSV</span>
-            <span class="instrument-meta">48 PARAMS — WOT 02:14 → 02:39</span>
+        <div class="hero-core">
+          <div class="start-lights" id="startLights" aria-hidden="true">
+            <span class="start-light"></span>
+            <span class="start-light"></span>
+            <span class="start-light"></span>
+            <span class="start-light"></span>
+            <span class="start-light"></span>
           </div>
-          <div class="instrument-legend mono" id="telemetryLegend">
-            <span class="leg" style="--c:var(--accent)">Boost [pre-throttle]</span>
-            <span class="leg" style="--c:var(--t-ghost)">Boost target</span>
-            <span class="leg" style="--c:var(--amber)">Lambda / AFR</span>
-            <span class="leg" style="--c:var(--cyan)">Torque @ clutch</span>
+          <p class="hero-eyebrow mono" data-flicker>[ DATALOG ANALYSIS SUITE ]</p>
+          <h1 class="hero-title">
+            <span class="line" data-split>Telemetry that</span>
+            <span class="line t-accent" data-split>tunes itself.</span>
+          </h1>
+          <p class="hero-sub" data-rise>The professional datalog suite for high-performance builds.
+            Upload a pull, read every channel, and let Turbo hand you the map changes.</p>
+          <div class="hero-ctas" data-rise>
+            <a href="/app" class="btn btn-primary btn-lg"><span>Upload your first log</span></a>
+            <a href="/app" class="btn btn-ghost btn-lg"><span>See live demo</span></a>
           </div>
-          <div class="instrument-canvas">
-            <canvas id="telemetry"></canvas>
-            <div class="chart-hud mono" id="chartHud">
-              <span class="chart-hud-rpm" id="hudRpm">—</span>
-              <div class="chart-hud-rows" id="hudRows"></div>
-            </div>
-            <div class="chart-redline mono" id="chartRedline">REDLINE</div>
-          </div>
-          <div class="instrument-metrics">
-            <div class="metric">
-              <span class="metric-label mono">Max boost</span>
-              <span class="metric-value mono" data-count="18.4" data-decimals="1">0.0</span>
-              <span class="metric-unit mono">psi</span>
-            </div>
-            <div class="metric">
-              <span class="metric-label mono">Peak RPM</span>
-              <span class="metric-value mono" data-count="6800">0</span>
-              <span class="metric-unit mono">rpm</span>
-            </div>
-            <div class="metric">
-              <span class="metric-label mono">Timing corr.</span>
-              <span class="metric-value mono t-red" data-count="-1.4" data-decimals="1">0.0</span>
-              <span class="metric-unit mono">deg</span>
-            </div>
-            <div class="metric">
-              <span class="metric-label mono">Torque</span>
-              <span class="metric-value mono" data-count="412">0</span>
-              <span class="metric-unit mono">Nm</span>
-            </div>
-            <div class="metric">
-              <span class="metric-label mono">Speed</span>
-              <span class="metric-value mono" data-count="94">0</span>
-              <span class="metric-unit mono">mph</span>
-            </div>
-          </div>
+          <p class="hero-note mono" data-rise>FREE FOREVER FOR PERSONAL USE — DEMO LOGIN: demo / demo</p>
         </div>
       </div>
 
-      <div class="hero-strip" id="heroStrip">
-        <div class="strip-cell">
-          <span class="strip-label mono">Boost</span>
-          <span class="strip-value mono" id="tickBoost">18.4</span>
-          <span class="strip-unit mono">psi</span>
-        </div>
-        <div class="strip-cell">
-          <span class="strip-label mono">AFR</span>
-          <span class="strip-value mono" id="tickAfr">11.8</span>
-          <span class="strip-unit mono">λ·14.7</span>
-        </div>
-        <div class="strip-cell">
-          <span class="strip-label mono">Engine</span>
-          <span class="strip-value mono" id="tickRpm">6 240</span>
-          <span class="strip-unit mono">rpm</span>
-        </div>
-        <div class="strip-cell">
-          <span class="strip-label mono">IAT</span>
-          <span class="strip-value mono" id="tickIat">31.5</span>
-          <span class="strip-unit mono">°C</span>
-        </div>
-        <div class="strip-cell strip-scroll mono">
-          <span class="scroll-cue">Scroll to spool</span>
-          <span class="scroll-arrow" aria-hidden="true">↓</span>
+      <!-- ── MARQUEE ──────────────────────────────────────────────── -->
+      <div class="marquee" aria-label="Works with every major logger">
+        <div class="marquee-track" id="marqueeTrack">
+          <span class="marquee-set">
+            <i>Works with</i> MHD Tuning <b>//</b> Bootmod3 <b>//</b> EcuTek <b>//</b> HP Tuners <b>//</b>
+            COBB Accessport <b>//</b> AEM <b>//</b> Haltech <b>//</b> Link ECU <b>//</b> Motec <b>//</b>
+          </span>
         </div>
       </div>
     </section>
-
-    <!-- ── MARQUEE ───────────────────────────────────────────────── -->
-    <div class="marquee" aria-label="Works with every major logger">
-      <div class="marquee-track" id="marqueeTrack">
-        <span class="marquee-set">
-          <i>Works with</i> MHD Tuning <b>//</b> Bootmod3 <b>//</b> EcuTek <b>//</b> HP Tuners <b>//</b>
-          COBB Accessport <b>//</b> AEM <b>//</b> Haltech <b>//</b> Link ECU <b>//</b> Motec <b>//</b>
-        </span>
-      </div>
-    </div>
 
     <!-- ── FEATURES ──────────────────────────────────────────────── -->
     <section id="features" class="sec">

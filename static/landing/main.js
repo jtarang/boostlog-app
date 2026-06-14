@@ -103,17 +103,11 @@ function initHero() {
     lines.forEach(line => allChars.push(...splitChars(line)));
 
     const rises = document.querySelectorAll('.hero [data-rise]');
-    const hudItems = document.querySelectorAll('.hero .hud-item');
-    const corners = document.querySelectorAll('.hero .hud-corner');
     const eyebrow = document.querySelector('.hero-eyebrow');
-    const strip = document.getElementById('heroStrip');
-    const heroInstrument = document.querySelector('.hero-instrument');
 
     gsap.set(allChars, { yPercent: 112, filter: 'blur(6px)' });
     gsap.set(rises, { autoAlpha: 0, y: 22, filter: 'blur(6px)' });
-    gsap.set([...hudItems, ...corners], { autoAlpha: 0 });
     gsap.set(eyebrow, { autoAlpha: 0 });
-    gsap.set(strip, { autoAlpha: 0, y: 14 });
 
     const tl = gsap.timeline({ defaults: { ease: 'power4.out' }, delay: 0.1 });
 
@@ -123,9 +117,7 @@ function initHero() {
 
     // The cell wakes up around the rig while the lights run
     tl.to(eyebrow, { autoAlpha: 1, duration: 0.05, repeat: 5, repeatDelay: 0.07, yoyo: true }, 0.35)
-        .to(eyebrow, { autoAlpha: 1, duration: 0.1 }, 0.85)
-        .to([...corners, ...hudItems], { autoAlpha: 1, duration: 0.5, stagger: 0.06 }, 0.5)
-        .to(strip, { autoAlpha: 1, y: 0, duration: 0.7 }, 0.85);
+        .to(eyebrow, { autoAlpha: 1, duration: 0.1 }, 0.85);
 
     // Lights out — back to clear, F1 style — and launch the headline
     tl.add(() => lights.forEach(l => l.classList.remove('on')), OUT)
