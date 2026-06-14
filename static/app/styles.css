@@ -3440,11 +3440,11 @@ body.focus-mode .chart-container {
     height: 100%;
     z-index: -2;
     pointer-events: none;
-    opacity: 0.55;
+    opacity: 0.75;
 }
 
 [data-theme="light"] .app-scene {
-    opacity: 0.14;
+    opacity: 0.22;
 }
 
 /* Frosted-glass readability over the 3D backdrop */
@@ -3454,8 +3454,8 @@ body.focus-mode .chart-container {
 }
 
 .main-content {
-    backdrop-filter: blur(6px) saturate(1.15);
-    -webkit-backdrop-filter: blur(6px) saturate(1.15);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
 }
 
 /* Engineering graph-paper underlay + accent glow (mirrors landing page) */
