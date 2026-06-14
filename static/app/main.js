@@ -31,6 +31,7 @@ import {
     renamePasskey, deletePasskey, openUpgradeModal, closeUpgradeModal, submitUpgrade, downgradeToFree,
 } from './modules/settings.js';
 import { initTheme, toggleTheme, setPalette } from './modules/theme.js';
+import { generateTuningModule, swapTuningLogs } from './modules/tuning.js';
 
 // === Action registry: maps data-action="<name>" → handler(el, event) ===
 const actions = {
@@ -66,6 +67,10 @@ const actions = {
     // AI drawer
     toggleAiDrawer,
     triggerAnalysis,
+
+    // AI Tuning Module
+    generateTuningModule,
+    swapTuningLogs,
 
     // Modals (rename / delete)
     closeRenameModal,
@@ -195,4 +200,9 @@ initAuth();
 
 // Optional motion / WebGL layers — progressive enhancement only, never fatal.
 import('./modules/motion.js?v=7.1').then(m => m.initMotion()).catch(() => { });
-import('./modules/authfx.js?v=7.1').then(m => m.initAuthFx()).catch(() => { });
+// 3D wireframe surface backdrop behind the entire app (no twinkle points).
+// Auth overlay gets the full scene (with points) for visual punch on login.
+import('/static/landing/modules/scene.js?v=8.5').then(m => {
+    m.initScene(document.getElementById('appScene'), { showPoints: false });
+    m.initScene(document.getElementById('authScene'));
+}).catch(() => { });

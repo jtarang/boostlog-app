@@ -88,7 +88,7 @@ function cssColor(name, fallback) {
     return new THREE.Color(v || fallback);
 }
 
-export function initScene(canvas) {
+export function initScene(canvas, { showPoints = true } = {}) {
     if (!canvas) return;
 
     let renderer;
@@ -144,7 +144,7 @@ export function initScene(canvas) {
     group.position.y = -0.4;
 
     group.add(new THREE.LineSegments(new THREE.WireframeGeometry(plane), lineMat));
-    group.add(new THREE.Points(plane, pointMat));
+    if (showPoints) group.add(new THREE.Points(plane, pointMat));
     scene.add(group);
 
     /* ── The pull: a live run tracing across the map ──────────────── */

@@ -117,3 +117,57 @@ def test_unauthorized_log_access(client):
     headers = get_auth_headers(client)
     res = client.get(f"/api/logs/99_wrong_id.csv", headers=headers)
     assert res.status_code == 403
+
+
+def _upload(client, headers, name, content):
+    fb = io.BytesIO(content)
+    fb.name = name
+    res = client.post("/api/upload", files={"file": (name, fb, "text/csv")}, headers=headers)
+    return res.json()["url"].split("/")[-1]
+
+
+# A richer two-pull dataset (pedal, rpm, boost, torque, timing) so the WOT
+# aggregation and RPM/torque curve both have real channels to chew on.
+_BASE_CSV = (
+    b"Pedal,Engine RPM,Boost Pressure (Actual),Boost Pressure (Target),Torque at Clutch (Actual),Timing Corr. Cyl 1\n"
+    b"100,3000,12,14,360,-0.5\n100,4000,16,17,420,-1.0\n100,5000,18,18,460,-2.0\n100,6000,17,18,440,-3.5\n100,7000,15,16,400,-1.0\n"
+)
+_OPT_CSV = (
+    b"Pedal,Engine RPM,Boost Pressure (Actual),Boost Pressure (Target),Torque at Clutch (Actual),Timing Corr. Cyl 1\n"
+    b"100,3000,14,14,400,-0.2\n100,4000,18,18,480,-0.5\n100,5000,21,21,520,-0.8\n100,6000,20,20,500,-1.0\n100,7000,18,18,460,-0.5\n"
+)
+
+
+def test_tuning_compare(client):
+    headers = get_auth_headers(client)
+    base = _upload(client, headers, "baseline.csv", _BASE_CSV)
+    opt = _upload(client, headers, "optimized.csv", _OPT_CSV)
+
+    res = client.post("/api/tuning/compare", json={"baseline": base, "optimized": opt}, headers=headers)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["baseline"]["name"] == "baseline.csv"
+    assert data["optimized"]["name"] == "optimized.csv"
+    # Optimized pull makes more torque + power and pulls less timing than baseline.
+    assert data["optimized"]["max_torque_nm"] > data["baseline"]["max_torque_nm"]
+    assert data["optimized"]["peak_power_hp"] > data["baseline"]["peak_power_hp"]
+    assert abs(data["optimized"]["worst_timing_correction"]) < abs(data["baseline"]["worst_timing_correction"])
+    # Curves are populated since RPM + torque channels exist.
+    assert isinstance(data["baseline"]["curve"], list) and len(data["baseline"]["curve"]) >= 3
+
+
+def test_tuning_recommend(client):
+    headers = get_auth_headers(client)
+    base = _upload(client, headers, "b2.csv", _BASE_CSV)
+    opt = _upload(client, headers, "o2.csv", _OPT_CSV)
+
+    res = client.post("/api/tuning/recommend", json={"baseline": base, "optimized": opt}, headers=headers)
+    assert res.status_code == 200
+    assert "✅ Tuning looks good" in res.json()["recommendations"]
+
+
+def test_tuning_compare_unauthorized_log(client):
+    headers = get_auth_headers(client)
+    base = _upload(client, headers, "mine.csv", _BASE_CSV)
+    res = client.post("/api/tuning/compare", json={"baseline": base, "optimized": "99_not_mine.csv"}, headers=headers)
+    assert res.status_code == 403
