@@ -14,7 +14,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@700;800&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="/static/landing/styles.css?v=7.3">
+  <link rel="stylesheet" href="/static/landing/styles.css?v=7.5">
   <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
 </head>
@@ -44,12 +44,11 @@
     </a>
 
     <nav class="nav-links" aria-label="Primary">
-      <a href="#system"><sup>01</sup>System</a>
-      <a href="#features"><sup>02</sup>Features</a>
-      <a href="#how"><sup>03</sup>Workflow</a>
-      <a href="#ai"><sup>04</sup>Turbo</a>
-      <a href="#pricing"><sup>05</sup>Pricing</a>
-      <a href="#faq"><sup>06</sup>FAQ</a>
+      <a href="#features"><sup>01</sup>Features</a>
+      <a href="#how"><sup>02</sup>Workflow</a>
+      <a href="#ai"><sup>03</sup>Turbo</a>
+      <a href="#pricing"><sup>04</sup>Pricing</a>
+      <a href="#faq"><sup>05</sup>FAQ</a>
     </nav>
 
     <div class="nav-right">
@@ -69,12 +68,11 @@
   <!-- Mobile nav -->
   <div class="mobile-nav" id="mobileNav" aria-hidden="true">
     <nav aria-label="Mobile">
-      <a href="#system"><sup>01</sup>System</a>
-      <a href="#features"><sup>02</sup>Features</a>
-      <a href="#how"><sup>03</sup>Workflow</a>
-      <a href="#ai"><sup>04</sup>Turbo</a>
-      <a href="#pricing"><sup>05</sup>Pricing</a>
-      <a href="#faq"><sup>06</sup>FAQ</a>
+      <a href="#features"><sup>01</sup>Features</a>
+      <a href="#how"><sup>02</sup>Workflow</a>
+      <a href="#ai"><sup>03</sup>Turbo</a>
+      <a href="#pricing"><sup>04</sup>Pricing</a>
+      <a href="#faq"><sup>05</sup>FAQ</a>
     </nav>
     <div class="mobile-nav-ctas">
       <a href="/app" class="btn btn-ghost"><span>Sign in</span></a>
@@ -122,6 +120,57 @@
         <p class="hero-note mono" data-rise>FREE FOREVER FOR PERSONAL USE — DEMO LOGIN: demo / demo</p>
       </div>
 
+      <!-- The product, front and center: a live telemetry pull -->
+      <div class="hero-instrument" data-rise>
+        <div class="instrument ticks">
+          <div class="instrument-bar mono">
+            <span class="instrument-id"><span class="hud-led"></span>RUN_695D8FD8.CSV</span>
+            <span class="instrument-meta">48 PARAMS — WOT 02:14 → 02:39</span>
+          </div>
+          <div class="instrument-legend mono" id="telemetryLegend">
+            <span class="leg" style="--c:var(--accent)">Boost [pre-throttle]</span>
+            <span class="leg" style="--c:var(--t-ghost)">Boost target</span>
+            <span class="leg" style="--c:var(--amber)">Lambda / AFR</span>
+            <span class="leg" style="--c:var(--cyan)">Torque @ clutch</span>
+          </div>
+          <div class="instrument-canvas">
+            <canvas id="telemetry"></canvas>
+            <div class="chart-hud mono" id="chartHud">
+              <span class="chart-hud-rpm" id="hudRpm">—</span>
+              <div class="chart-hud-rows" id="hudRows"></div>
+            </div>
+            <div class="chart-redline mono" id="chartRedline">REDLINE</div>
+          </div>
+          <div class="instrument-metrics">
+            <div class="metric">
+              <span class="metric-label mono">Max boost</span>
+              <span class="metric-value mono" data-count="18.4" data-decimals="1">0.0</span>
+              <span class="metric-unit mono">psi</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label mono">Peak RPM</span>
+              <span class="metric-value mono" data-count="6800">0</span>
+              <span class="metric-unit mono">rpm</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label mono">Timing corr.</span>
+              <span class="metric-value mono t-red" data-count="-1.4" data-decimals="1">0.0</span>
+              <span class="metric-unit mono">deg</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label mono">Torque</span>
+              <span class="metric-value mono" data-count="412">0</span>
+              <span class="metric-unit mono">Nm</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label mono">Speed</span>
+              <span class="metric-value mono" data-count="94">0</span>
+              <span class="metric-unit mono">mph</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="hero-strip" id="heroStrip">
         <div class="strip-cell">
           <span class="strip-label mono">Boost</span>
@@ -160,68 +209,10 @@
       </div>
     </div>
 
-    <!-- ── SYSTEM / LIVE INSTRUMENT ──────────────────────────────── -->
-    <section id="system" class="sec">
-      <header class="sec-head">
-        <p class="sec-tag mono">SEC.01 — LIVE TELEMETRY</p>
-        <h2 class="sec-title">Every channel.<br>One instrument.</h2>
-        <p class="sec-sub">A fast, scrubbable trace of your entire run — boost, target, lambda and torque
-          overlaid at 100 Hz. Hover the pull to read the cells.</p>
-      </header>
-
-      <div class="instrument ticks" data-rise>
-        <div class="instrument-bar mono">
-          <span class="instrument-id"><span class="hud-led"></span>RUN_695D8FD8.CSV</span>
-          <span class="instrument-meta">48 PARAMS — WOT 02:14 → 02:39</span>
-        </div>
-        <div class="instrument-legend mono" id="telemetryLegend">
-          <span class="leg" style="--c:var(--accent)">Boost [pre-throttle]</span>
-          <span class="leg" style="--c:var(--t-ghost)">Boost target</span>
-          <span class="leg" style="--c:var(--amber)">Lambda / AFR</span>
-          <span class="leg" style="--c:var(--cyan)">Torque @ clutch</span>
-        </div>
-        <div class="instrument-canvas">
-          <canvas id="telemetry"></canvas>
-          <div class="chart-hud mono" id="chartHud">
-            <span class="chart-hud-rpm" id="hudRpm">—</span>
-            <div class="chart-hud-rows" id="hudRows"></div>
-          </div>
-          <div class="chart-redline mono" id="chartRedline">REDLINE</div>
-        </div>
-        <div class="instrument-metrics">
-          <div class="metric">
-            <span class="metric-label mono">Max boost</span>
-            <span class="metric-value mono" data-count="18.4" data-decimals="1">0.0</span>
-            <span class="metric-unit mono">psi</span>
-          </div>
-          <div class="metric">
-            <span class="metric-label mono">Peak RPM</span>
-            <span class="metric-value mono" data-count="6800">0</span>
-            <span class="metric-unit mono">rpm</span>
-          </div>
-          <div class="metric">
-            <span class="metric-label mono">Timing corr.</span>
-            <span class="metric-value mono t-red" data-count="-1.4" data-decimals="1">0.0</span>
-            <span class="metric-unit mono">deg</span>
-          </div>
-          <div class="metric">
-            <span class="metric-label mono">Torque</span>
-            <span class="metric-value mono" data-count="412">0</span>
-            <span class="metric-unit mono">Nm</span>
-          </div>
-          <div class="metric">
-            <span class="metric-label mono">Speed</span>
-            <span class="metric-value mono" data-count="94">0</span>
-            <span class="metric-unit mono">mph</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- ── FEATURES ──────────────────────────────────────────────── -->
     <section id="features" class="sec">
       <header class="sec-head">
-        <p class="sec-tag mono">SEC.02 — FEATURES</p>
+        <p class="sec-tag mono">SEC.01 — FEATURES</p>
         <h2 class="sec-title">Everything in your log,<br>finally readable.</h2>
         <p class="sec-sub">Extract every bit of horsepower using data, not guesswork.
           Built for professional tuners and serious enthusiasts.</p>
@@ -318,7 +309,7 @@
     <!-- ── WORKFLOW ──────────────────────────────────────────────── -->
     <section id="how" class="sec">
       <header class="sec-head">
-        <p class="sec-tag mono">SEC.03 — WORKFLOW</p>
+        <p class="sec-tag mono">SEC.02 — WORKFLOW</p>
         <h2 class="sec-title">From CSV to calibration<br>in 60 seconds.</h2>
       </header>
 
@@ -383,7 +374,7 @@
     <section id="ai" class="sec">
       <div class="ai-grid">
         <div class="ai-copy">
-          <p class="sec-tag mono">SEC.04 — TURBO</p>
+          <p class="sec-tag mono">SEC.03 — TURBO</p>
           <h2 class="sec-title">A tuner in<br>your pocket.</h2>
           <p class="sec-sub">Ask questions in plain English. The agent reads your datalog, correlates
             parameters and gives you actionable map recommendations.</p>
@@ -425,7 +416,7 @@
     <!-- ── PRICING ───────────────────────────────────────────────── -->
     <section id="pricing" class="sec">
       <header class="sec-head">
-        <p class="sec-tag mono">SEC.05 — PRICING</p>
+        <p class="sec-tag mono">SEC.04 — PRICING</p>
         <h2 class="sec-title">Simple pricing.<br>Serious gains.</h2>
         <p class="sec-sub">Start free. Upgrade when you're ready to chase numbers.</p>
       </header>
@@ -482,7 +473,7 @@
     <!-- ── FAQ ───────────────────────────────────────────────────── -->
     <section id="faq" class="sec sec-narrow">
       <header class="sec-head">
-        <p class="sec-tag mono">SEC.06 — FAQ</p>
+        <p class="sec-tag mono">SEC.05 — FAQ</p>
         <h2 class="sec-title">Common questions.</h2>
       </header>
 
@@ -579,7 +570,6 @@
         <p class="mono t-dim">// DATALOGS THAT TUNE THEMSELVES</p>
       </div>
       <nav class="footer-links mono" aria-label="Footer">
-        <a href="#system">System</a>
         <a href="#features">Features</a>
         <a href="#how">Workflow</a>
         <a href="#ai">Turbo</a>

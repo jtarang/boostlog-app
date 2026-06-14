@@ -107,9 +107,10 @@ function initHero() {
     const corners = document.querySelectorAll('.hero .hud-corner');
     const eyebrow = document.querySelector('.hero-eyebrow');
     const strip = document.getElementById('heroStrip');
+    const heroInstrument = document.querySelector('.hero-instrument');
 
-    gsap.set(allChars, { yPercent: 112 });
-    gsap.set(rises, { autoAlpha: 0, y: 22 });
+    gsap.set(allChars, { yPercent: 112, filter: 'blur(6px)' });
+    gsap.set(rises, { autoAlpha: 0, y: 22, filter: 'blur(6px)' });
     gsap.set([...hudItems, ...corners], { autoAlpha: 0 });
     gsap.set(eyebrow, { autoAlpha: 0 });
     gsap.set(strip, { autoAlpha: 0, y: 14 });
@@ -128,44 +129,11 @@ function initHero() {
 
     // Lights out — back to clear, F1 style — and launch the headline
     tl.add(() => lights.forEach(l => l.classList.remove('on')), OUT)
-        .to(allChars, { yPercent: 0, duration: 1.0, stagger: 0.022 }, OUT)
-        .to(rises, { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.12 }, OUT + 0.3)
+        .to(allChars, { yPercent: 0, filter: 'blur(0px)', duration: 1.0, stagger: 0.022 }, OUT)
+        .to(rises, { autoAlpha: 1, y: 0, filter: 'blur(0px)', duration: 0.8, stagger: 0.12 }, OUT + 0.3)
         .to(rig, { autoAlpha: 0, duration: 0.6 }, OUT + 1.1);
 }
 
-/* ── Hero strip: live telemetry readouts ──────────────────────────── */
-function initTicker() {
-    const elBoost = document.getElementById('tickBoost');
-    const elAfr = document.getElementById('tickAfr');
-    const elRpm = document.getElementById('tickRpm');
-    const elIat = document.getElementById('tickIat');
-    if (!elBoost || REDUCED) return;
-
-    const SHIFT_AT = 6800, DROP_TO = 3600, START = 2300;
-    let rpm = START, last = 0, iatPhase = Math.random() * 7;
-
-    const fmtRpm = (v) => Math.round(v).toLocaleString('en-US').replace(/,/g, ' ');
-
-    function frame(now) {
-        if (now - last > 90) {
-            last = now;
-            rpm += 110 + Math.random() * 60;
-            if (rpm > SHIFT_AT) rpm = DROP_TO + Math.random() * 250;
-            const load = (rpm - START) / (SHIFT_AT - START);
-            const boost = 5.5 + load * 12.9 + (Math.random() - 0.5) * 0.5;
-            const afr = 12.9 - load * 1.7 + (Math.random() - 0.5) * 0.2;
-            iatPhase += 0.013;
-            const iat = 31.5 + Math.sin(iatPhase) * 3.2 + (Math.random() - 0.5) * 0.3;
-
-            elRpm.textContent = fmtRpm(rpm);
-            elBoost.textContent = boost.toFixed(1);
-            elAfr.textContent = afr.toFixed(1);
-            elIat.textContent = iat.toFixed(1);
-        }
-        requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
-}
 
 /* ── Marquee: duplicate the set so the CSS loop is seamless ───────── */
 function initMarquee() {
@@ -181,31 +149,31 @@ function initReveals() {
 
     document.querySelectorAll('.sec-head').forEach(head => {
         const kids = head.children;
-        gsap.set(kids, { autoAlpha: 0, y: 26 });
+        gsap.set(kids, { autoAlpha: 0, y: 26, filter: 'blur(6px)' });
         window.ScrollTrigger.create({
             trigger: head,
             start: 'top 82%',
             once: true,
-            onEnter: () => gsap.to(kids, { autoAlpha: 1, y: 0, duration: 0.85, stagger: 0.1, ease: 'power3.out' }),
+            onEnter: () => gsap.to(kids, { autoAlpha: 1, y: 0, filter: 'blur(0px)', duration: 0.85, stagger: 0.1, ease: 'power3.out' }),
         });
     });
 
     gsap.utils.toArray('[data-rise]:not(.hero [data-rise])').forEach(el => {
-        gsap.set(el, { autoAlpha: 0, y: 30 });
+        gsap.set(el, { autoAlpha: 0, y: 30, filter: 'blur(6px)' });
         window.ScrollTrigger.create({
             trigger: el,
             start: 'top 86%',
             once: true,
-            onEnter: () => gsap.to(el, { autoAlpha: 1, y: 0, duration: 0.9, ease: 'power3.out' }),
+            onEnter: () => gsap.to(el, { autoAlpha: 1, y: 0, filter: 'blur(0px)', duration: 0.9, ease: 'power3.out' }),
         });
     });
 
     const cards = gsap.utils.toArray('[data-card]');
-    gsap.set(cards, { autoAlpha: 0, y: 24 });
+    gsap.set(cards, { autoAlpha: 0, y: 24, filter: 'blur(6px)' });
     window.ScrollTrigger.batch(cards, {
         start: 'top 88%',
         once: true,
-        onEnter: (batch) => gsap.to(batch, { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.08, ease: 'power3.out' }),
+        onEnter: (batch) => gsap.to(batch, { autoAlpha: 1, y: 0, filter: 'blur(0px)', duration: 0.7, stagger: 0.08, ease: 'power3.out' }),
     });
 }
 
@@ -260,15 +228,15 @@ function initWorkflow() {
         const body = step.querySelector('.step-body');
         const term = step.querySelector('.term');
         const ghost = step.querySelector('.step-ghost');
-        gsap.set([body, term], { autoAlpha: 0, y: 36 });
-        gsap.set(ghost, { autoAlpha: 0, x: -22 });
+        gsap.set([body, term], { autoAlpha: 0, y: 36, filter: 'blur(6px)' });
+        gsap.set(ghost, { autoAlpha: 0, x: -22, filter: 'blur(6px)' });
         window.ScrollTrigger.create({
             trigger: step,
             start: 'top 78%',
             once: true,
             onEnter: () => {
-                gsap.to(ghost, { autoAlpha: 1, x: 0, duration: 0.9, ease: 'power3.out' });
-                gsap.to([body, term], { autoAlpha: 1, y: 0, duration: 0.85, stagger: 0.14, ease: 'power3.out' });
+                gsap.to(ghost, { autoAlpha: 1, x: 0, filter: 'blur(0px)', duration: 0.9, ease: 'power3.out' });
+                gsap.to([body, term], { autoAlpha: 1, y: 0, filter: 'blur(0px)', duration: 0.85, stagger: 0.14, ease: 'power3.out' });
             },
         });
     });
@@ -282,7 +250,7 @@ function initChat() {
     const msgs = gsap.utils.toArray('#aiMessages [data-type]');
     if (!term || !msgs.length) return;
 
-    gsap.set(msgs, { autoAlpha: 0, y: 14 });
+    gsap.set(msgs, { autoAlpha: 0, y: 14, filter: 'blur(4px)' });
 
     const makeTyping = () => {
         const t = document.createElement('div');
@@ -315,7 +283,7 @@ function initChat() {
                     tl.to({}, { duration: 1.0 });
                     tl.add(() => { gsap.killTweensOf(typing.querySelectorAll('span')); typing.remove(); });
                 }
-                tl.to(msg, { autoAlpha: 1, y: 0, duration: 0.45, ease: 'power3.out' });
+                tl.to(msg, { autoAlpha: 1, y: 0, filter: 'blur(0px)', duration: 0.45, ease: 'power3.out' });
                 tl.to({}, { duration: isAi ? 0.55 : 0.4 });
             });
         },
@@ -330,13 +298,13 @@ function initCtaReveal() {
     if (!MOTION() || !title) return;
 
     const gsap = window.gsap;
-    gsap.set([title, sub, btns], { autoAlpha: 0, y: 30 });
+    gsap.set([title, sub, btns], { autoAlpha: 0, y: 30, filter: 'blur(6px)' });
     window.ScrollTrigger.create({
         trigger: '#cta',
         start: 'top 70%',
         once: true,
         onEnter: () => gsap.to([title, sub, btns], {
-            autoAlpha: 1, y: 0, duration: 0.6, stagger: 0.09, ease: 'back.out(1.6)',
+            autoAlpha: 1, y: 0, filter: 'blur(0px)', duration: 0.6, stagger: 0.09, ease: 'back.out(1.6)',
         }),
     });
 }
@@ -387,7 +355,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initGearbox();
     initMarquee();
     initHero();
-    initTicker();
     initReveals();
     initCounters();
     initWorkflow();

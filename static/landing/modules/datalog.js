@@ -12,6 +12,11 @@ export function initTelemetry() {
     const hudRows = document.getElementById('hudRows');
     const redline = document.getElementById('chartRedline');
 
+    const elBoost = document.getElementById('tickBoost');
+    const elAfr = document.getElementById('tickAfr');
+    const elRpm = document.getElementById('tickRpm');
+    const elIat = document.getElementById('tickIat');
+
     const css = getComputedStyle(document.documentElement);
     const COL = {
         boost: (css.getPropertyValue('--accent') || '#8338ec').trim(),
@@ -83,9 +88,23 @@ export function initTelemetry() {
 
     const yOf = (v) => H * 0.88 - v * (H / 1.1);
 
+    const fmtRpm = (v) => Math.round(v).toLocaleString('en-US').replace(/,/g, ' ');
+
+    function updateStripValues(i) {
+        if (elBoost) elBoost.textContent = boostPsi(i).toFixed(1);
+        if (elAfr) elAfr.textContent = afrAt(i).toFixed(1);
+        if (elRpm) elRpm.textContent = fmtRpm(rpmAt(i));
+        if (elIat) {
+            const iat = 31.5 + (i / (N - 1)) * 3.5 + Math.sin(i * 0.15) * 0.2;
+            elIat.textContent = iat.toFixed(1);
+        }
+    }
+
     let currentProgress = 0;
     let hoverIndex = null;
     let redlineShown = false;
+    let loopIndex = 0;
+    let scanAnimFrame = null;
 
     function draw(progress = 1, hoverIdx = null) {
         const W = canvas.offsetWidth;
@@ -227,13 +246,16 @@ export function initTelemetry() {
         updateHud(hoverIndex);
         if (hud) hud.classList.add('active');
         setRedline(Math.abs(hoverIndex - peakBoostIndex) < N * 0.05);
+        updateStripValues(hoverIndex);
     }
 
     function pointerLeave() {
+        if (hoverIndex !== null) {
+            loopIndex = hoverIndex;
+        }
         hoverIndex = null;
         if (hud) hud.classList.remove('active');
         setRedline(false);
-        draw(1, null);
     }
 
     canvas.addEventListener('mousemove', pointerMove);
@@ -245,11 +267,29 @@ export function initTelemetry() {
     let animStart = null;
     const ANIM_DURATION = 1900;
 
+    function runScanLoop() {
+        if (hoverIndex === null) {
+            loopIndex = (loopIndex + 1) % N;
+            draw(1, loopIndex);
+            updateStripValues(loopIndex);
+            setRedline(Math.abs(loopIndex - peakBoostIndex) < N * 0.05);
+        }
+        scanAnimFrame = requestAnimationFrame(runScanLoop);
+    }
+
+    function startScanLoop() {
+        if (scanAnimFrame) cancelAnimationFrame(scanAnimFrame);
+        scanAnimFrame = requestAnimationFrame(runScanLoop);
+    }
+
     function animate(timestamp) {
         if (!animStart) animStart = timestamp;
         const t = Math.min((timestamp - animStart) / ANIM_DURATION, 1);
         currentProgress = 1 - Math.pow(1 - t, 2.5);
         draw(currentProgress);
+
+        const drawIdx = Math.min(N - 1, Math.floor(currentProgress * (N - 1)));
+        updateStripValues(drawIdx);
 
         if (!redlineShown && currentProgress * N >= peakBoostIndex) {
             redlineShown = true;
@@ -257,7 +297,11 @@ export function initTelemetry() {
             setTimeout(() => { if (hoverIndex === null) setRedline(false); }, 1100);
         }
 
-        if (t < 1) requestAnimationFrame(animate);
+        if (t < 1) {
+            requestAnimationFrame(animate);
+        } else {
+            startScanLoop();
+        }
     }
 
     function resize() {
@@ -275,6 +319,7 @@ export function initTelemetry() {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         currentProgress = 1;
         draw(1);
+        updateStripValues(N - 1);
         return;
     }
 

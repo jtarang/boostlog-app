@@ -442,15 +442,17 @@ em {
   justify-content: center;
   align-items: center;
   padding: calc(var(--nav-h) + 30px) 20px 110px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .hero-canvas {
-  position: absolute;
+  position: fixed;
   inset: 0;
   width: 100%;
   height: 100%;
   z-index: 0;
+  pointer-events: none;
+  filter: blur(2px);
 }
 
 .hero-fade {
@@ -518,6 +520,23 @@ em {
   z-index: 3;
   text-align: center;
   max-width: 1020px;
+}
+
+/* Telemetry instrument in the hero — the product IS the hero */
+.hero-instrument {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  max-width: 1100px;
+  margin: 2.8rem auto 0;
+}
+
+.hero-instrument .instrument {
+  box-shadow: 0 8px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(131, 56, 236, 0.12);
+}
+
+.hero-instrument .instrument-canvas {
+  height: 340px;
 }
 
 /* Race start: the lights live at the top of the page now */
