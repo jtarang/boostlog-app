@@ -3,6 +3,7 @@ import { showToast } from './toast.js';
 import { renameLog } from './modals.js';
 import { switchView } from './view.js';
 import { loadServerLog, refreshLogList } from './sidebar.js';
+import { preSelectTuningLogs } from './tuning.js';
 import {
     renameBuild,
     deleteBuild,
@@ -283,6 +284,7 @@ function openLogFromLibrary(log) {
 export function refreshBulkBar() {
     const bar = document.getElementById('libraryBulkBar');
     const count = document.getElementById('libraryBulkCount');
+    const compareBtn = document.getElementById('btnBulkCompare');
     if (!bar) return;
     if (state.bulkSelection.size === 0) {
         bar.style.display = 'none';
@@ -290,6 +292,20 @@ export function refreshBulkBar() {
     }
     bar.style.display = 'flex';
     count.textContent = `${state.bulkSelection.size} selected`;
+    if (compareBtn) compareBtn.style.display = state.bulkSelection.size === 2 ? '' : 'none';
+}
+
+export function compareSelectedLogs() {
+    if (state.bulkSelection.size !== 2) return;
+    const ids = [...state.bulkSelection];
+    const logs = ids.map(id => state.currentLogs.find(l => l.id === id)).filter(Boolean);
+    if (logs.length !== 2) return;
+
+    // Older log = baseline, newer = optimized (sorted by upload date).
+    logs.sort((a, b) => new Date(a.uploaded_at) - new Date(b.uploaded_at));
+    const storedOf = log => log.url.split('/').pop();
+    preSelectTuningLogs(storedOf(logs[0]), storedOf(logs[1]));
+    switchView('tuning');
 }
 
 export function clearBulkSelection() {

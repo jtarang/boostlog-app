@@ -10,6 +10,11 @@ let compareData = null;            // last /compare response
 let selectedBaseline = null;       // stored_filename
 let selectedOptimized = null;      // stored_filename
 
+export function preSelectTuningLogs(baseline, optimized) {
+    selectedBaseline = baseline;
+    selectedOptimized = optimized;
+}
+
 // Redraw on theme/palette flips so canvas colors track CSS.
 window.addEventListener('themechange', () => {
     if (state.currentView === 'tuning' && compareData) drawCharts();
@@ -115,9 +120,7 @@ export function swapTuningLogs() {
 }
 
 async function loadComparison() {
-    const label = document.getElementById('tuningSourceLabel');
     const content = document.getElementById('tuningContent');
-    if (label) label.textContent = 'Comparing runs…';
     if (content) content.classList.add('is-loading');
 
     try {
@@ -132,12 +135,8 @@ async function loadComparison() {
         drawCharts();
         updateKpis();
         renderRecoHint();
-        if (label) {
-            label.textContent = `${compareData.baseline.name}  →  ${compareData.optimized.name}`;
-        }
     } catch (err) {
         showToast(`Comparison failed: ${err.message}`, 'error');
-        if (label) label.textContent = 'Comparison unavailable';
     } finally {
         if (content) content.classList.remove('is-loading');
     }
@@ -256,21 +255,39 @@ function curveFor(side) {
     return [];
 }
 
+function noDataState(wrap, msg) {
+    wrap.innerHTML = `
+        <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;opacity:0.5;text-align:center;padding:16px">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            <p style="margin:0;font-size:12px;font-family:var(--font-mono);line-height:1.5">${msg}</p>
+        </div>`;
+}
+
 function renderPredictive(t) {
     const el = document.getElementById('tuningPredictiveChart');
     if (!el) return;
-    if (charts.predictive) charts.predictive.destroy();
+    if (charts.predictive) { charts.predictive.destroy(); charts.predictive = null; }
 
     const baseC = curveFor(compareData.baseline);
     const optC = curveFor(compareData.optimized);
+
+    if (!optC.length && !baseC.length) {
+        noDataState(el.parentElement, 'Requires RPM + Torque channels in your logs.<br>Log a WOT pull with both channels to see power curves.');
+        return;
+    }
+
+    el.parentElement.innerHTML = '<canvas id="tuningPredictiveChart"></canvas>';
+    const canvas = document.getElementById('tuningPredictiveChart');
     const pts = (c, k) => c.map(p => ({ x: p.rpm, y: p[k] }));
 
-    charts.predictive = new Chart(el.getContext('2d'), {
+    charts.predictive = new Chart(canvas.getContext('2d'), {
         type: 'line',
         data: {
             datasets: [
                 { label: 'Optimized Power', data: pts(optC, 'power'), borderColor: t.accent, borderWidth: 2.5,
-                  tension: 0.4, pointRadius: 0, yAxisID: 'yPwr', fill: true, backgroundColor: gradient(el, t.accent) },
+                  tension: 0.4, pointRadius: 0, yAxisID: 'yPwr', fill: true, backgroundColor: gradient(canvas, t.accent) },
                 { label: 'Baseline Power', data: pts(baseC, 'power'), borderColor: hexA(t.muted, 0.85), borderWidth: 1.5,
                   borderDash: [5, 4], tension: 0.4, pointRadius: 0, yAxisID: 'yPwr' },
                 { label: 'Optimized Torque', data: pts(optC, 'torque'), borderColor: t.tune2, borderWidth: 2,
@@ -293,10 +310,19 @@ function renderPredictive(t) {
 function renderGain(t) {
     const el = document.getElementById('tuningGainChart');
     if (!el) return;
-    if (charts.gain) charts.gain.destroy();
+    if (charts.gain) { charts.gain.destroy(); charts.gain = null; }
 
     const baseC = curveFor(compareData.baseline);
     const optC = curveFor(compareData.optimized);
+
+    if (!optC.length) {
+        noDataState(el.parentElement, 'Requires power curve data from both logs.<br>Available once RPM + Torque channels are present.');
+        return;
+    }
+
+    el.parentElement.innerHTML = '<canvas id="tuningGainChart"></canvas>';
+    const canvas = document.getElementById('tuningGainChart');
+
     const interp = (c, x) => {
         if (!c.length) return 0;
         if (x <= c[0].rpm) return c[0].power;
@@ -315,7 +341,7 @@ function renderGain(t) {
     const data = sample.map(p => Math.round(p.power - interp(baseC, p.rpm)));
     const peakIdx = data.indexOf(Math.max(...data));
 
-    charts.gain = new Chart(el.getContext('2d'), {
+    charts.gain = new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: {
             labels,
@@ -362,7 +388,7 @@ function renderRecoHint() {
             <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 3v3M12 18v3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M3 12h3M18 12h3M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"></path>
             </svg>
-            <p>Charts compare your two runs above.<br>Hit <strong>Create Module</strong> to have <strong>Moose</strong> generate a prioritized optimization plan from this telemetry.</p>
+            <p>Charts compare your two runs above.<br>Hit <strong>Generate AI Report</strong> to have <strong>Moose</strong> generate a prioritized optimization plan from this telemetry.</p>
         </div>`;
 }
 

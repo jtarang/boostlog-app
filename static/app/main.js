@@ -19,7 +19,7 @@ import {
 import { toggleAiDrawer, triggerAnalysis, submitChat } from './modules/analysis.js';
 import {
     renderLibraryLogs, bulkMovePrompt, clearBulkSelection,
-    closeMoveLogsModal, submitMoveLogs,
+    closeMoveLogsModal, submitMoveLogs, compareSelectedLogs,
 } from './modules/library.js';
 import {
     newBuildPrompt, closeNewBuildModal, submitNewBuild,
@@ -89,6 +89,7 @@ const actions = {
     deleteBuildFromView: (el) => deleteBuildFromView(parseInt(el.dataset.id, 10), el.dataset.name),
 
     // Library
+    compareSelectedLogs,
     bulkMovePrompt,
     clearBulkSelection,
     closeMoveLogsModal,

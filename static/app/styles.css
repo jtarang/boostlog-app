@@ -3729,7 +3729,6 @@ body::before {
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    margin-left: auto;
     box-shadow: 0 2px 10px rgba(var(--accent-rgb), 0.35);
     transition: filter 0.15s ease, box-shadow 0.15s ease;
     white-space: nowrap;
@@ -3747,18 +3746,6 @@ body::before {
     display: flex;
     flex-direction: column;
     gap: 20px;
-}
-
-.tuning-source-row { display: flex; align-items: center; }
-.tuning-source-label {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.04em;
-    color: var(--text-secondary);
-    padding: 5px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 2px;
-    background: var(--bg-card);
 }
 
 /* ── KPI strip ──────────────────────────────────────────────────── */
@@ -3922,23 +3909,6 @@ body::before {
     transition: var(--transition);
 }
 .tuning-swap:hover { color: var(--accent); border-color: var(--accent); background: rgba(var(--accent-rgb), 0.08); }
-.tuning-source-label {
-    margin-left: auto;
-    align-self: center;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.03em;
-    color: var(--text-secondary);
-    padding: 6px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 2px;
-    background: var(--bg-card);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 360px;
-}
-
 .tuning-content { display: flex; flex-direction: column; gap: 20px; transition: opacity 0.2s ease; }
 .tuning-content.is-loading { opacity: 0.45; pointer-events: none; }
 
@@ -3995,6 +3965,73 @@ body::before {
 
 @media (max-width: 640px) {
     .tuning-controls { flex-direction: column; align-items: stretch; }
-    .tuning-source-label { margin-left: 0; max-width: none; }
     .tuning-swap { align-self: center; transform: rotate(90deg); }
+}
+
+/* ── Rhombus / parallelogram button theme (matches landing page) ── */
+.btn-primary,
+.btn-secondary,
+.btn-demo,
+.btn-upload-sidebar,
+.btn-bulk,
+.btn-bulk-secondary,
+.btn-new-build-rail,
+.btn-download,
+.logout-btn,
+.url-import-btn,
+.log-card-btn {
+    transform: skewX(-8deg);
+    border-radius: 2px !important;
+}
+
+/* Counter-skew all children so text and icons stay upright */
+.btn-primary > *,
+.btn-secondary > *,
+.btn-demo > *,
+.btn-upload-sidebar > *,
+.btn-bulk > *,
+.btn-bulk-secondary > *,
+.btn-new-build-rail > *,
+.btn-download > *,
+.logout-btn > *,
+.url-import-btn > *,
+.log-card-btn > * {
+    display: inline-block;
+    transform: skewX(8deg);
+}
+
+/* Hover: keep skew, add lift */
+.btn-primary:hover,
+.btn-secondary:hover,
+.btn-demo:hover,
+.btn-upload-sidebar:hover,
+.btn-new-build-rail:hover,
+.btn-download:hover,
+.logout-btn:hover,
+.url-import-btn:hover,
+.log-card-btn:hover {
+    transform: skewX(-8deg) translateY(-2px);
+}
+
+.btn-primary:active,
+.btn-secondary:active,
+.btn-demo:active,
+.btn-upload-sidebar:active {
+    transform: skewX(-8deg) translateY(0);
+}
+
+/* Collapsed sidebar upload becomes icon-only pill — drop skew */
+.sidebar.collapsed .btn-upload-sidebar,
+.sidebar.collapsed .btn-upload-sidebar:hover {
+    transform: none;
+    border-radius: 50% !important;
+}
+
+/* Small send/icon-only buttons — keep square, no skew */
+#btnSendChat,
+.btn-close-modal,
+.btn-focus-mode,
+.rename-log-btn {
+    transform: none !important;
+    border-radius: 2px !important;
 }

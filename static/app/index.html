@@ -333,6 +333,13 @@
                         </div>
                         <div class="library-bulk-bar" id="libraryBulkBar" style="display: none;">
                             <span id="libraryBulkCount">0 selected</span>
+                            <button class="btn-bulk" id="btnBulkCompare" data-action="compareSelectedLogs" style="display:none;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                                    <polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                                </svg>
+                                Compare
+                            </button>
                             <button class="btn-bulk" data-action="bulkMovePrompt">Move to build…</button>
                             <button class="btn-bulk btn-bulk-secondary" data-action="clearBulkSelection">Clear</button>
                         </div>
@@ -562,7 +569,6 @@
                             <label>Optimized</label>
                             <select class="select-modern" id="tuningOptimizedSelect"></select>
                         </div>
-                        <span class="tuning-source-label" id="tuningSourceLabel"></span>
                         <button class="btn-create-module" id="btnCreateModule" data-action="generateTuningModule">
                             <svg class="cm-spark" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M12 3v3M12 18v3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M3 12h3M18 12h3M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"></path>
@@ -636,8 +642,8 @@
 
                         <div class="tuning-card">
                             <div class="tuning-card-head">
-                                <h3>Predictive Modeling</h3>
-                                <span class="tuning-card-tag">Gain by RPM band</span>
+                                <h3>Gain by RPM Band</h3>
+                                <span class="tuning-card-tag">Delta vs baseline</span>
                             </div>
                             <div class="tuning-chart-wrap"><canvas id="tuningGainChart"></canvas></div>
                         </div>

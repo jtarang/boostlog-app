@@ -54,7 +54,7 @@ def aggregate_wot_summary(file_path: str) -> dict:
     df = pl.read_csv(file_path, ignore_errors=True)
     cols = df.columns
 
-    rpm_col = _find_col(cols, ["engine rpm", "rpm"])
+    rpm_col = _find_col(cols, ["engine rpm", "engine speed", "rpm", "1/min"])
     boost_act_col = _find_col(cols, ["boost pressure (actual)", "map", "manifold absolute pressure"])
     boost_tgt_col = _find_col(cols, ["boost pressure (target)"])
     timing_cols = [c for c in cols if "timing corr" in c.lower()]
@@ -130,7 +130,7 @@ def rpm_power_curve(file_path: str, bins: int = 12) -> dict | None:
         return None
 
     cols = df.columns
-    rpm_col = _find_col(cols, ["engine rpm", "rpm"])
+    rpm_col = _find_col(cols, ["engine rpm", "engine speed", "rpm", "1/min"])
     torque_col = _find_col(cols, ["torque at clutch", "torque (actual)", "torque"])
     if not rpm_col or not torque_col:
         return None
