@@ -31,8 +31,8 @@ export async function initMotion() {
             const nowVisible = visible(section);
             if (nowVisible && !wasVisible) {
                 gsap.fromTo(section,
-                    { autoAlpha: 0, y: 10 },
-                    { autoAlpha: 1, y: 0, duration: 0.35, ease: 'power2.out', clearProps: 'all' });
+                    { autoAlpha: 0, y: 10, filter: 'blur(6px)' },
+                    { autoAlpha: 1, y: 0, filter: 'blur(0px)', duration: 0.35, ease: 'power2.out', clearProps: 'all' });
             }
             wasVisible = nowVisible;
         }).observe(section, { attributes: true, attributeFilter: ['style'] });
@@ -54,9 +54,9 @@ export async function initMotion() {
                     pending = [];
                     raf = null;
                     gsap.fromTo(batch,
-                        { autoAlpha: 0, y: 14 },
+                        { autoAlpha: 0, y: 14, filter: 'blur(6px)' },
                         {
-                            autoAlpha: 1, y: 0, duration: 0.34, stagger: 0.035,
+                            autoAlpha: 1, y: 0, filter: 'blur(0px)', duration: 0.34, stagger: 0.035,
                             ease: 'power2.out', clearProps: 'all', overwrite: true,
                         });
                 });
@@ -74,8 +74,8 @@ export async function initMotion() {
         new MutationObserver(() => {
             if (!fab.disabled) {
                 gsap.fromTo(fab,
-                    { scale: 0.4, rotation: -12, autoAlpha: 0 },
-                    { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.55, ease: 'back.out(2.2)', overwrite: true });
+                    { scale: 0.4, rotation: -12, autoAlpha: 0, filter: 'blur(4px)' },
+                    { scale: 1, rotation: 0, autoAlpha: 1, filter: 'blur(0px)', duration: 0.55, ease: 'back.out(2.2)', overwrite: true });
             }
         }).observe(fab, { attributes: true, attributeFilter: ['disabled'] });
     }

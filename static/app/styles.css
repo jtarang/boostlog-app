@@ -16,14 +16,29 @@
     --cyan: #54e2ff;       /* secondary channel color (builds, torque, data) */
     --cyan-rgb: 84, 226, 255;
     --amber: #ffb454;
+    /* Tuning-module secondary hues — analogous to the active --accent so the
+       AI Tuning charts/KPIs harmonize with every palette. Fallbacks here;
+       the @supports block below makes them accent-derived. */
+    --tune-2: #54e2ff;
+    --tune-3: #ffb454;
     --brand-grad: linear-gradient(to right, #3A86FF, #d400ff, #FF006E);
-    --card-radius: 12px;
+    --card-radius: 2px;
     --transition: all 0.25s ease;
     --font-display: 'Chakra Petch', 'Inter', sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
     --fg-rgb: 236, 238, 244;
     --bg-elevated: #101317;
     --bg-popover: #0e1114;
+}
+
+/* Derive the tuning secondaries from --accent (analogous hues, fixed S/L) so
+   they re-harmonize automatically for every palette. Substitution is dynamic:
+   each palette overrides --accent, and these resolve against it. */
+@supports (color: hsl(from white h s l)) {
+    :root {
+        --tune-2: hsl(from var(--accent) calc(h + 30) 72% 60%);
+        --tune-3: hsl(from var(--accent) calc(h - 55) 78% 60%);
+    }
 }
 
 /* ── Palettes (brand + semantic tokens; swap via <html data-palette>) ──
@@ -83,10 +98,11 @@
 [data-theme="light"] {
     --fg-rgb: 16, 19, 28;
     --bg-main: #eef0f5;
-    --bg-sidebar: #ffffff;
-    --bg-card: #ffffff;
-    --bg-elevated: #ffffff;
-    --bg-popover: #ffffff;
+    /* Semi-transparent so the body::before grid + glow shows through */
+    --bg-sidebar: rgba(255, 255, 255, 0.78);
+    --bg-card: rgba(255, 255, 255, 0.68);
+    --bg-elevated: rgba(255, 255, 255, 0.90);
+    --bg-popover: rgba(255, 255, 255, 0.96);
     --text-primary: #11141c;
     --text-secondary: #565e6e;
     --border-color: rgba(16, 19, 28, 0.12);
@@ -104,7 +120,7 @@
     --brand-grad: linear-gradient(to right, #67901a, #0e7490);
 }
 
-/* Soft elevation for white cards on the light canvas */
+/* Elevation for transparent cards on the light canvas */
 [data-theme="light"] .graph-card,
 [data-theme="light"] .stats-card,
 [data-theme="light"] .agent-chat-card,
@@ -114,7 +130,7 @@
 [data-theme="light"] .library-rail,
 [data-theme="light"] .library-main,
 [data-theme="light"] .metric-item {
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.09), 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
 /* Components with baked-in dark glass → light equivalents */
@@ -146,7 +162,7 @@
     background: rgba(var(--fg-rgb), 0.04);
     color: var(--text-secondary);
     border: 1px solid var(--border-color);
-    border-radius: 20px;
+    border-radius: 2px;
     cursor: pointer;
     transition: var(--transition);
     display: flex;
@@ -193,7 +209,7 @@
     padding: 12px;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border-radius: 2px;
     cursor: pointer;
     transition: var(--transition);
     font-family: inherit;
@@ -224,7 +240,7 @@
 .palette-swatch-bar {
     width: 100%;
     height: 28px;
-    border-radius: 6px;
+    border-radius: 2px;
 }
 
 .palette-swatch-name {
@@ -243,7 +259,7 @@
     background: rgba(var(--fg-rgb), 0.06);
     border: 1px solid var(--border-color);
     padding: 2px 7px;
-    border-radius: 4px;
+    border-radius: 2px;
 }
 
 * {
@@ -324,7 +340,7 @@ h4 {
 .sidebar-collapse-btn {
     width: 28px;
     height: 28px;
-    border-radius: 6px;
+    border-radius: 2px;
     border: 1px solid var(--border-color);
     background: transparent;
     color: var(--text-secondary);
@@ -382,7 +398,7 @@ h4 {
     justify-content: center;
     gap: 8px;
     padding: 12px;
-    border-radius: 10px;
+    border-radius: 2px;
     border: none;
     background: var(--accent);
     color: #fff;
@@ -430,7 +446,7 @@ h4 {
 
 .drop-zone {
     border: 2px dashed var(--border-color);
-    border-radius: 12px;
+    border-radius: 2px;
     padding: 32px 16px;
     text-align: center;
     cursor: pointer;
@@ -480,7 +496,7 @@ h4 {
     background: rgba(var(--cyan-rgb), 0.1);
     color: var(--cyan);
     border: 1px solid rgba(var(--cyan-rgb), 0.3);
-    border-radius: 3px;
+    border-radius: 2px;
     max-width: 80px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -507,7 +523,7 @@ h4 {
 .log-list li {
     padding: 12px 16px;
     background: var(--bg-card);
-    border-radius: 8px;
+    border-radius: 2px;
     border: 1px solid var(--border-color);
     font-size: 13px;
     cursor: pointer;
@@ -568,7 +584,7 @@ h4 {
     font-weight: 700;
     text-transform: uppercase;
     padding: 3px 7px;
-    border-radius: 3px;
+    border-radius: 2px;
     background: rgba(var(--accent-rgb), 0.12);
     border: 1px solid rgba(var(--accent-rgb), 0.35);
     color: var(--accent);
@@ -583,7 +599,7 @@ h4 {
     color: var(--text-secondary);
     cursor: pointer;
     padding: 4px;
-    border-radius: 4px;
+    border-radius: 2px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -625,7 +641,7 @@ h4 {
     align-items: center;
     gap: 10px;
     padding: 8px 12px;
-    border-radius: 8px;
+    border-radius: 2px;
     border: 1px solid transparent;
     background: transparent;
     color: var(--text-secondary);
@@ -808,7 +824,7 @@ body:not(.view-library) .library-view {
     justify-content: center;
     gap: 6px;
     padding: 10px;
-    border-radius: 8px;
+    border-radius: 2px;
     border: 1px dashed var(--border-color);
     background: transparent;
     color: var(--text-secondary);
@@ -848,7 +864,7 @@ body:not(.view-library) .library-view {
     align-items: center;
     gap: 8px;
     padding: 8px 10px;
-    border-radius: 8px;
+    border-radius: 2px;
     cursor: pointer;
     transition: background 0.15s ease;
     border: 1px solid transparent;
@@ -878,7 +894,7 @@ body:not(.view-library) .library-view {
     color: var(--text-secondary);
     background: rgba(var(--fg-rgb), 0.06);
     padding: 1px 7px;
-    border-radius: 10px;
+    border-radius: 2px;
 }
 
 .rail-item-actions {
@@ -899,7 +915,7 @@ body:not(.view-library) .library-view {
     color: var(--text-secondary);
     cursor: pointer;
     padding: 4px;
-    border-radius: 4px;
+    border-radius: 2px;
     display: flex;
     align-items: center;
     transition: var(--transition);
@@ -961,7 +977,7 @@ body:not(.view-library) .library-view {
     color: var(--text-secondary);
     background: rgba(var(--fg-rgb), 0.06);
     padding: 2px 10px;
-    border-radius: 10px;
+    border-radius: 2px;
 }
 
 .library-toolbar-right {
@@ -973,7 +989,7 @@ body:not(.view-library) .library-view {
 .library-search {
     background: var(--bg-main);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 2px;
     padding: 8px 12px;
     color: var(--text-primary);
     font-family: inherit;
@@ -999,7 +1015,7 @@ body:not(.view-library) .library-view {
     padding: 10px 14px;
     background: rgba(var(--accent-rgb), 0.10);
     border: 1px solid rgba(var(--accent-rgb), 0.35);
-    border-radius: 10px;
+    border-radius: 2px;
     font-size: 13px;
     color: var(--text-primary);
 }
@@ -1009,7 +1025,7 @@ body:not(.view-library) .library-view {
     color: #fff;
     border: none;
     padding: 6px 12px;
-    border-radius: 6px;
+    border-radius: 2px;
     font-family: inherit;
     font-size: 12px;
     font-weight: 600;
@@ -1050,7 +1066,7 @@ body:not(.view-library) .library-view {
     flex-direction: column;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border-radius: 2px;
     overflow: hidden;
     transition: var(--transition);
     position: relative;
@@ -1117,7 +1133,7 @@ body:not(.view-library) .library-view {
 .log-card-spark {
     height: 58px;
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: 2px;
     background: rgba(var(--fg-rgb), 0.02);
     overflow: hidden;
     transition: border-color 0.25s;
@@ -1157,7 +1173,7 @@ body:not(.view-library) .library-view {
     text-transform: uppercase;
     letter-spacing: 0.08em;
     padding: 3px 8px;
-    border-radius: 3px;
+    border-radius: 2px;
     background: rgba(var(--cyan-rgb), 0.1);
     color: var(--cyan);
     border: 1px solid rgba(var(--cyan-rgb), 0.3);
@@ -1212,7 +1228,7 @@ body:not(.view-library) .library-view {
     color: var(--text-secondary);
     cursor: pointer;
     padding: 6px;
-    border-radius: 6px;
+    border-radius: 2px;
     display: flex;
     align-items: center;
     transition: var(--transition);
@@ -1251,7 +1267,7 @@ body:not(.view-library) .library-view {
     overflow-y: auto;
     background: var(--bg-popover);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border-radius: 2px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(var(--accent-rgb), 0.15);
     padding: 4px;
     display: flex;
@@ -1267,7 +1283,7 @@ body:not(.view-library) .library-view {
     font-family: inherit;
     font-size: 13px;
     padding: 8px 12px;
-    border-radius: 6px;
+    border-radius: 2px;
     cursor: pointer;
     transition: background 0.15s ease;
 }
@@ -1291,7 +1307,7 @@ body:not(.view-library) .library-view {
 .agent-panel {
     background: var(--bg-main);
     padding: 20px;
-    border-radius: 12px;
+    border-radius: 2px;
     border: 1px solid rgba(var(--fg-rgb), 0.02);
 }
 
@@ -1305,7 +1321,7 @@ body:not(.view-library) .library-view {
 .btn-primary {
     width: 100%;
     padding: 12px;
-    border-radius: 8px;
+    border-radius: 2px;
     border: none;
     background: var(--accent);
     color: #fff;
@@ -1322,7 +1338,7 @@ body:not(.view-library) .library-view {
 .btn-secondary {
     width: 100%;
     padding: 12px;
-    border-radius: 8px;
+    border-radius: 2px;
     border: 1px solid var(--border-color);
     background: transparent;
     color: var(--text-primary);
@@ -1347,7 +1363,7 @@ body:not(.view-library) .library-view {
     width: 100%;
     margin-top: 16px;
     padding: 12px;
-    border-radius: 8px;
+    border-radius: 2px;
     border: 1px solid rgba(var(--accent-rgb), 0.4);
     background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.05), rgba(var(--accent-rgb), 0.15));
     color: #e0b0ff;
@@ -1398,18 +1414,25 @@ body:not(.view-library) .library-view {
 }
 
 .graph-card-title {
-    font-size: 15px;
-    font-weight: 600;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    font-family: var(--font-display, var(--font-mono));
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     margin: 0;
-    padding: 2px 6px;
-    border-radius: 6px;
+    padding: 2px 10px;
+    border-radius: 2px;
     border: 1px solid transparent;
     transition: var(--transition);
-    max-width: 400px;
+    max-width: 44%;
 }
 
 .graph-card-title.editable {
@@ -1439,7 +1462,7 @@ body:not(.view-library) .library-view {
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    border-radius: 20px;
+    border-radius: 2px;
     border: 1px solid var(--border-color);
     background: transparent;
     color: var(--text-secondary);
@@ -1486,20 +1509,106 @@ body:not(.view-library) .library-view {
 
 .graph-card {
     flex: 1;
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    /* Chart fills the left, channels live in a right-side rail (legend +
+       selection combined). minmax(0,*) on the track and row is essential —
+       a bare 1fr keeps its content's min size and shoves the chip list off
+       the page on shorter viewports. */
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(240px, 21vw, 330px);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas:
+        "header  header"
+        "chart   railsearch"
+        "chart   rail";
+    column-gap: 18px;
+    min-height: 0;
+}
+
+.graph-card .card-header { grid-area: header; }
+
+/* Top legend is redundant once the rail shows each channel's value — hide it. */
+.graph-card .chart-legend { display: none; }
+
+.graph-card .chart-container {
+    grid-area: chart;
+    min-height: 0;
+}
+
+.graph-card .toggle-search-wrap {
+    grid-area: railsearch;
+    margin-top: 14px;
+    padding-top: 0;
+    border-top: none;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.graph-card .parameter-toggles {
+    grid-area: rail;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 4px;
+    margin-top: 0;
+    padding-top: 12px;
+    padding-bottom: 76px; /* clear the floating AI button */
+    border-top: 1px solid var(--border-color);
+    max-height: none;
+    min-height: 0;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.graph-card .parameter-toggles .toggle-label {
+    width: 100%;
+    flex-shrink: 1;
+    white-space: normal;
+    align-items: flex-start;
+    line-height: 1.45;
+    font-size: 10.5px;
+}
+
+/* Collapse the channel rail to give the chart the full width. The second
+   selector outranks the focus-mode column override so it works in both modes. */
+.graph-card.rail-collapsed,
+body.focus-mode .graph-card.rail-collapsed {
+    grid-template-columns: minmax(0, 1fr) 0;
+    column-gap: 0;
+}
+
+.graph-card.rail-collapsed .toggle-search-wrap,
+.graph-card.rail-collapsed .parameter-toggles {
+    display: none;
+}
+
+#btnToggleRail.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.08);
 }
 
 .stats-card {
     flex-shrink: 0;
-    padding: 20px 24px;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
 }
 
 .card-header {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 14px 20px;
+    gap: 8px;
+    padding: 8px 0;
     border-bottom: 1px solid var(--border-color);
-    background: rgba(var(--fg-rgb), 0.015);
+    background: none;
 }
 
 .card-actions {
@@ -1513,7 +1622,7 @@ body:not(.view-library) .library-view {
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    border-radius: 20px;
+    border-radius: 2px;
     border: 1px solid var(--border-color);
     background: transparent;
     color: var(--text-secondary);
@@ -1543,7 +1652,7 @@ body.focus-mode .btn-focus-mode {
     border: 1px solid var(--border-color);
     color: var(--text-primary);
     padding: 8px 12px;
-    border-radius: 6px;
+    border-radius: 2px;
     font-family: inherit;
     font-size: 13px;
     outline: none;
@@ -1578,7 +1687,7 @@ body.focus-mode .btn-focus-mode {
     border: none;
     background: transparent;
     padding: 2px 4px;
-    border-radius: 6px;
+    border-radius: 2px;
     transition: var(--transition);
     letter-spacing: 0.01em;
 }
@@ -1591,7 +1700,7 @@ body.focus-mode .btn-focus-mode {
 .chart-legend-dot {
     width: 9px;
     height: 9px;
-    border-radius: 3px;
+    border-radius: 2px;
     flex-shrink: 0;
     box-shadow: 0 0 6px var(--dot-glow, transparent);
 }
@@ -1633,8 +1742,10 @@ body.focus-mode .main-content {
     padding: 10px;
 }
 
-body.focus-mode .chart-container {
-    flex: 1;
+/* Focus mode just hides the sidebar + stats and gives the rail a touch more
+   width — the chart/rail split itself is the shared .graph-card layout. */
+body.focus-mode .graph-card {
+    grid-template-columns: minmax(0, 1fr) clamp(260px, 22vw, 360px);
 }
 
 .empty-chart-overlay {
@@ -1646,7 +1757,7 @@ body.focus-mode .chart-container {
     background: rgba(24, 28, 37, 0.4);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-radius: 8px;
+    border-radius: 2px;
     z-index: 10;
     transition: var(--transition);
 }
@@ -1674,7 +1785,7 @@ body.focus-mode .chart-container {
     width: 100%;
     padding: 56px 40px;
     background: rgba(var(--fg-rgb), 0.02);
-    border-radius: 12px 12px 0 0;
+    border-radius: 2px 2px 0 0;
     border-bottom: none;
 }
 
@@ -1693,7 +1804,7 @@ body.focus-mode .chart-container {
     background: rgba(var(--fg-rgb),0.02);
     border: 2px dashed var(--border-color);
     border-top: none;
-    border-radius: 0 0 12px 12px;
+    border-radius: 0 0 2px 2px;
     padding: 16px 20px 20px;
 }
 
@@ -1727,7 +1838,7 @@ body.focus-mode .chart-container {
     border: 1px solid var(--border-color);
     color: var(--text-primary);
     padding: 9px 14px;
-    border-radius: 8px;
+    border-radius: 2px;
     font-family: inherit;
     font-size: 13px;
     outline: none;
@@ -1741,7 +1852,7 @@ body.focus-mode .chart-container {
 
 .url-import-btn {
     padding: 9px 18px;
-    border-radius: 8px;
+    border-radius: 2px;
     border: none;
     background: var(--accent);
     color: white;
@@ -1782,18 +1893,13 @@ body.focus-mode .chart-container {
     border-color: var(--accent);
 }
 
-.toggle-search-icon {
-    color: var(--text-secondary);
-    flex-shrink: 0;
-}
-
 .toggle-search {
     width: 100%;
     background: var(--bg-main);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
     padding: 8px 12px;
-    border-radius: 20px;
+    border-radius: 2px;
     font-family: var(--font-mono);
     font-size: 11px;
     outline: none;
@@ -1856,7 +1962,7 @@ body.focus-mode .chart-container {
 
 .parameter-toggles::-webkit-scrollbar-thumb {
     background: var(--border-color);
-    border-radius: 4px;
+    border-radius: 2px;
 }
 
 .toggle-label {
@@ -1868,7 +1974,7 @@ body.focus-mode .chart-container {
     cursor: pointer;
     background: rgba(var(--fg-rgb), 0.03);
     padding: 5px 10px;
-    border-radius: 20px;
+    border-radius: 2px;
     border: 1px solid var(--border-color);
     transition: var(--transition);
     user-select: none;
@@ -1909,17 +2015,37 @@ body.focus-mode .chart-container {
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
-    padding: 4px 0;
+    padding: 8px 0;
     user-select: none;
-    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 14px;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 100%;
+}
+
+.collapsible-header h3 {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+    transition: color 0.15s ease;
 }
 
 .collapsible-header:hover h3 {
-    color: var(--accent);
+    color: var(--text-primary);
 }
 
 .collapse-chevron {
-    transition: transform 0.3s ease;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    transition: transform 0.25s ease;
     color: var(--text-secondary);
 }
 
@@ -1932,7 +2058,7 @@ body.focus-mode .chart-container {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     padding: 16px;
-    border-radius: 8px;
+    border-radius: 2px;
     display: flex;
     flex-direction: column;
     border: 1px solid var(--border-color);
@@ -1992,7 +2118,7 @@ body.focus-mode .chart-container {
     margin-top: 16px;
     flex: 1;
     background: transparent;
-    border-radius: 8px;
+    border-radius: 2px;
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
@@ -2002,7 +2128,7 @@ body.focus-mode .chart-container {
 }
 
 .msg-user, .msg-ai {
-    border-radius: 12px;
+    border-radius: 2px;
     padding: 1rem 1.25rem;
     font-size: 0.88rem;
     line-height: 1.7;
@@ -2109,7 +2235,7 @@ body.focus-mode .chart-container {
     border: 1px solid var(--border-color);
     color: var(--text-primary);
     padding: 12px 16px;
-    border-radius: 8px;
+    border-radius: 2px;
     margin-bottom: 16px;
     font-family: inherit;
     font-size: 14px;
@@ -2145,7 +2271,7 @@ body.focus-mode .chart-container {
     align-items: center;
     gap: 12px;
     padding: 14px 20px;
-    border-radius: 12px;
+    border-radius: 2px;
     background: rgba(24, 28, 37, 0.92);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -2222,7 +2348,7 @@ body.focus-mode .chart-container {
     cursor: pointer;
     font-size: 14px;
     padding: 4px;
-    border-radius: 4px;
+    border-radius: 2px;
     transition: var(--transition);
     flex-shrink: 0;
 }
@@ -2250,7 +2376,7 @@ body.focus-mode .chart-container {
     gap: 10px;
     background: rgba(var(--fg-rgb), 0.03);
     padding: 6px 16px 6px 6px;
-    border-radius: 30px;
+    border-radius: 2px;
     border: 1px solid var(--border-color);
     transition: var(--transition);
 }
@@ -2305,7 +2431,7 @@ body.focus-mode .chart-container {
     background: rgba(var(--danger-rgb), 0.05);
     color: var(--danger);
     border: 1px solid rgba(var(--danger-rgb), 0.2);
-    border-radius: 20px;
+    border-radius: 2px;
     cursor: pointer;
     transition: var(--transition);
     font-weight: 600;
@@ -2462,7 +2588,7 @@ body.focus-mode .chart-container {
     padding: 6px 10px;
     border-left: 2px solid var(--accent);
     background: rgba(var(--accent-rgb), 0.05);
-    border-radius: 0 6px 6px 0;
+    border-radius: 0 2px 2px 0;
     animation: step-appear 0.3s ease;
 }
 
@@ -2481,7 +2607,7 @@ body.focus-mode .chart-container {
     font-size: 12px;
     font-weight: 600;
     padding: 6px 12px;
-    border-radius: 8px;
+    border-radius: 2px;
     border: 1px solid var(--border-color);
     white-space: nowrap;
     opacity: 0;
@@ -2580,7 +2706,7 @@ body.focus-mode .chart-container {
 .ai-usage-pill {
     background: rgba(var(--accent-rgb), 0.1);
     border: 1px solid rgba(var(--accent-rgb), 0.2);
-    border-radius: 20px;
+    border-radius: 2px;
     padding: 4px 10px;
     font-size: 11px;
     font-weight: 600;
@@ -2647,7 +2773,7 @@ body.focus-mode .chart-container {
 }
 
 .ai-drawer-actions .btn-primary {
-    border-radius: 20px;
+    border-radius: 2px;
 }
 
 .ai-drawer-actions .btn-primary.btn-rerun {
@@ -2685,7 +2811,7 @@ body.focus-mode .chart-container {
 .history-count {
     background: rgba(var(--accent-rgb), 0.15);
     color: var(--accent);
-    border-radius: 10px;
+    border-radius: 2px;
     padding: 1px 7px;
     font-size: 10px;
     font-weight: 700;
@@ -2703,7 +2829,7 @@ body.focus-mode .chart-container {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
-    border-radius: 14px;
+    border-radius: 2px;
     padding: 4px 12px;
     font-size: 11px;
     cursor: pointer;
@@ -2747,7 +2873,7 @@ body.focus-mode .chart-container {
 .hamburger {
     width: 36px;
     height: 36px;
-    border-radius: 8px;
+    border-radius: 2px;
     border: 1px solid var(--border-color);
     background: transparent;
     color: var(--text-primary);
@@ -2786,6 +2912,38 @@ body.focus-mode .chart-container {
 @media (max-width: 1024px) {
     .dashboard-grid {
         flex-direction: column;
+    }
+}
+
+/* Narrow screens: a side rail is too cramped — revert the graph card to the
+   original stacked layout (chart on top, channel chips wrapping below). */
+@media (max-width: 900px) {
+    .graph-card {
+        display: flex;
+        flex-direction: column;
+    }
+    .graph-card .chart-container { min-height: 300px; }
+    .graph-card .toggle-search-wrap {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+        margin-bottom: 0;
+    }
+    .graph-card .parameter-toggles {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        height: auto;
+        max-height: 120px;
+        margin-top: 20px;
+        padding-top: 20px;
+        padding-bottom: 8px;
+    }
+    .graph-card .parameter-toggles .toggle-label {
+        width: auto;
+        white-space: nowrap;
+        align-items: center;
+        font-size: 11px;
     }
 }
 
@@ -2944,7 +3102,7 @@ body.focus-mode .chart-container {
     color: var(--text-secondary);
     width: 32px;
     height: 32px;
-    border-radius: 8px;
+    border-radius: 2px;
     font-size: 18px;
     cursor: pointer;
     display: flex;
@@ -3024,7 +3182,7 @@ body.focus-mode .chart-container {
     padding: 6px 12px;
     background: rgba(var(--fg-rgb), 0.03);
     border: 1px solid var(--border-color);
-    border-radius: 20px;
+    border-radius: 2px;
     font-size: 11px;
     color: var(--text-secondary);
     cursor: pointer;
@@ -3040,6 +3198,15 @@ body.focus-mode .chart-container {
 /* Settings View */
 .settings-view {
     padding: 30px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* Garage (builds) is a plain block view — give it its own scroll so long
+   fleets don't clip against the fixed-height main content. */
+.builds-view {
+    height: 100%;
+    overflow-y: auto;
 }
 
 .settings-container {
@@ -3050,7 +3217,7 @@ body.focus-mode .chart-container {
 .settings-card {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
+    border-radius: 2px;
     padding: 24px;
     margin-bottom: 24px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -3101,7 +3268,7 @@ body.focus-mode .chart-container {
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
     padding: 4px 10px;
-    border-radius: 6px;
+    border-radius: 2px;
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
@@ -3147,7 +3314,7 @@ body.focus-mode .chart-container {
     right: 0;
     height: 2px;
     background: linear-gradient(90deg, var(--accent), var(--cyan));
-    border-radius: 12px 12px 0 0;
+    border-radius: 2px 2px 0 0;
 }
 
 .garage-modal-header h2 {
@@ -3171,7 +3338,7 @@ body.focus-mode .chart-container {
 .build-mgr-card {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
+    border-radius: 2px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -3219,7 +3386,7 @@ body.focus-mode .chart-container {
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
     padding: 4px 12px;
-    border-radius: 6px;
+    border-radius: 2px;
     font-size: 11px;
     cursor: pointer;
     transition: var(--transition);
@@ -3269,7 +3436,7 @@ body.focus-mode .chart-container {
     font-size: 12px !important;
     background: rgba(0, 0, 0, 0.2);
     padding: 2px 4px;
-    border-radius: 4px;
+    border-radius: 2px;
 }
 
 .build-mgr-footer {
@@ -3304,7 +3471,7 @@ body.focus-mode .chart-container {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     padding: 3px 10px;
-    border-radius: 20px;
+    border-radius: 2px;
     white-space: nowrap;
 }
 
@@ -3349,7 +3516,7 @@ body.focus-mode .chart-container {
     display: flex;
     gap: 1px;
     background: var(--border-color);
-    border-radius: 8px;
+    border-radius: 2px;
     overflow: hidden;
     margin-bottom: 16px;
 }
@@ -3407,7 +3574,33 @@ body.focus-mode .chart-container {
    Overrides only; all selectors/IDs above keep working untouched.
    ═══════════════════════════════════════════════════════════════════ */
 
-/* Engineering graph-paper underlay */
+/* Full-screen 3D wireframe surface backdrop (scene.js, no twinkle points) */
+.app-scene {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+    pointer-events: none;
+    opacity: 0.75;
+}
+
+[data-theme="light"] .app-scene {
+    opacity: 0.22;
+}
+
+/* Frosted-glass readability over the 3D backdrop */
+.sidebar {
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+}
+
+.main-content {
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+/* Engineering graph-paper underlay + accent glow (mirrors landing page) */
 body::before {
     content: '';
     position: fixed;
@@ -3416,7 +3609,8 @@ body::before {
     pointer-events: none;
     background:
         linear-gradient(rgba(var(--fg-rgb), 0.022) 1px, transparent 1px) 0 0 / 100% 56px,
-        linear-gradient(90deg, rgba(var(--fg-rgb), 0.022) 1px, transparent 1px) 0 0 / 56px 100%;
+        linear-gradient(90deg, rgba(var(--fg-rgb), 0.022) 1px, transparent 1px) 0 0 / 56px 100%,
+        radial-gradient(120% 80% at 50% 0%, rgba(var(--accent-rgb), 0.07), transparent 52%);
 }
 
 ::selection {
@@ -3435,7 +3629,7 @@ body::before {
 
 ::-webkit-scrollbar-thumb {
     background: rgba(var(--fg-rgb), 0.14);
-    border-radius: 6px;
+    border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -3447,11 +3641,21 @@ body::before {
     outline-offset: 2px;
 }
 
-/* ── Filled controls: text must read on lime ───────────────────── */
+/* ── Action buttons echo the landing's mono-telemetry CTAs ─────── */
+.btn-primary,
+.btn-secondary,
+.btn-create-module,
+.btn-demo {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-weight: 600;
+}
+
+/* Filled controls: text must read on accent */
 .btn-primary {
     color: var(--accent-contrast);
     font-weight: 700;
-    letter-spacing: 0.02em;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -3492,7 +3696,7 @@ body::before {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.09em;
-    border-radius: 6px;
+    border-radius: 2px;
 }
 
 .sidebar-nav .nav-btn.active {
@@ -3507,12 +3711,13 @@ body::before {
     letter-spacing: 0.14em;
 }
 
-/* ── Brand wordmark — Outfit lockup mirroring the mark:
-      front bars = text color, tall bar = accent ─────────────────── */
+/* ── Brand wordmark — Chakra Petch lockup, unified with the display
+      font used across the app + landing (front bars = text, tall = accent) */
 .brand-text,
 .brand h1,
 .mobile-header h1 {
-    font-family: 'Outfit', sans-serif;
+    font-family: var(--font-display);
+    letter-spacing: 0;
     color: var(--text-primary);
 }
 
@@ -3536,7 +3741,7 @@ body::before {
 
 /* ── Metrics: instrument cells ──────────────────────────────────── */
 .metric-item {
-    border-radius: 4px;
+    border-radius: 2px;
     border-left-width: 2px;
 }
 
@@ -3562,8 +3767,25 @@ body::before {
 }
 
 /* ── Auth: night dyno cell ──────────────────────────────────────── */
+/* Login backdrop mirrors the landing page: engineering graph-paper grid +
+   radial accent glow + film grain (see landing body::before and .noise).
+   Tokenized so it tracks the active palette. */
 .auth-overlay {
-    background: rgba(7, 9, 10, 0.82);
+    background:
+        linear-gradient(rgba(var(--fg-rgb), 0.028) 1px, transparent 1px) 0 0 / 100% 56px,
+        linear-gradient(90deg, rgba(var(--fg-rgb), 0.028) 1px, transparent 1px) 0 0 / 56px 100%,
+        radial-gradient(120% 90% at 50% 0%, rgba(var(--accent-rgb), 0.05), transparent 55%),
+        var(--bg-main);
+}
+
+.auth-overlay::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 .auth-fx {
@@ -3572,6 +3794,7 @@ body::before {
     width: 100%;
     height: 100%;
     pointer-events: none;
+    filter: blur(2px);
 }
 
 [data-theme="light"] .auth-fx {
@@ -3581,7 +3804,7 @@ body::before {
 .auth-card {
     background: rgba(10, 13, 15, 0.85);
     border: 1px solid rgba(var(--fg-rgb), 0.12);
-    border-radius: 12px;
+    border-radius: 2px;
     z-index: 1;
 }
 
@@ -3596,7 +3819,7 @@ body::before {
 /* ── Inputs ─────────────────────────────────────────────────────── */
 .input-modern,
 .select-modern {
-    border-radius: 6px;
+    border-radius: 2px;
 }
 
 .input-modern:focus {
@@ -3606,7 +3829,7 @@ body::before {
 /* ── Drop zones: taped-off bay ──────────────────────────────────── */
 .drop-zone {
     border-width: 1px;
-    border-radius: 8px;
+    border-radius: 2px;
     border-color: rgba(var(--accent-rgb), 0.35);
 }
 
@@ -3617,10 +3840,379 @@ body::before {
 /* ── Modals ─────────────────────────────────────────────────────── */
 .modal-card,
 .modal-content {
-    border-radius: 12px;
+    border-radius: 2px;
 }
 
 /* ── AI drawer accents ──────────────────────────────────────────── */
 .ai-usage-pill {
     font-family: var(--font-mono);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   AI Tuning Module
+   ═══════════════════════════════════════════════════════════════════ */
+.tuning-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* "Generate AI Report" button — sits inline in the controls row, uses accent */
+.btn-create-module {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border: none;
+    border-radius: 2px;
+    background: var(--accent);
+    color: #fff;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(var(--accent-rgb), 0.35);
+    transition: filter 0.15s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+}
+.btn-create-module:hover { filter: brightness(1.1); box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.45); }
+.btn-create-module:disabled { cursor: progress; filter: saturate(0.6) brightness(0.85); }
+.btn-create-module.is-loading .cm-spark { animation: cm-spin 0.8s linear infinite; }
+@keyframes cm-spin { to { transform: rotate(360deg); } }
+
+.tuning-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 24px 30px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ── KPI strip ──────────────────────────────────────────────────── */
+.tuning-kpis-section { display: flex; flex-direction: column; gap: 0; }
+
+.tuning-kpis-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    padding: 8px 2px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    transition: color 0.15s ease;
+    margin-bottom: 14px;
+}
+.tuning-kpis-toggle:hover { color: var(--text-primary); }
+.kpis-chevron { flex-shrink: 0; transition: transform 0.25s ease; }
+.tuning-kpis-toggle[aria-expanded="false"] .kpis-chevron { transform: rotate(180deg); }
+
+.tuning-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    overflow: hidden;
+    max-height: 300px;
+    opacity: 1;
+    transition: max-height 0.3s ease, opacity 0.2s ease, margin-bottom 0.25s ease;
+    margin-bottom: 0;
+}
+.tuning-kpis.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin-bottom: -14px;
+    pointer-events: none;
+}
+.tuning-kpi {
+    position: relative;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--kpi-color);
+    border-radius: 2px;
+    padding: 16px 18px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 6px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    overflow: hidden;
+}
+.tuning-kpi:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.28), 0 0 14px color-mix(in srgb, var(--kpi-color) 18%, transparent);
+}
+.tuning-kpi-label {
+    flex: 1 0 100%;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+.tuning-kpi-value { font-family: var(--font-display); font-size: 30px; font-weight: 700; color: var(--kpi-color); line-height: 1; }
+.tuning-kpi-unit { font-family: var(--font-mono); font-size: 13px; color: var(--text-secondary); }
+.tuning-kpi-sub { flex: 1 0 100%; margin-top: 8px; font-size: 11px; color: var(--text-secondary); }
+
+/* ── Analytics grid ─────────────────────────────────────────────── */
+.tuning-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-auto-rows: 340px;
+    gap: 20px;
+}
+.tuning-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--card-radius);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+.tuning-card-wide { grid-column: 1; }
+.tuning-reco-card { grid-column: 2; grid-row: 1 / span 2; }
+.tuning-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(var(--fg-rgb), 0.015);
+}
+.tuning-card-head h3 { margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.tuning-card-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    padding: 3px 9px;
+    border-radius: 2px;
+    background: rgba(var(--accent-rgb), 0.1);
+    border: 1px solid rgba(var(--accent-rgb), 0.22);
+}
+.tuning-chart-wrap { position: relative; padding: 16px 18px; height: 280px; }
+.tuning-chart-wrap canvas { width: 100% !important; height: 100% !important; }
+
+/* ── Recommendations ────────────────────────────────────────────── */
+.tuning-reco-list {
+    flex: 1;
+    min-height: 0;
+    padding: 8px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: opacity 0.25s ease;
+}
+.tuning-reco-list.is-refreshing { opacity: 0.4; }
+.tuning-reco {
+    display: flex;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 2px;
+    transition: background 0.2s ease;
+}
+.tuning-reco:hover { background: rgba(var(--fg-rgb), 0.04); }
+.tuning-reco-dot {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    margin-top: 6px;
+    border-radius: 50%;
+    background: var(--reco-color);
+    box-shadow: 0 0 10px var(--reco-color);
+}
+.tuning-reco-body { flex: 1; min-width: 0; }
+.tuning-reco-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
+.tuning-reco-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.tuning-reco-pill {
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--reco-color);
+    padding: 2px 8px;
+    border-radius: 2px;
+    border: 1px solid color-mix(in srgb, var(--reco-color) 45%, transparent);
+    background: color-mix(in srgb, var(--reco-color) 12%, transparent);
+}
+.tuning-reco-text { margin: 0; font-size: 12px; line-height: 1.5; color: var(--text-secondary); }
+
+@media (max-width: 980px) {
+    .tuning-grid { grid-template-columns: 1fr; }
+    .tuning-card-wide, .tuning-reco-card { grid-column: 1; }
+    .tuning-reco-card { grid-row: auto; }
+    .tuning-body { padding: 18px; }
+    .btn-create-module span { display: none; }
+}
+
+/* ── AI Tuning: two-log picker + states ─────────────────────────── */
+.tuning-controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.tuning-picker { display: flex; flex-direction: column; gap: 6px; min-width: 200px; }
+.tuning-picker label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+}
+.tuning-picker .select-modern { min-width: 200px; }
+.tuning-swap {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    margin-bottom: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+.tuning-swap:hover { color: var(--accent); border-color: var(--accent); background: rgba(var(--accent-rgb), 0.08); }
+.tuning-content { display: flex; flex-direction: column; gap: 20px; transition: opacity 0.2s ease; }
+.tuning-content.is-loading { opacity: 0.45; pointer-events: none; }
+
+.tuning-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 12px;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+}
+.tuning-empty svg { color: var(--accent); opacity: 0.8; }
+.tuning-empty h3 { margin: 0; font-size: 18px; color: var(--text-primary); }
+.tuning-empty p { margin: 0; max-width: 420px; font-size: 13px; line-height: 1.6; }
+
+/* Recommendations hint / loading */
+.tuning-reco-hint {
+    height: 100%;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 14px;
+    padding: 28px;
+    color: var(--text-secondary);
+}
+.tuning-reco-hint p { margin: 0; font-size: 13px; line-height: 1.6; }
+.tuning-reco-hint strong { color: var(--text-primary); }
+.tuning-spinner {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 3px solid rgba(var(--accent-rgb), 0.25);
+    border-top-color: var(--accent);
+    animation: cm-spin 0.7s linear infinite;
+}
+
+/* Rendered AI markdown inside the reco panel */
+.tuning-reco-list.markdown-body { padding: 18px; display: block; font-size: 13px; line-height: 1.65; color: var(--text-primary); overflow-y: auto; }
+.markdown-body h2, .markdown-body h3 { font-size: 14px; margin: 16px 0 8px; color: var(--text-primary); }
+.markdown-body h2:first-child, .markdown-body h3:first-child { margin-top: 0; }
+.markdown-body table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
+.markdown-body th, .markdown-body td { border: 1px solid var(--border-color); padding: 6px 8px; text-align: left; }
+.markdown-body th { background: rgba(var(--accent-rgb), 0.08); }
+.markdown-body ul, .markdown-body ol { padding-left: 20px; margin: 8px 0; }
+.markdown-body li { margin: 4px 0; }
+.markdown-body code { font-family: var(--font-mono); font-size: 12px; background: rgba(var(--fg-rgb), 0.06); padding: 1px 5px; border-radius: 2px; }
+.markdown-body strong { color: var(--text-primary); }
+
+@media (max-width: 640px) {
+    .tuning-controls { flex-direction: column; align-items: stretch; }
+    .tuning-swap { align-self: center; transform: rotate(90deg); }
+}
+
+/* ── Rhombus / parallelogram button theme (matches landing page) ── */
+.btn-primary,
+.btn-secondary,
+.btn-demo,
+.btn-upload-sidebar,
+.btn-bulk,
+.btn-bulk-secondary,
+.btn-new-build-rail,
+.btn-download,
+.logout-btn,
+.url-import-btn,
+.log-card-btn {
+    transform: skewX(-8deg);
+    border-radius: 2px !important;
+}
+
+/* Counter-skew all children so text and icons stay upright */
+.btn-primary > *,
+.btn-secondary > *,
+.btn-demo > *,
+.btn-upload-sidebar > *,
+.btn-bulk > *,
+.btn-bulk-secondary > *,
+.btn-new-build-rail > *,
+.btn-download > *,
+.logout-btn > *,
+.url-import-btn > *,
+.log-card-btn > * {
+    display: inline-block;
+    transform: skewX(8deg);
+}
+
+/* Hover: keep skew, add lift */
+.btn-primary:hover,
+.btn-secondary:hover,
+.btn-demo:hover,
+.btn-upload-sidebar:hover,
+.btn-new-build-rail:hover,
+.btn-download:hover,
+.logout-btn:hover,
+.url-import-btn:hover,
+.log-card-btn:hover {
+    transform: skewX(-8deg) translateY(-2px);
+}
+
+.btn-primary:active,
+.btn-secondary:active,
+.btn-demo:active,
+.btn-upload-sidebar:active {
+    transform: skewX(-8deg) translateY(0);
+}
+
+/* Collapsed sidebar upload becomes icon-only pill — drop skew */
+.sidebar.collapsed .btn-upload-sidebar,
+.sidebar.collapsed .btn-upload-sidebar:hover {
+    transform: none;
+    border-radius: 50% !important;
+}
+
+/* Small send/icon-only buttons — keep square, no skew */
+#btnSendChat,
+.btn-close-modal,
+.btn-focus-mode,
+.rename-log-btn {
+    transform: none !important;
+    border-radius: 2px !important;
 }

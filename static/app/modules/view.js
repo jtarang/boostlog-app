@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { renderLibrary } from './library.js';
 import { renderBuildsView } from './builds.js';
 import { loadUserSettings } from './settings.js';
+import { renderTuning } from './tuning.js';
 
 export function switchView(view) {
     state.currentView = view;
@@ -12,30 +13,31 @@ export function switchView(view) {
         btn.classList.toggle('active', btn.dataset.view === view);
     });
 
+    // Hide every view first, then reveal the requested one.
+    document.querySelector('.dashboard-grid').style.display = 'none';
+    document.getElementById('libraryView').style.display = 'none';
+    document.getElementById('buildsView').style.display = 'none';
+    document.getElementById('settingsView').style.display = 'none';
+    document.getElementById('tuningView').style.display = 'none';
+
+    // Note: library/tuning are flex-column views (CSS `display:flex`) whose
+    // inner scroll containers rely on that flex chain — show them with 'flex',
+    // not 'block', or their `overflow-y:auto` never gets a constrained height.
     if (view === 'dashboard') {
         document.querySelector('.dashboard-grid').style.display = 'grid';
-        document.getElementById('libraryView').style.display = 'none';
-        document.getElementById('buildsView').style.display = 'none';
-        document.getElementById('settingsView').style.display = 'none';
         setTimeout(() => { if (state.currentChart) state.currentChart.resize(); }, 50);
     } else if (view === 'library') {
-        document.querySelector('.dashboard-grid').style.display = 'none';
-        document.getElementById('libraryView').style.display = 'block';
-        document.getElementById('buildsView').style.display = 'none';
-        document.getElementById('settingsView').style.display = 'none';
+        document.getElementById('libraryView').style.display = 'flex';
         renderLibrary();
     } else if (view === 'builds') {
-        document.querySelector('.dashboard-grid').style.display = 'none';
-        document.getElementById('libraryView').style.display = 'none';
         document.getElementById('buildsView').style.display = 'block';
-        document.getElementById('settingsView').style.display = 'none';
         renderBuildsView();
     } else if (view === 'settings') {
-        document.querySelector('.dashboard-grid').style.display = 'none';
-        document.getElementById('libraryView').style.display = 'none';
-        document.getElementById('buildsView').style.display = 'none';
         document.getElementById('settingsView').style.display = 'block';
         loadUserSettings();
+    } else if (view === 'tuning') {
+        document.getElementById('tuningView').style.display = 'flex';
+        renderTuning();
     }
 }
 
@@ -66,4 +68,16 @@ export function toggleFocusMode() {
     setTimeout(() => {
         if (state.currentChart) state.currentChart.resize();
     }, 300);
+}
+
+// Collapse / show the right-side channel rail so the chart can use the full width.
+export function toggleChannelRail() {
+    const card = document.querySelector('.graph-card');
+    if (!card) return;
+    const collapsed = card.classList.toggle('rail-collapsed');
+    const btn = document.getElementById('btnToggleRail');
+    if (btn) btn.classList.toggle('active', !collapsed);
+    setTimeout(() => {
+        if (state.currentChart) state.currentChart.resize();
+    }, 280);
 }

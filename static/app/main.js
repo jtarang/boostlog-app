@@ -9,7 +9,7 @@ import {
     toggleSidebar, collapseSidebar,
 } from './modules/sidebar.js';
 import { renameLog, closeRenameModal, submitRename, closeDeleteModal } from './modules/modals.js';
-import { switchView, toggleMetrics, filterToggles, toggleFocusMode } from './modules/view.js';
+import { switchView, toggleMetrics, filterToggles, toggleFocusMode, toggleChannelRail } from './modules/view.js';
 import { toggleAllParams } from './modules/chart.js';
 import {
     openUploadModal, closeUploadModal,
@@ -19,7 +19,7 @@ import {
 import { toggleAiDrawer, triggerAnalysis, submitChat } from './modules/analysis.js';
 import {
     renderLibraryLogs, bulkMovePrompt, clearBulkSelection,
-    closeMoveLogsModal, submitMoveLogs,
+    closeMoveLogsModal, submitMoveLogs, compareSelectedLogs,
 } from './modules/library.js';
 import {
     newBuildPrompt, closeNewBuildModal, submitNewBuild,
@@ -31,6 +31,7 @@ import {
     renamePasskey, deletePasskey, openUpgradeModal, closeUpgradeModal, submitUpgrade, downgradeToFree,
 } from './modules/settings.js';
 import { initTheme, toggleTheme, setPalette } from './modules/theme.js';
+import { generateTuningModule, swapTuningLogs } from './modules/tuning.js';
 
 // === Action registry: maps data-action="<name>" → handler(el, event) ===
 const actions = {
@@ -61,11 +62,16 @@ const actions = {
     // Chart / metrics
     toggleMetrics,
     toggleFocusMode,
+    toggleChannelRail,
     toggleAllParams: (el) => toggleAllParams(el.dataset.checked === 'true'),
 
     // AI drawer
     toggleAiDrawer,
     triggerAnalysis,
+
+    // AI Tuning Module
+    generateTuningModule,
+    swapTuningLogs,
 
     // Modals (rename / delete)
     closeRenameModal,
@@ -84,6 +90,7 @@ const actions = {
     deleteBuildFromView: (el) => deleteBuildFromView(parseInt(el.dataset.id, 10), el.dataset.name),
 
     // Library
+    compareSelectedLogs,
     bulkMovePrompt,
     clearBulkSelection,
     closeMoveLogsModal,
@@ -195,4 +202,9 @@ initAuth();
 
 // Optional motion / WebGL layers — progressive enhancement only, never fatal.
 import('./modules/motion.js?v=7.1').then(m => m.initMotion()).catch(() => { });
-import('./modules/authfx.js?v=7.1').then(m => m.initAuthFx()).catch(() => { });
+// 3D wireframe surface backdrop behind the entire app (no twinkle points).
+// Auth overlay gets the full scene (with points) for visual punch on login.
+import('/static/landing/modules/scene.js?v=8.5').then(m => {
+    m.initScene(document.getElementById('appScene'), { showPoints: false });
+    m.initScene(document.getElementById('authScene'));
+}).catch(() => { });
