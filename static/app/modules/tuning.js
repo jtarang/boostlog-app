@@ -105,6 +105,15 @@ export function renderTuning() {
         baseSel.addEventListener('change', () => { selectedBaseline = baseSel.value; loadComparison(); });
         optSel.addEventListener('change', () => { selectedOptimized = optSel.value; loadComparison(); });
         baseSel._bound = true;
+
+        const kpisToggle = document.getElementById('tuningKpisToggle');
+        const kpisBody   = document.getElementById('tuningKpisBody');
+        if (kpisToggle && kpisBody) {
+            kpisToggle.addEventListener('click', () => {
+                const collapsed = kpisBody.classList.toggle('collapsed');
+                kpisToggle.setAttribute('aria-expanded', String(!collapsed));
+            });
+        }
     }
 
     loadComparison();
