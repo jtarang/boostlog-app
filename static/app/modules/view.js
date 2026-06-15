@@ -69,3 +69,15 @@ export function toggleFocusMode() {
         if (state.currentChart) state.currentChart.resize();
     }, 300);
 }
+
+// Collapse / show the right-side channel rail so the chart can use the full width.
+export function toggleChannelRail() {
+    const card = document.querySelector('.graph-card');
+    if (!card) return;
+    const collapsed = card.classList.toggle('rail-collapsed');
+    const btn = document.getElementById('btnToggleRail');
+    if (btn) btn.classList.toggle('active', !collapsed);
+    setTimeout(() => {
+        if (state.currentChart) state.currentChart.resize();
+    }, 280);
+}

@@ -9,7 +9,7 @@ import {
     toggleSidebar, collapseSidebar,
 } from './modules/sidebar.js';
 import { renameLog, closeRenameModal, submitRename, closeDeleteModal } from './modules/modals.js';
-import { switchView, toggleMetrics, filterToggles, toggleFocusMode } from './modules/view.js';
+import { switchView, toggleMetrics, filterToggles, toggleFocusMode, toggleChannelRail } from './modules/view.js';
 import { toggleAllParams } from './modules/chart.js';
 import {
     openUploadModal, closeUploadModal,
@@ -62,6 +62,7 @@ const actions = {
     // Chart / metrics
     toggleMetrics,
     toggleFocusMode,
+    toggleChannelRail,
     toggleAllParams: (el) => toggleAllParams(el.dataset.checked === 'true'),
 
     // AI drawer

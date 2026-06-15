@@ -1414,21 +1414,25 @@ body:not(.view-library) .library-view {
 }
 
 .graph-card-title {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-secondary);
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    font-family: var(--font-display, var(--font-mono));
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     margin: 0;
-    padding: 2px 4px;
+    padding: 2px 10px;
     border-radius: 2px;
     border: 1px solid transparent;
     transition: var(--transition);
-    max-width: 400px;
+    max-width: 44%;
 }
 
 .graph-card-title.editable {
@@ -1509,6 +1513,82 @@ body:not(.view-library) .library-view {
     border: none;
     border-radius: 0;
     box-shadow: none;
+    /* Chart fills the left, channels live in a right-side rail (legend +
+       selection combined). minmax(0,*) on the track and row is essential —
+       a bare 1fr keeps its content's min size and shoves the chip list off
+       the page on shorter viewports. */
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(240px, 21vw, 330px);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas:
+        "header  header"
+        "chart   railsearch"
+        "chart   rail";
+    column-gap: 18px;
+    min-height: 0;
+}
+
+.graph-card .card-header { grid-area: header; }
+
+/* Top legend is redundant once the rail shows each channel's value — hide it. */
+.graph-card .chart-legend { display: none; }
+
+.graph-card .chart-container {
+    grid-area: chart;
+    min-height: 0;
+}
+
+.graph-card .toggle-search-wrap {
+    grid-area: railsearch;
+    margin-top: 14px;
+    padding-top: 0;
+    border-top: none;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.graph-card .parameter-toggles {
+    grid-area: rail;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 4px;
+    margin-top: 0;
+    padding-top: 12px;
+    padding-bottom: 76px; /* clear the floating AI button */
+    border-top: 1px solid var(--border-color);
+    max-height: none;
+    min-height: 0;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.graph-card .parameter-toggles .toggle-label {
+    width: 100%;
+    flex-shrink: 1;
+    white-space: normal;
+    align-items: flex-start;
+    line-height: 1.45;
+    font-size: 10.5px;
+}
+
+/* Collapse the channel rail to give the chart the full width. The second
+   selector outranks the focus-mode column override so it works in both modes. */
+.graph-card.rail-collapsed,
+body.focus-mode .graph-card.rail-collapsed {
+    grid-template-columns: minmax(0, 1fr) 0;
+    column-gap: 0;
+}
+
+.graph-card.rail-collapsed .toggle-search-wrap,
+.graph-card.rail-collapsed .parameter-toggles {
+    display: none;
+}
+
+#btnToggleRail.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.08);
 }
 
 .stats-card {
@@ -1521,9 +1601,11 @@ body:not(.view-library) .library-view {
 }
 
 .card-header {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
     padding: 8px 0;
     border-bottom: 1px solid var(--border-color);
     background: none;
@@ -1660,8 +1742,10 @@ body.focus-mode .main-content {
     padding: 10px;
 }
 
-body.focus-mode .chart-container {
-    flex: 1;
+/* Focus mode just hides the sidebar + stats and gives the rail a touch more
+   width — the chart/rail split itself is the shared .graph-card layout. */
+body.focus-mode .graph-card {
+    grid-template-columns: minmax(0, 1fr) clamp(260px, 22vw, 360px);
 }
 
 .empty-chart-overlay {
@@ -1807,11 +1891,6 @@ body.focus-mode .chart-container {
 
 .toggle-search-wrap:focus-within {
     border-color: var(--accent);
-}
-
-.toggle-search-icon {
-    color: var(--text-secondary);
-    flex-shrink: 0;
 }
 
 .toggle-search {
@@ -2833,6 +2912,38 @@ body.focus-mode .chart-container {
 @media (max-width: 1024px) {
     .dashboard-grid {
         flex-direction: column;
+    }
+}
+
+/* Narrow screens: a side rail is too cramped — revert the graph card to the
+   original stacked layout (chart on top, channel chips wrapping below). */
+@media (max-width: 900px) {
+    .graph-card {
+        display: flex;
+        flex-direction: column;
+    }
+    .graph-card .chart-container { min-height: 300px; }
+    .graph-card .toggle-search-wrap {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+        margin-bottom: 0;
+    }
+    .graph-card .parameter-toggles {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        height: auto;
+        max-height: 120px;
+        margin-top: 20px;
+        padding-top: 20px;
+        padding-bottom: 8px;
+    }
+    .graph-card .parameter-toggles .toggle-label {
+        width: auto;
+        white-space: nowrap;
+        align-items: center;
+        font-size: 11px;
     }
 }
 

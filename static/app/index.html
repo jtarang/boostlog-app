@@ -648,16 +648,23 @@
                 <div class="graph-card col-span-2">
                     <div class="card-header">
                         <div class="card-header-left">
-                            <h3 id="pageTitle" class="graph-card-title">Dyno Telemetry</h3>
                             <a id="btnDownload" href="#" class="btn-download" style="display:none;">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                                 Download
                             </a>
                         </div>
+                        <h3 id="pageTitle" class="graph-card-title">Dyno Telemetry</h3>
                         <div class="card-actions">
                             <select class="select-modern" id="xAxisSelect">
                                 <option value="">X-Axis</option>
                             </select>
+
+                            <button class="btn-focus-mode" id="btnToggleRail" data-action="toggleChannelRail" title="Toggle channel panel">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="15" y1="3" x2="15" y2="21"></line>
+                                </svg>
+                                <span>Channels</span>
+                            </button>
 
                             <button class="btn-focus-mode" id="btnFocusMode" data-action="toggleFocusMode" title="Focus Mode">
                                 <svg class="icon-expand" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -697,12 +704,7 @@
                         </div>
                     </div>
                     <div class="toggle-search-wrap">
-                        <svg class="toggle-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                        <input type="text" class="toggle-search" id="toggleSearch" placeholder="Filter parameters...">
+                        <input type="text" class="toggle-search" id="toggleSearch" placeholder="Filter channels...">
                         <div class="bulk-actions">
                             <button type="button" data-action="toggleAllParams" data-checked="true">All</button>
                             <span class="divider">|</span>
