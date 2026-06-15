@@ -480,8 +480,8 @@ em {
   height: 100%;
   z-index: 0;
   pointer-events: none;
-  filter: blur(2px);
 }
+.cluster-canvas { z-index: 1; }
 
 .hero-fade {
   position: absolute;
@@ -489,8 +489,8 @@ em {
   z-index: 1;
   pointer-events: none;
   background:
-    radial-gradient(70% 55% at 50% 48%, rgba(7, 9, 10, 0.42), transparent 70%),
-    linear-gradient(180deg, rgba(7, 9, 10, 0.55) 0%, transparent 26%, transparent 58%, var(--bg) 97%);
+    radial-gradient(60% 45% at 50% 28%, rgba(7, 9, 10, 0.72) 0%, rgba(7, 9, 10, 0.15) 65%, transparent 100%),
+    linear-gradient(180deg, rgba(7, 9, 10, 0.48) 0%, transparent 22%, transparent 62%, var(--bg) 97%);
 }
 
 /* HUD framing */

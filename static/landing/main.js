@@ -354,10 +354,15 @@ document.addEventListener('DOMContentLoaded', () => {
     initCtaReveal();
     initFaq();
 
-    // 3D boost-map hero (Three.js) — optional enhancement, never fatal.
+    // 3D boost-map scene (Three.js) — reveals underneath as cluster fades out.
     import('./modules/scene.js?v=7.1')
         .then(m => m.initScene(document.getElementById('apexScene')))
-        .catch(() => { /* WebGL/CDN unavailable — static hero stays */ });
+        .catch(() => { /* WebGL unavailable — static hero stays */ });
+
+    // Instrument-cluster intro (canvas + GSAP) — fades out when hero content arrives.
+    import('./modules/cluster.js?v=1.1')
+        .then(m => m.initCluster(document.getElementById('clusterCanvas')))
+        .catch(() => { /* canvas unavailable — static hero stays */ });
 
     // Telemetry instrument canvas
     import('./modules/datalog.js?v=7.1')
