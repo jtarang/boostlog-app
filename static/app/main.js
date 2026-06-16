@@ -202,9 +202,11 @@ initAuth();
 
 // Optional motion / WebGL layers — progressive enhancement only, never fatal.
 import('./modules/motion.js?v=7.1').then(m => m.initMotion()).catch(() => { });
-// 3D wireframe surface backdrop behind the entire app (no twinkle points).
-// Auth overlay gets the full scene (with points) for visual punch on login.
-import('/static/landing/modules/scene.js?v=8.5').then(m => {
-    m.initScene(document.getElementById('appScene'), { showPoints: false });
-    m.initScene(document.getElementById('authScene'));
-}).catch(() => { });
+import('/static/landing/modules/background.js?v=1.2').then(m => {
+    m.initBackground(document.getElementById('appScene'));
+    m.initBackground(document.getElementById('authScene'));
+}).catch(console.error);
+
+import('/static/landing/modules/scramble.js?v=1.0').then(m => m.initScramble()).catch(console.error);
+
+import('./modules/playback.js?v=1.0').then(m => m.initPlayback()).catch(console.error);
