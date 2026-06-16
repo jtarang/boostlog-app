@@ -354,11 +354,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initCtaReveal();
     initFaq();
 
-    // 3D boost-map scene (Three.js) — reveals underneath as cluster fades out.
-    import('./modules/scene.js?v=7.1')
-        .then(m => m.initScene(document.getElementById('apexScene')))
-        .catch(() => { /* WebGL unavailable — static hero stays */ });
-
     // Instrument-cluster intro (canvas + GSAP) — fades out when hero content arrives.
     import('./modules/cluster.js?v=1.1')
         .then(m => m.initCluster(document.getElementById('clusterCanvas')))
@@ -368,4 +363,14 @@ document.addEventListener('DOMContentLoaded', () => {
     import('./modules/datalog.js?v=7.1')
         .then(m => m.initTelemetry())
         .catch(() => { /* canvas stays empty behind metrics */ });
+
+    // Background particle and graph line canvas
+    import('./modules/background.js?v=1.2')
+        .then(m => m.initBackground(document.getElementById('bgCanvas')))
+        .catch(console.error);
+
+    // Init scramble hover effect
+    import('./modules/scramble.js?v=1.0')
+        .then(m => m.initScramble())
+        .catch(console.error);
 });

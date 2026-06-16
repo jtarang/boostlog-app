@@ -173,13 +173,46 @@ export function calculateMetrics() {
         }
     });
 
+    updateLiveMetrics({
+        boostCol, rpmCol, timingCol, torqueCol, fuelCol, speedCol,
+        maxB, maxR, maxT, maxTrq, maxFuel, maxSpd
+    }, true);
+}
+
+// Called during playback to show instantaneous values, or by calculateMetrics to show max values.
+export function updateLiveMetrics(rowOrMax, isMax = false) {
     const $ = id => document.getElementById(id);
-    $('valBoost').textContent = boostCol && maxB !== null ? maxB.toFixed(1) : '--';
-    $('valRpm').textContent = rpmCol && maxR !== null ? maxR.toFixed(0) : '--';
-    $('valTiming').textContent = timingCol && maxT !== null ? maxT.toFixed(1) : '--';
-    $('valTorque').textContent = torqueCol && maxTrq !== null ? maxTrq.toFixed(0) : '--';
-    $('valFuelPressure').textContent = fuelCol && maxFuel !== null ? maxFuel.toFixed(1) : '--';
-    $('valSpeed').textContent = speedCol && maxSpd !== null ? maxSpd.toFixed(0) : '--';
+    
+    if (isMax) {
+        $('valBoost').textContent = rowOrMax.boostCol && rowOrMax.maxB !== null ? rowOrMax.maxB.toFixed(1) : '--';
+        $('valRpm').textContent = rowOrMax.rpmCol && rowOrMax.maxR !== null ? rowOrMax.maxR.toFixed(0) : '--';
+        $('valTiming').textContent = rowOrMax.timingCol && rowOrMax.maxT !== null ? rowOrMax.maxT.toFixed(1) : '--';
+        $('valTorque').textContent = rowOrMax.torqueCol && rowOrMax.maxTrq !== null ? rowOrMax.maxTrq.toFixed(0) : '--';
+        $('valFuelPressure').textContent = rowOrMax.fuelCol && rowOrMax.maxFuel !== null ? rowOrMax.maxFuel.toFixed(1) : '--';
+        $('valSpeed').textContent = rowOrMax.speedCol && rowOrMax.maxSpd !== null ? rowOrMax.maxSpd.toFixed(0) : '--';
+    } else {
+        const headers = state.currentHeaders;
+        const boostCol = headers.find(h => h.toLowerCase().includes('boost') && !h.toLowerCase().includes('target'));
+        const rpmCol = headers.find(h => h.toLowerCase() === 'rpm' || h.toLowerCase().includes('engine speed'));
+        const timingCol = headers.find(h => h.toLowerCase().includes('timing corr'));
+        const torqueCol = headers.find(h => h.toLowerCase().includes('torque at clutch (actual)')) || headers.find(h => h.toLowerCase().includes('torque') || h.toLowerCase().includes('trq'));
+        const fuelCol = headers.find(h => h.toLowerCase().includes('pi fuel pressure')) || headers.find(h => h.toLowerCase().includes('low pressure fuel')) || headers.find(h => h.toLowerCase().includes('fuel pressure'));
+        const speedCol = headers.find(h => h.toLowerCase().includes('speed') && !h.toLowerCase().includes('engine'));
+
+        const vB = boostCol ? parseFloat(rowOrMax[boostCol]) : NaN;
+        const vR = rpmCol ? parseFloat(rowOrMax[rpmCol]) : NaN;
+        const vT = timingCol ? parseFloat(rowOrMax[timingCol]) : NaN;
+        const vTrq = torqueCol ? parseFloat(rowOrMax[torqueCol]) : NaN;
+        const vF = fuelCol ? parseFloat(rowOrMax[fuelCol]) : NaN;
+        const vS = speedCol ? parseFloat(rowOrMax[speedCol]) : NaN;
+
+        $('valBoost').textContent = !isNaN(vB) ? vB.toFixed(1) : '--';
+        $('valRpm').textContent = !isNaN(vR) ? vR.toFixed(0) : '--';
+        $('valTiming').textContent = !isNaN(vT) ? vT.toFixed(1) : '--';
+        $('valTorque').textContent = !isNaN(vTrq) ? vTrq.toFixed(0) : '--';
+        $('valFuelPressure').textContent = !isNaN(vF) ? vF.toFixed(1) : '--';
+        $('valSpeed').textContent = !isNaN(vS) ? vS.toFixed(0) : '--';
+    }
 }
 
 export function renderChart() {
@@ -213,6 +246,7 @@ export function renderChart() {
     const stackPrimaryAxis = {};
     const scalesConfig = {
         x: {
+            type: 'linear',
             grid: { color: t.grid },
             ticks: { color: t.ticks, maxTicksLimit: 12 }
         }
@@ -223,9 +257,13 @@ export function renderChart() {
         const color = lineColors[state.currentHeaders.indexOf(header) % lineColors.length];
 
         const data = state.currentData.map(row => {
-            const v = parseFloat(row[header]);
-            return isNaN(v) ? null : v;
-        });
+            const xVal = parseFloat(row[xCol]);
+            const yVal = parseFloat(row[header]);
+            return {
+                x: isNaN(xVal) ? null : xVal,
+                y: isNaN(yVal) ? null : yVal
+            };
+        }).filter(pt => pt.x !== null);
 
         const lh = header.toLowerCase();
         const isHighPress = lh.includes('hpfp') || lh.includes('rail pressure') ||
@@ -245,7 +283,7 @@ export function renderChart() {
 
         const meta = stackMeta[stackID];
 
-        const validVals = data.filter(v => v !== null).sort((a, b) => a - b);
+        const validVals = data.map(pt => pt.y).filter(v => v !== null).sort((a, b) => a - b);
         let suggestedMin, suggestedMax;
         if (validVals.length > 1) {
             const lo = validVals[Math.max(0, Math.floor(validVals.length * 0.01))];

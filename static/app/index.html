@@ -13,7 +13,7 @@
         rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="apple-touch-icon" href="/static/logo_boostlog.svg">
-    <link rel="stylesheet" href="/static/app/styles.css?v=8.7">
+    <link rel="stylesheet" href="/static/app/styles.css?v=8.9">
     <!-- Chart.js for beautiful graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
@@ -55,14 +55,14 @@
                 <button type="button" class="tab" data-action="switchAuthTab" data-mode="register">Register</button>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; margin-bottom: 8px;">
-                <button type="button" class="btn-demo" data-action="loginAsDemo" style="margin: 0;">
+                <button type="button" class="btn-demo" data-scramble="true" data-action="loginAsDemo" style="margin: 0;">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #FF006E;">
                         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                     </svg>
                     Demo Mode
                 </button>
 
-                <a href="/api/auth/github/login" class="btn-primary btn-github"
+                <a href="/api/auth/github/login" class="btn-primary btn-github" data-scramble="true"
                     style="margin: 0; background-color: #2b3137; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #444d56; font-size: 13px;">
                     <svg height="15" aria-hidden="true" viewBox="0 0 16 16" version="1.1" width="15"
                         data-view-component="true" style="fill: white;">
@@ -84,8 +84,8 @@
                 <input type="password" id="authPassword" placeholder="Password" required class="input-modern" autocomplete="current-password">
                 
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
-                    <button type="submit" class="btn-primary" id="authSubmitBtn">Login</button>
-                    <button type="button" id="btnPasskeyLogin" class="btn-secondary" data-action="loginWithPasskey" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: var(--text-primary); font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <button type="submit" class="btn-primary" data-scramble="true" id="authSubmitBtn">Login</button>
+                    <button type="button" id="btnPasskeyLogin" class="btn-secondary" data-scramble="true" data-action="loginWithPasskey" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: var(--text-primary); font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="m21 2-9.6 9.6"></path><path d="m15.5 7.5 3 3L22 7l-3-3"></path></svg>
                         Sign in with Passkey
                     </button>
@@ -109,7 +109,7 @@
                 <p id="forgotHint" style="font-size: 11px; margin-top: -8px; color: var(--success); display: none;"></p>
             </div>
             <div class="modal-footer" style="padding-top: 12px;">
-                <button class="btn-primary" data-action="submitForgotPassword" style="width: 100%;">Send Recovery Link</button>
+                <button class="btn-primary" data-scramble="true" data-action="submitForgotPassword" style="width: 100%;">Send Recovery Link</button>
             </div>
         </div>
     </div>
@@ -126,7 +126,7 @@
                 <p id="resetError" class="auth-error" style="text-align: left;"></p>
             </div>
             <div class="modal-footer" style="padding-top: 12px;">
-                <button class="btn-primary" data-action="submitResetPassword" style="width: 100%;">Update Password</button>
+                <button class="btn-primary" data-scramble="true" data-action="submitResetPassword" style="width: 100%;">Update Password</button>
             </div>
         </div>
     </div>
@@ -205,7 +205,7 @@
             </nav>
 
             <div class="upload-section">
-                <button class="btn-upload-sidebar" data-action="openUploadModal">
+                <button class="btn-upload-sidebar" data-scramble="true" data-action="openUploadModal">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                         <polyline points="17 8 12 3 7 8"/>
@@ -295,7 +295,7 @@
                 </header>
                 <div class="library-body">
                     <aside class="library-rail">
-                        <button class="btn-new-build-rail" data-action="newBuildPrompt">
+                        <button class="btn-new-build-rail" data-scramble="true" data-action="newBuildPrompt">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                                 <line x1="12" y1="11" x2="12" y2="17"></line>
@@ -333,15 +333,15 @@
                         </div>
                         <div class="library-bulk-bar" id="libraryBulkBar" style="display: none;">
                             <span id="libraryBulkCount">0 selected</span>
-                            <button class="btn-bulk" id="btnBulkCompare" data-action="compareSelectedLogs" style="display:none;">
+                            <button class="btn-bulk" data-scramble="true" id="btnBulkCompare" data-action="compareSelectedLogs" style="display:none;">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
                                     <polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
                                 </svg>
                                 Compare
                             </button>
-                            <button class="btn-bulk" data-action="bulkMovePrompt">Move to build…</button>
-                            <button class="btn-bulk btn-bulk-secondary" data-action="clearBulkSelection">Clear</button>
+                            <button class="btn-bulk" data-scramble="true" data-action="bulkMovePrompt">Move to build…</button>
+                            <button class="btn-bulk btn-bulk-secondary" data-scramble="true" data-action="clearBulkSelection">Clear</button>
                         </div>
                         <div class="library-grid" id="libraryGrid"></div>
                         <div class="library-empty" id="libraryEmpty" style="display: none;">
@@ -435,12 +435,12 @@
                                 <label>Change Username</label>
                                 <div style="display: flex; gap: 8px;">
                                     <input type="text" id="setNewUsername" class="input-modern" style="margin-bottom: 0;">
-                                    <button class="btn-primary" data-action="updateUsername" style="padding: 0 16px;">Update</button>
+                                    <button class="btn-primary" data-scramble="true" data-action="updateUsername" style="padding: 0 16px;">Update</button>
                                 </div>
                             </div>
                             <div class="input-group">
                                 <label>Passkeys / Biometrics</label>
-                                <button class="btn-secondary" data-action="registerPasskey" style="background: rgba(131, 56, 236, 0.1); border: 1px solid var(--accent); color: var(--accent); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <button class="btn-secondary" data-scramble="true" data-action="registerPasskey" style="background: rgba(131, 56, 236, 0.1); border: 1px solid var(--accent); color: var(--accent); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                     Add a Passkey
                                 </button>
@@ -469,28 +469,28 @@
                                 <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Free</div>
                                 <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">$0/month</div>
                                 <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 12px;">50k tokens</div>
-                                <button class="btn-primary" data-action="openUpgradeModal" data-tier="free" data-price="0" style="width: 100%; padding: 8px; font-size: 12px; display: none;" id="upgradeFreeBut">Current</button>
-                                <button class="btn-secondary" data-action="downgradeToFree" style="width: 100%; padding: 8px; font-size: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.15);" id="downgradeFreeBut">Downgrade</button>
+                                <button class="btn-primary" data-scramble="true" data-action="openUpgradeModal" data-tier="free" data-price="0" style="width: 100%; padding: 8px; font-size: 12px; display: none;" id="upgradeFreeBut">Current</button>
+                                <button class="btn-secondary" data-scramble="true" data-action="downgradeToFree" style="width: 100%; padding: 8px; font-size: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.15);" id="downgradeFreeBut">Downgrade</button>
                             </div>
                             <div style="padding: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 2px; text-align: center;">
                                 <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Pro</div>
                                 <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">$14/month</div>
                                 <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 12px;">5M tokens</div>
-                                <button class="btn-primary" id="upgradeProUpBtn" data-action="openUpgradeModal" data-tier="pro" data-price="14" style="width: 100%; padding: 8px; font-size: 12px;">Upgrade</button>
-                                <button class="btn-primary" id="upgradeProBut" data-action="openUpgradeModal" data-tier="pro" data-price="14" style="width: 100%; padding: 8px; font-size: 12px; display: none;">Current</button>
+                                <button class="btn-primary" data-scramble="true" id="upgradeProUpBtn" data-action="openUpgradeModal" data-tier="pro" data-price="14" style="width: 100%; padding: 8px; font-size: 12px;">Upgrade</button>
+                                <button class="btn-primary" data-scramble="true" id="upgradeProBut" data-action="openUpgradeModal" data-tier="pro" data-price="14" style="width: 100%; padding: 8px; font-size: 12px; display: none;">Current</button>
                             </div>
                             <div style="padding: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 2px; text-align: center;">
                                 <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Tuner</div>
                                 <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">$29/month</div>
                                 <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 12px;">100M tokens</div>
-                                <button class="btn-primary" id="upgradeTunerUpBtn" data-action="openUpgradeModal" data-tier="tuner" data-price="29" style="width: 100%; padding: 8px; font-size: 12px;">Upgrade</button>
-                                <button class="btn-primary" id="upgradeTunerBut" data-action="openUpgradeModal" data-tier="tuner" data-price="29" style="width: 100%; padding: 8px; font-size: 12px; display: none;">Current</button>
+                                <button class="btn-primary" data-scramble="true" id="upgradeTunerUpBtn" data-action="openUpgradeModal" data-tier="tuner" data-price="29" style="width: 100%; padding: 8px; font-size: 12px;">Upgrade</button>
+                                <button class="btn-primary" data-scramble="true" id="upgradeTunerBut" data-action="openUpgradeModal" data-tier="tuner" data-price="29" style="width: 100%; padding: 8px; font-size: 12px; display: none;">Current</button>
                             </div>
                         </div>
                     </div>
 
                     <div class="settings-actions">
-                        <button class="btn-primary" data-action="saveUserSettings" style="padding: 12px 32px;">Save All Settings</button>
+                        <button class="btn-primary" data-scramble="true" data-action="saveUserSettings" style="padding: 12px 32px;">Save All Settings</button>
                     </div>
                 </div>
             </section>
@@ -517,7 +517,7 @@
                         </div>
                         <div class="library-toolbar-right" style="display: flex; gap: 12px; align-items: center;">
                             <input type="text" id="buildsSearch" class="library-search" placeholder="Search by car, VIN, or customer…" style="width: 260px;">
-                            <button class="btn-primary" data-action="newBuildPrompt" style="white-space: nowrap;">
+                            <button class="btn-primary" data-scramble="true" data-action="newBuildPrompt" style="white-space: nowrap;">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -569,7 +569,7 @@
                         </svg>
                         <h3>Need two datalogs to compare</h3>
                         <p>Upload at least two runs — a baseline and a tuned pull — and the module will model real gains and generate AI recommendations.</p>
-                        <button class="btn-primary" data-action="openUploadModal" style="width:auto; padding: 10px 20px;">Upload a Boostlog</button>
+                        <button class="btn-primary" data-scramble="true" data-action="openUploadModal" style="width:auto; padding: 10px 20px;">Upload a Boostlog</button>
                     </div>
 
                     <div class="tuning-content" id="tuningContent">
@@ -648,7 +648,7 @@
                 <div class="graph-card col-span-2">
                     <div class="card-header">
                         <div class="card-header-left">
-                            <a id="btnDownload" href="#" class="btn-download" style="display:none;">
+                            <a id="btnDownload" href="#" class="btn-download" data-scramble="true" style="display:none;">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                                 Download
                             </a>
@@ -658,6 +658,13 @@
                             <select class="select-modern" id="xAxisSelect">
                                 <option value="">X-Axis</option>
                             </select>
+
+                            <button class="btn-focus-mode" id="btnPlayLog" title="Play Datalog">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                                <span>Play</span>
+                            </button>
 
                             <button class="btn-focus-mode" id="btnToggleRail" data-action="toggleChannelRail" title="Toggle channel panel">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -728,27 +735,27 @@
                     <div class="metrics-grid collapsible-body" id="metricsBody">
                         <div class="metric-item">
                             <span class="label">Max Boost</span>
-                            <span class="value" id="valBoost">-- </span><span class="unit">psi</span>
+                            <span class="value" id="valBoost" data-scramble="true">-- </span><span class="unit">psi</span>
                         </div>
                         <div class="metric-item">
                             <span class="label">Peak RPM</span>
-                            <span class="value" id="valRpm">-- </span><span class="unit">rpm</span>
+                            <span class="value" id="valRpm" data-scramble="true">-- </span><span class="unit">rpm</span>
                         </div>
                         <div class="metric-item danger">
                             <span class="label">Max Timing Corr.</span>
-                            <span class="value" id="valTiming">-- </span><span class="unit">deg</span>
+                            <span class="value" id="valTiming" data-scramble="true">-- </span><span class="unit">deg</span>
                         </div>
                         <div class="metric-item">
                             <span class="label">PI Fuel Pressure</span>
-                            <span class="value" id="valFuelPressure">-- </span><span class="unit">psi</span>
+                            <span class="value" id="valFuelPressure" data-scramble="true">-- </span><span class="unit">psi</span>
                         </div>
                         <div class="metric-item">
                             <span class="label">Torque at Clutch</span>
-                            <span class="value" id="valTorque">-- </span><span class="unit">Nm</span>
+                            <span class="value" id="valTorque" data-scramble="true">-- </span><span class="unit">Nm</span>
                         </div>
                         <div class="metric-item">
                             <span class="label">Max Vehicle Speed</span>
-                            <span class="value" id="valSpeed">-- </span><span class="unit">mph</span>
+                            <span class="value" id="valSpeed" data-scramble="true">-- </span><span class="unit">mph</span>
                         </div>
                     </div>
                 </div>
@@ -809,10 +816,10 @@
             </div>
         </div>
         <div class="ai-drawer-actions" style="border-top: 1px solid var(--border-color); padding: 16px; background: var(--bg-card); position: sticky; bottom: 0; z-index: 10;">
-            <button class="btn-primary" id="btnAnalyze" disabled data-action="triggerAnalysis" style="width: 100%;">Start Analysis</button>
+            <button class="btn-primary" data-scramble="true" id="btnAnalyze" disabled data-action="triggerAnalysis" style="width: 100%;">Start Analysis</button>
             <form id="chatForm" style="display: none; width: 100%; gap: 12px; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 2px; padding: 4px 4px 4px 16px;">
                 <input type="text" id="chatInput" placeholder="Ask a follow-up question..." autocomplete="off" style="flex: 1; border: none; background: transparent; color: var(--text-primary); font-family: inherit; font-size: 14px; outline: none; padding: 8px 0;">
-                <button type="submit" class="btn-primary" id="btnSendChat" style="padding: 8px; border-radius: 2px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <button type="submit" class="btn-primary" data-scramble="true" id="btnSendChat" style="padding: 8px; border-radius: 2px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px; margin-top: 1px;"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                 </button>
             </form>
@@ -867,8 +874,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" data-action="closeNewBuildModal">Cancel</button>
-                <button class="btn-primary" data-action="submitNewBuild" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                <button class="btn-secondary" data-scramble="true" data-action="closeNewBuildModal">Cancel</button>
+                <button class="btn-primary" data-scramble="true" data-action="submitNewBuild" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
                     Add to Garage
                 </button>
@@ -889,8 +896,8 @@
                 <input type="text" id="renameInput" class="input-modern" placeholder="">
             </div>
             <div class="modal-footer" style="display: flex; gap: 12px; margin-top: 24px;">
-                <button class="btn-secondary" data-action="closeRenameModal" style="flex: 1;">Cancel</button>
-                <button class="btn-primary" id="renameModalConfirm" data-action="submitRename" style="flex: 1;">Save Changes</button>
+                <button class="btn-secondary" data-scramble="true" data-action="closeRenameModal" style="flex: 1;">Cancel</button>
+                <button class="btn-primary" data-scramble="true" id="renameModalConfirm" data-action="submitRename" style="flex: 1;">Save Changes</button>
             </div>
         </div>
     </div>
@@ -943,8 +950,8 @@
                 <p id="deleteModalText" style="line-height: 1.5; font-size: 14px;"></p>
             </div>
             <div class="modal-footer" style="padding: 16px 28px; background: rgba(0,0,0,0.2);">
-                <button class="btn-secondary" data-action="closeDeleteModal">Cancel</button>
-                <button class="btn-primary" id="btnConfirmDelete" style="background: #ff006e; border-color: #ff006e; box-shadow: 0 0 20px rgba(255, 0, 110, 0.3);">Permanently Delete</button>
+                <button class="btn-secondary" data-scramble="true" data-action="closeDeleteModal">Cancel</button>
+                <button class="btn-primary" data-scramble="true" id="btnConfirmDelete" style="background: #ff006e; border-color: #ff006e; box-shadow: 0 0 20px rgba(255, 0, 110, 0.3);">Permanently Delete</button>
             </div>
         </div>
     </div>
@@ -971,8 +978,8 @@
                 <p id="moveLogsContext" style="font-size: 12px; color: var(--text-secondary); margin-top: 12px; font-style: italic;"></p>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" data-action="closeMoveLogsModal">Cancel</button>
-                <button class="btn-primary" data-action="submitMoveLogs" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                <button class="btn-secondary" data-scramble="true" data-action="closeMoveLogsModal">Cancel</button>
+                <button class="btn-primary" data-scramble="true" data-action="submitMoveLogs" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                     Execute Move
                 </button>
@@ -1029,8 +1036,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" data-action="closeBuildDetails">Cancel</button>
-                <button class="btn-primary" data-action="saveBuildDetails" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                <button class="btn-secondary" data-scramble="true" data-action="closeBuildDetails">Cancel</button>
+                <button class="btn-primary" data-scramble="true" data-action="saveBuildDetails" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                     Save Changes
                 </button>
@@ -1070,8 +1077,8 @@
                 </form>
             </div>
             <div class="modal-footer" style="padding-top: 12px;">
-                <button class="btn-secondary" data-action="closeUpgradeModal">Cancel</button>
-                <button class="btn-primary" id="btnUpgradeConfirm" data-action="submitUpgrade" style="flex: 1;">Pay Now</button>
+                <button class="btn-secondary" data-scramble="true" data-action="closeUpgradeModal">Cancel</button>
+                <button class="btn-primary" data-scramble="true" id="btnUpgradeConfirm" data-action="submitUpgrade" style="flex: 1;">Pay Now</button>
             </div>
         </div>
     </div>
