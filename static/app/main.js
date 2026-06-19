@@ -2,6 +2,7 @@
 // so no module needs to expose globals on `window`.
 import './modules/api.js'; // installs the configurable API base; must load first
 import { state } from './modules/state.js';
+import { initNative } from './modules/native.js';
 import {
     initAuth, switchAuthTab, handleAuth, loginAsDemo, logout, loginWithPasskey,
     openForgotPassword, closeForgotPassword, submitForgotPassword, submitResetPassword,
@@ -200,6 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 initTheme();
 initAuth();
+initNative();
 
 // Optional motion / WebGL layers — progressive enhancement only, never fatal.
 import('./modules/motion.js?v=7.1').then(m => m.initMotion()).catch(() => { });
