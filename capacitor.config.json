@@ -1,0 +1,9 @@
+{
+  "appId": "app.boostlog",
+  "appName": "boostLog",
+  "webDir": "static/capacitor-shell",
+  "server": {
+    "url": "https://boostlog.app/app",
+    "cleartext": false
+  }
+}
