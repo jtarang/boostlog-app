@@ -1250,8 +1250,46 @@ body:not(.view-library) .library-view {
     .library-body {
         grid-template-columns: 1fr;
     }
+    /* Rail becomes a compact horizontal chip strip so the Smart filters and
+       Builds fit on one line and the log grid stays visible without scrolling
+       past a tall sidebar card. */
     .library-rail {
-        max-height: 200px;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: nowrap;
+        gap: 8px;
+        max-height: none;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 10px 12px;
+        -webkit-overflow-scrolling: touch;
+    }
+    .library-rail::-webkit-scrollbar {
+        height: 0;
+    }
+    .btn-new-build-rail {
+        flex: 0 0 auto;
+        margin-bottom: 0;
+        white-space: nowrap;
+    }
+    .rail-section-label {
+        flex: 0 0 auto;
+        padding: 0 2px;
+        white-space: nowrap;
+    }
+    .rail-list {
+        flex-direction: row;
+        gap: 6px;
+        flex: 0 0 auto;
+    }
+    .rail-item {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        padding: 6px 12px;
+    }
+    .rail-item-name {
+        flex: 0 0 auto;
+        white-space: nowrap;
     }
     .library-search {
         width: 140px;
@@ -3037,6 +3075,121 @@ body.focus-mode .graph-card {
 
     .fab-ai::after {
         display: none;
+    }
+
+    /* === #1 Responsive toolbar ===
+       The card header is a fixed 3-col grid on desktop (1fr | title | actions)
+       which lets the action row run off the right edge and get clipped by the
+       card's overflow:hidden, leaving Play/Channels/Focus unreachable. On phones
+       reflow it to a wrapping flexbox: title (truncating) on top, the full action
+       toolbar wraps onto its own row so every control stays on screen and tappable. */
+    .card-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 10px;
+    }
+
+    .graph-card-title {
+        justify-self: auto;
+        text-align: left;
+        flex: 1 1 auto;
+        min-width: 0;          /* allow the ellipsis to actually kick in */
+    }
+
+    .card-header-left {
+        flex: 0 0 auto;
+    }
+
+    .card-actions {
+        justify-self: auto;
+        flex: 1 1 100%;        /* full-width row beneath the title */
+        flex-wrap: wrap;        /* wrap controls instead of clipping them */
+        gap: 8px;
+    }
+
+    .card-actions .select-modern {
+        flex: 1 1 120px;
+        min-width: 0;
+    }
+
+    .card-actions .btn-focus-mode {
+        flex: 0 0 auto;        /* keep buttons their natural size, just wrap */
+    }
+
+    /* === #3 Make the graph the main focus ===
+       Give the chart a dominant height so it leads the viewport, and demote the
+       secondary channel chips and session-metrics cards below it (they already
+       stack via the flex column, this just keeps the chart owning the top). */
+    /* graph-card must grow with its content on mobile rather than shrink to a
+       fixed flex slice — that constraint crushed the channel list below the
+       chart down to a sliver. Let the page scroll instead. */
+    .graph-card {
+        flex: none;
+    }
+
+    .graph-card .chart-container {
+        min-height: clamp(320px, 58vh, 560px);
+    }
+
+    /* Channel list: the desktop side-rail uses height:100%, which collapses to a
+       sliver in the mobile flex column (channels effectively invisible). Let it
+       size to content as a wrapping chip block below the chart, capped + scrollable. */
+    .graph-card .toggle-search-wrap {
+        display: flex;
+    }
+
+    .graph-card .parameter-toggles {
+        height: auto;
+        max-height: 240px;
+        overflow-y: auto;
+        flex-direction: column;  /* one channel per line */
+        flex-wrap: nowrap;
+        align-items: stretch;
+        gap: 6px;
+        padding-top: 12px;
+        padding-bottom: 16px;
+    }
+
+    .graph-card .parameter-toggles .toggle-label {
+        width: 100%;            /* full-width row per channel */
+        font-size: 12px;
+    }
+
+    .dashboard-grid {
+        gap: 16px;
+    }
+
+    /* === #4 Builds/Library toolbar ===
+       The search + primary-action group is a fixed-width non-wrapping row, so
+       the "New Build" button runs off the right edge. Give it its own full-width
+       wrapping row and let the search field flex instead of staying 200px. */
+    .library-toolbar-right {
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+    }
+
+    .library-search {
+        flex: 1 1 160px;
+        width: auto;
+    }
+
+    .library-toolbar-right .btn-primary {
+        flex: 0 0 auto;
+    }
+
+    /* === Datalogs grid ===
+       On desktop the library is a full-height inner scroll area, which on a phone
+       crushes each card's grid row to ~58px and clips the sparkline/name/footer
+       (overflow:hidden). Break the 100%-height chain so cards size to their
+       content and the page scrolls normally instead. */
+    .library-view {
+        height: auto;
+    }
+
+    .library-grid {
+        overflow-y: visible;
+        grid-auto-rows: auto;
     }
 
 }
