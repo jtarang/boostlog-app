@@ -15,3 +15,14 @@ data/
 .coverage
 .pytest_cache/
 htmlcov/
+
+# Node / Capacitor
+node_modules/
+ios/App/Pods/
+ios/App/build/
+ios/DerivedData/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+.DS_Store

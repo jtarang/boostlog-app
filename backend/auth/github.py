@@ -12,15 +12,21 @@ router = APIRouter()
 
 
 @router.get("/api/auth/github/login")
-def github_login():
+def github_login(native: bool = False):
     if not config.GITHUB_CLIENT_ID:
         raise HTTPException(status_code=500, detail="GitHub API keys missing. Set GITHUB_CLIENT_ID to use SSO.")
-    url = f"https://github.com/login/oauth/authorize?client_id={config.GITHUB_CLIENT_ID}&scope=user"
+    # `state` is round-tripped by GitHub so the callback knows whether to return
+    # to the web app or hand back to the native app via a deep link.
+    state = "native" if native else "web"
+    url = (
+        f"https://github.com/login/oauth/authorize"
+        f"?client_id={config.GITHUB_CLIENT_ID}&scope=user&state={state}"
+    )
     return RedirectResponse(url)
 
 
 @router.get("/api/auth/github/callback")
-async def github_callback(code: str, db: Session = Depends(get_db)):
+async def github_callback(code: str, state: str = "web", db: Session = Depends(get_db)):
     if not config.GITHUB_CLIENT_ID or not config.GITHUB_CLIENT_SECRET:
         raise HTTPException(status_code=500, detail="GitHub API keys missing. Set GITHUB_CLIENT_SECRET.")
 
@@ -65,6 +71,12 @@ async def github_callback(code: str, db: Session = Depends(get_db)):
             db.refresh(user)
 
         local_token = create_access_token(data={"sub": user.username, "features": get_user_features(user.username)})
+
+        # Native app: hand the token back via a deep link so the system browser
+        # closes and control returns to the app (embedded-webview OAuth is
+        # discouraged by providers/app stores).
+        if state == "native":
+            return RedirectResponse(url=f"boostlog://auth/github?token={local_token}")
 
         html_content = f'''
         <html>

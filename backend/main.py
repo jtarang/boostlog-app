@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
@@ -49,6 +50,17 @@ app = FastAPI(title="Boostlog Web App", lifespan=lifespan)
 
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=config.ALLOWED_HOSTS)
 
+# The native (Capacitor) app loads from capacitor://localhost (iOS) and
+# http(s)://localhost (Android), so it calls the API cross-origin. Auth is
+# bearer-token (no cookies), so allow_credentials stays off.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=config.CORS_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
@@ -62,6 +74,48 @@ async def serve_landing():
 async def serve_app():
     with open("static/app/index.html", "r") as f:
         return f.read()
+
+
+# Browsers and iOS probe these well-known root paths regardless of <link> tags.
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("static/favicon.ico")
+
+
+@app.get("/apple-touch-icon.png", include_in_schema=False)
+@app.get("/apple-touch-icon-precomposed.png", include_in_schema=False)
+async def apple_touch_icon():
+    return FileResponse("static/apple-touch-icon.png")
+
+
+# PWA: web app manifest (served from root so install metadata is found).
+@app.get("/manifest.webmanifest", include_in_schema=False)
+async def manifest():
+    return JSONResponse(
+        {
+            "name": "boostLog",
+            "short_name": "boostLog",
+            "description": "High-performance datalog visualizer and AI tuning agent.",
+            "start_url": "/app",
+            "scope": "/",
+            "display": "standalone",
+            "background_color": "#0f172a",
+            "theme_color": "#0f172a",
+            "orientation": "any",
+            "icons": [
+                {"src": "/static/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+                {"src": "/static/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
+                {"src": "/static/apple-touch-icon.png", "sizes": "180x180", "type": "image/png"},
+            ],
+        },
+        media_type="application/manifest+json",
+    )
+
+
+# PWA: service worker must be served from root so its scope covers the whole app.
+@app.get("/sw.js", include_in_schema=False)
+async def service_worker():
+    return FileResponse("static/sw.js", media_type="application/javascript")
 
 
 app.include_router(passwords_router.router)
