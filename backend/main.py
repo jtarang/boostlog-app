@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -48,6 +49,17 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Boostlog Web App", lifespan=lifespan)
 
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=config.ALLOWED_HOSTS)
+
+# The native (Capacitor) app loads from capacitor://localhost (iOS) and
+# http(s)://localhost (Android), so it calls the API cross-origin. Auth is
+# bearer-token (no cookies), so allow_credentials stays off.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=config.CORS_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 

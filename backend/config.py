@@ -22,6 +22,17 @@ ALLOWED_HOSTS = [
     if h.strip()
 ]
 
+# CORS origins allowed to call the API. Includes the Capacitor native webview
+# origins (iOS: capacitor://localhost, Android: http(s)://localhost).
+CORS_ORIGINS = [
+    o.strip()
+    for o in os.getenv(
+        "CORS_ORIGINS",
+        "https://boostlog.app,capacitor://localhost,http://localhost,https://localhost",
+    ).split(",")
+    if o.strip()
+]
+
 
 def get_secret(secret_name):
     if os.getenv("SKIP_AWS_FETCH") == "true":

@@ -1,5 +1,6 @@
 // Entry point. Wires DOM events through a delegated `data-action` registry
 // so no module needs to expose globals on `window`.
+import './modules/api.js'; // installs the configurable API base; must load first
 import { state } from './modules/state.js';
 import {
     initAuth, switchAuthTab, handleAuth, loginAsDemo, logout, loginWithPasskey,
