@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
@@ -62,6 +62,18 @@ async def serve_landing():
 async def serve_app():
     with open("static/app/index.html", "r") as f:
         return f.read()
+
+
+# Browsers and iOS probe these well-known root paths regardless of <link> tags.
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("static/favicon.ico")
+
+
+@app.get("/apple-touch-icon.png", include_in_schema=False)
+@app.get("/apple-touch-icon-precomposed.png", include_in_schema=False)
+async def apple_touch_icon():
+    return FileResponse("static/apple-touch-icon.png")
 
 
 app.include_router(passwords_router.router)
