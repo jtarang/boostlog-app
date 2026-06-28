@@ -360,12 +360,12 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(() => { /* canvas unavailable — static hero stays */ });
 
     // Telemetry instrument canvas
-    import('./modules/datalog.js?v=7.1')
+    import('./modules/datalog.js?v=7.2')
         .then(m => m.initTelemetry())
         .catch(() => { /* canvas stays empty behind metrics */ });
 
     // Background particle and graph line canvas
-    import('./modules/background.js?v=1.2')
+    import('./modules/background.js?v=1.3')
         .then(m => m.initBackground(document.getElementById('bgCanvas')))
         .catch(console.error);
 

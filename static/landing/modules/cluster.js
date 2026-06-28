@@ -3,6 +3,8 @@
    gauge, gear indicator, and speed readout animate through a realistic pull
    sequence and loop at idle. Pure canvas — no WebGL dependency. */
 
+import { frameGate } from './perf.js?v=1.0';
+
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // Tachometer arc geometry — standard 270° sweep, bottom-left to bottom-right.
@@ -359,7 +361,16 @@ export function initCluster(canvas) {
     }
 
     // ── Master draw ────────────────────────────────────────────────────────
-    function draw() {
+    // Cap the render rate (frameGate auto-lowers it on weak devices). The pull
+    // is driven by GSAP-tweened state in real time, so skipping render frames
+    // only drops the visible framerate — it never changes the sequence timing.
+    const gate = frameGate(60);
+
+    function draw(now) {
+        if (now !== undefined && !gate(now)) {
+            raf = requestAnimationFrame(draw);
+            return;
+        }
         ctx.clearRect(0, 0, W, H);
 
         const alpha = Math.max(0, Math.min(1, st.alpha));
