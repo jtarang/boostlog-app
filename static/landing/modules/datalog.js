@@ -1,6 +1,8 @@
 /* The instrument: a synthetic but believable WOT pull rendered on canvas.
    Draw-in starts when scrolled into view; hover scrubs a crosshair HUD. */
 
+import { gatedLoop } from './perf.js?v=1.0';
+
 export function initTelemetry() {
     const canvas = document.getElementById('telemetry');
     if (!canvas) return;
@@ -104,7 +106,7 @@ export function initTelemetry() {
     let hoverIndex = null;
     let redlineShown = false;
     let loopIndex = 0;
-    let scanAnimFrame = null;
+    let scanLoop = null;
 
     function draw(progress = 1, hoverIdx = null) {
         const W = canvas.offsetWidth;
@@ -266,21 +268,43 @@ export function initTelemetry() {
     let animStart = null;
     const ANIM_DURATION = 1900;
 
-    function runScanLoop() {
-        if (hoverIndex === null) {
-            loopIndex = (loopIndex + 1) % N;
-            draw(1, loopIndex);
-            updateStripValues(loopIndex);
-            updateHud(loopIndex);
-            if (hud) hud.classList.add('active');
-            setRedline(Math.abs(loopIndex - peakBoostIndex) < N * 0.05);
-        }
-        scanAnimFrame = requestAnimationFrame(runScanLoop);
+    // The idle scan sweep. Advancement is time-based so the sweep keeps a
+    // constant speed regardless of the frame cap, and the loop is gated to a
+    // modest fps + tab visibility so it doesn't burn a core redrawing and
+    // writing the DOM 60×/s on weak machines.
+    const SCAN_INDICES_PER_SEC = 60;
+    let scanLast = 0;
+    let scanAcc = 0;
+
+    function scanFrame(now) {
+        // While hovering (or after a long pause, e.g. backgrounded tab), don't
+        // bank elapsed time — otherwise the sweep would leap forward on resume.
+        const dt = scanLast ? now - scanLast : 0;
+        scanLast = now;
+        if (hoverIndex !== null || dt > 250) { scanAcc = 0; return; }
+        scanAcc += dt * 0.001 * SCAN_INDICES_PER_SEC;
+        const advance = Math.floor(scanAcc);
+        if (advance <= 0) return;
+        scanAcc -= advance;
+        loopIndex = (loopIndex + advance) % N;
+        draw(1, loopIndex);
+        updateStripValues(loopIndex);
+        updateHud(loopIndex);
+        if (hud) hud.classList.add('active');
+        setRedline(Math.abs(loopIndex - peakBoostIndex) < N * 0.05);
     }
 
     function startScanLoop() {
-        if (scanAnimFrame) cancelAnimationFrame(scanAnimFrame);
-        scanAnimFrame = requestAnimationFrame(runScanLoop);
+        if (scanLoop) return;
+        scanLast = 0;
+        scanLoop = gatedLoop(scanFrame, { fps: 30 });
+        // Pause the sweep whenever the chart scrolls out of view.
+        if ('IntersectionObserver' in window) {
+            new IntersectionObserver(
+                ([e]) => scanLoop.setActive(e.isIntersecting),
+                { threshold: 0 },
+            ).observe(canvas);
+        }
     }
 
     function animate(timestamp) {
