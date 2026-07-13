@@ -15,6 +15,12 @@ class User(Base):
     hashed_password = Column(String, nullable=True)
     github_id = Column(String, unique=True, index=True, nullable=True)
     settings_json = Column(Text, nullable=True)
+
+    # Linked bootmod3 account. Tokens are Fernet-encrypted (see backend.crypto);
+    # the password is never stored -- on token expiry the user re-links.
+    bootmod3_tokens = Column(Text, nullable=True)
+    bootmod3_email = Column(String, nullable=True)
+    bootmod3_linked_at = Column(DateTime(timezone=True), nullable=True)
     subscription_tier = Column(String, default="free")
     ai_usages = relationship("AIUsage", back_populates="user")
 

@@ -1,6 +1,7 @@
 import { getAuthHeaders, escapeHtml } from './utils.js';
 import { showToast } from './toast.js';
 import { openRenameModal, openConfirmDeleteModal } from './modals.js';
+import { loadBootmod3Status } from './bootmod3.js';
 
 export async function loadUserSettings() {
     console.log('loadUserSettings called');
@@ -20,6 +21,7 @@ export async function loadUserSettings() {
         }
     } catch (err) { console.error('Failed to load settings:', err); }
     loadPasskeys();
+    loadBootmod3Status();
 }
 
 export async function loadSubscriptionInfo(currentTier) {

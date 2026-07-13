@@ -9,6 +9,7 @@ sqlalchemy
 passlib
 bcrypt<4.0.0
 PyJWT
+cryptography
 httpx
 python-dotenv
 litellm

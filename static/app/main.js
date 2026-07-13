@@ -34,6 +34,10 @@ import {
 } from './modules/settings.js';
 import { initTheme, toggleTheme, setPalette } from './modules/theme.js';
 import { generateTuningModule, swapTuningLogs } from './modules/tuning.js';
+import {
+    linkBootmod3, unlinkBootmod3, importSelectedBootmod3,
+    refreshBootmod3Logs, toggleAllBootmod3,
+} from './modules/bootmod3.js';
 
 // === Action registry: maps data-action="<name>" → handler(el, event) ===
 const actions = {
@@ -110,6 +114,14 @@ const actions = {
     closeUpgradeModal,
     submitUpgrade,
     downgradeToFree,
+
+    // bootmod3 linked account
+    linkBootmod3,
+    unlinkBootmod3,
+    importSelectedBootmod3,
+    refreshBootmod3Logs,
+    toggleAllBootmod3,
+    goToBootmod3Settings: () => switchView('settings'),
 };
 
 function dispatch(e) {

@@ -1,0 +1,39 @@
+services:
+  web:
+    build: .
+    # Host 8000 is taken by the API Parrot desktop app; 8001 keeps this out of its way.
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    env_file:
+      - .env.dev
+    environment:
+      # Apple `container` resolves no service names -- not `db`, and not
+      # `<name>.test` even with a DNS domain registered. 192.168.64.1 is the
+      # host gateway, which forwards to each service's published port below.
+      # Unlike a container's own IP, it survives recreates.
+      - DATABASE_URL=postgresql://boostuser:boostpass@192.168.64.1:5432/boostlog
+      # `host.docker.internal` does not exist here either. Same gateway route --
+      # but Ollama must bind 0.0.0.0 (it defaults to 127.0.0.1, unreachable
+      # from containers): OLLAMA_HOST=0.0.0.0 ollama serve
+      - OLLAMA_API_BASE=http://192.168.64.1:11434
+      - OLLAMA_HOST=192.168.64.1:11434
+    command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    env_file:
+      - .env.dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

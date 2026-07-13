@@ -11,6 +11,7 @@ import {
     showBuildPicker,
     openNewBuildModal,
 } from './builds.js';
+import { renderBootmod3Panel } from './bootmod3.js';
 
 export function renderLibrary() {
     renderLibraryRail();
@@ -33,6 +34,8 @@ function renderLibraryRail() {
     for (const item of smartItems) {
         smart.appendChild(buildRailItem(item.key, item.name, item.count, false));
     }
+    // Linked-account import tab. No count (remote logs load lazily on open).
+    smart.appendChild(buildRailItem('bootmod3', 'bootmod3', '↗', false));
 
     builds.innerHTML = '';
     if (state.currentBuilds.length === 0) {
@@ -130,6 +133,13 @@ export function renderLibraryLogs() {
     const title = document.getElementById('libraryActiveTitle');
     const countPill = document.getElementById('libraryActiveCount');
     if (!grid) return;
+
+    // The bootmod3 tab renders remote (not-yet-imported) logs; hand off entirely.
+    if (state.libraryFilter === 'bootmod3') {
+        document.getElementById('libraryBulkBar').style.display = 'none';
+        renderBootmod3Panel(grid);
+        return;
+    }
 
     if (state.libraryFilter === 'all') title.textContent = 'All Logs';
     else if (state.libraryFilter === 'unassigned') title.textContent = 'Unassigned';
