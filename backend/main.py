@@ -13,6 +13,7 @@ from backend.auth import webauthn as webauthn_router
 from backend.auth.core import get_password_hash
 from backend.models import User, SubscriptionTier
 from backend.routers import analyze, chat, logs, builds, users, tuning
+from backend.routers import bootmod3 as bootmod3_router
 
 
 @asynccontextmanager
@@ -127,3 +128,4 @@ app.include_router(logs.router)
 app.include_router(builds.router)
 app.include_router(users.router)
 app.include_router(tuning.router)
+app.include_router(bootmod3_router.router)

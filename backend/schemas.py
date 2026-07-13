@@ -59,3 +59,13 @@ class PasskeyRename(BaseModel):
 
 class SubscriptionUpgrade(BaseModel):
     tier: str
+
+
+class Bootmod3Link(BaseModel):
+    username: str
+    password: str
+
+
+class Bootmod3Import(BaseModel):
+    log_id: str
+    build_id: Optional[int] = None
