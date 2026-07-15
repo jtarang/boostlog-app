@@ -227,8 +227,10 @@ initNative();
 
 // Optional motion / WebGL layers — progressive enhancement only, never fatal.
 import('./modules/motion.js?v=7.1').then(m => m.initMotion()).catch(() => { });
+// Animated WebGL backdrop runs on the login screen only. It used to also run
+// app-wide on #appScene, where it showed through behind the dyno/graph and was
+// distracting (and cost an extra GPU context).
 import('/static/landing/modules/background.js?v=1.3').then(m => {
-    m.initBackground(document.getElementById('appScene'));
     m.initBackground(document.getElementById('authScene'));
 }).catch(console.error);
 

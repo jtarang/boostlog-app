@@ -97,12 +97,13 @@
 /* ── Light theme ──────────────────────────────────────────────── */
 [data-theme="light"] {
     --fg-rgb: 16, 19, 28;
-    --bg-main: #eef0f5;
-    /* Semi-transparent so the body::before grid + glow shows through */
-    --bg-sidebar: rgba(255, 255, 255, 0.78);
-    --bg-card: rgba(255, 255, 255, 0.68);
-    --bg-elevated: rgba(255, 255, 255, 0.90);
-    --bg-popover: rgba(255, 255, 255, 0.96);
+    --bg-main: #d8dbe2;
+    /* Soft light-grey surfaces (not pure white) so the UI reads calmer.
+       Semi-transparent so the body::before grid + glow shows through. */
+    --bg-sidebar: rgba(240, 242, 246, 0.82);
+    --bg-card: rgba(238, 240, 244, 0.74);
+    --bg-elevated: rgba(243, 245, 248, 0.92);
+    --bg-popover: rgba(245, 247, 250, 0.97);
     --text-primary: #11141c;
     --text-secondary: #565e6e;
     --border-color: rgba(16, 19, 28, 0.12);
@@ -135,10 +136,10 @@
 
 /* Components with baked-in dark glass → light equivalents */
 [data-theme="light"] .auth-overlay { background: rgba(226, 230, 236, 0.55); }
-[data-theme="light"] .auth-card { background: rgba(255, 255, 255, 0.88); }
-[data-theme="light"] .toast-notification { background: rgba(255, 255, 255, 0.95); }
-[data-theme="light"] .empty-chart-overlay { background: rgba(236, 238, 242, 0.55); }
-[data-theme="light"] .mobile-header { background: rgba(255, 255, 255, 0.95); }
+[data-theme="light"] .auth-card { background: rgba(240, 242, 246, 0.90); }
+[data-theme="light"] .toast-notification { background: rgba(242, 244, 247, 0.96); }
+[data-theme="light"] .empty-chart-overlay { background: rgba(222, 225, 232, 0.55); }
+[data-theme="light"] .mobile-header { background: rgba(240, 242, 246, 0.95); }
 [data-theme="light"] .build-picker { box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18); }
 
 /* White-on-tint text fails on light surfaces → use accent / readable colors */
@@ -3903,6 +3904,9 @@ body.focus-mode .graph-card {
 
 /* Full-screen 3D wireframe surface backdrop (scene.js, no twinkle points) */
 .app-scene {
+    /* Disabled: the animated backdrop is login-only now (see main.js). Hidden
+       so the empty canvas can never show behind the dyno/graph. */
+    display: none;
     position: fixed;
     inset: 0;
     width: 100%;
