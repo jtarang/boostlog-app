@@ -14,6 +14,10 @@ import { renameLog, closeRenameModal, submitRename, closeDeleteModal } from './m
 import { switchView, toggleMetrics, filterToggles, toggleFocusMode, toggleChannelRail } from './modules/view.js';
 import { toggleAllParams } from './modules/chart.js';
 import {
+    openMetricsEditor, closeMetricsEditor, addMetricRow,
+    resetMetricsEditor, saveMetricsEditor, renderMetricTiles,
+} from './modules/metrics.js';
+import {
     openUploadModal, closeUploadModal,
     submitUrlImportModal, handleUrlImport, wireDropZones,
     downloadLog,
@@ -70,6 +74,11 @@ const actions = {
     toggleFocusMode,
     toggleChannelRail,
     toggleAllParams: (el) => toggleAllParams(el.dataset.checked === 'true'),
+    openMetricsEditor,
+    closeMetricsEditor,
+    addMetricRow,
+    resetMetricsEditor,
+    saveMetricsEditor,
 
     // AI drawer
     toggleAiDrawer,
@@ -173,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     wireDropZones();
+    renderMetricTiles(); // show the (empty) metric tiles before a log is loaded
 
     const params = new URLSearchParams(window.location.search);
     if (params.has('token')) {

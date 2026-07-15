@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { updateLiveMetrics, calculateMetrics } from './chart.js';
+import { updateLiveMetrics, calculateMetrics } from './metrics.js';
 
 let playbackRafId = null;
 let isPlaying = false;

@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { parseJwt } from './utils.js';
 import { showToast } from './toast.js';
 import { refreshLogList } from './sidebar.js';
+import { loadUserSettings } from './settings.js';
 
 export function initAuth() {
     if (state.authToken) {
@@ -12,6 +13,9 @@ export function initAuth() {
         }
         document.getElementById('authOverlay').style.display = 'none';
         refreshLogList(null, true);
+        // Pull account settings (units, axis mode, session-metric config) so
+        // they apply on the dashboard, not just when the Settings view opens.
+        loadUserSettings();
     } else {
         document.getElementById('authOverlay').style.display = 'flex';
         startPasskeyAutofill();

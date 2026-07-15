@@ -1,7 +1,43 @@
+import { state } from './state.js';
 import { getAuthHeaders, escapeHtml } from './utils.js';
 import { showToast } from './toast.js';
 import { openRenameModal, openConfirmDeleteModal } from './modals.js';
 import { loadBootmod3Status } from './bootmod3.js';
+import { getAxisMode, setAxisMode } from './chart.js';
+import { getMetricsConfig, saveMetricsConfig, renderMetricTiles, calculateMetrics } from './metrics.js';
+
+// Serialize the full settings object to the account. The backend replaces
+// settings_json wholesale, so we always send every key we own, merged onto the
+// cached copy loaded at sign-in (state.userSettings). Fired on explicit saves
+// and whenever a decoupled part (e.g. the metrics editor) emits 'settingschanged'.
+async function persistSettings() {
+    state.userSettings = {
+        ...(state.userSettings || {}),
+        graph_mode: getAxisMode(),
+        session_metrics: getMetricsConfig(),
+    };
+    try {
+        await fetch('/api/user/me', {
+            method: 'PATCH',
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ settings_json: JSON.stringify(state.userSettings) }),
+        });
+    } catch (err) {
+        console.error('Failed to sync settings to account:', err);
+    }
+}
+
+window.addEventListener('settingschanged', persistSettings);
+
+// Map graph_mode to the current axis-mode vocabulary. The old select
+// ("single"/"multi") was never actually applied to the chart, so there's no
+// legacy behavior to preserve — only "multi" needs remapping; "single" now
+// carries its new meaning (one shared axis).
+function normalizeGraphMode(v) {
+    if (v === 'multi') return 'independent';         // old "Multiple Overlay"
+    if (['grouped', 'single', 'independent'].includes(v)) return v;
+    return 'grouped';
+}
 
 export async function loadUserSettings() {
     console.log('loadUserSettings called');
@@ -13,8 +49,25 @@ export async function loadUserSettings() {
             document.getElementById('setFullName').value = data.full_name || '';
             document.getElementById('setEmail').value = data.email || '';
             if (data.settings) {
+                // Cache the account settings so later writes merge onto them
+                // (the backend replaces settings_json wholesale).
+                state.userSettings = { ...data.settings };
+
                 document.getElementById('setUnits').value = data.settings.units || 'metric';
-                document.getElementById('setGraphMode').value = data.settings.graph_mode || 'single';
+                // Seed the local axis-mode store from the account on first load
+                // (e.g. a fresh device), then reflect it in the dropdown.
+                if (data.settings.graph_mode && !localStorage.getItem('boostlog_axis_mode')) {
+                    setAxisMode(normalizeGraphMode(data.settings.graph_mode));
+                }
+                document.getElementById('setGraphMode').value = getAxisMode();
+
+                // Session-metric config is account-authoritative: every edit is
+                // pushed to the account, so on load the account wins.
+                if (Array.isArray(data.settings.session_metrics) && data.settings.session_metrics.length) {
+                    saveMetricsConfig(data.settings.session_metrics);
+                    renderMetricTiles();
+                    if (state.currentData) calculateMetrics();
+                }
             }
             console.log('Calling loadSubscriptionInfo with tier:', data.subscription_tier);
             loadSubscriptionInfo(data.subscription_tier);
@@ -136,13 +189,23 @@ export function deletePasskey(id, name) {
 }
 
 export async function saveUserSettings() {
+    // Apply the chosen axis mode locally (updates the inline toggle + redraws),
+    // then persist the full settings object (merged onto the cached copy so we
+    // don't drop keys the backend would otherwise overwrite, e.g. metrics).
+    const graphMode = normalizeGraphMode(document.getElementById('setGraphMode').value);
+    setAxisMode(graphMode);
+
+    state.userSettings = {
+        ...(state.userSettings || {}),
+        units: document.getElementById('setUnits').value,
+        graph_mode: graphMode,
+        session_metrics: getMetricsConfig(),
+    };
+
     const payload = {
         full_name: document.getElementById('setFullName').value.trim(),
         email: document.getElementById('setEmail').value.trim(),
-        settings_json: JSON.stringify({
-            units: document.getElementById('setUnits').value,
-            graph_mode: document.getElementById('setGraphMode').value
-        })
+        settings_json: JSON.stringify(state.userSettings)
     };
     try {
         const res = await fetch('/api/user/me', {

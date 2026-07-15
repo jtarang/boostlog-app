@@ -1552,16 +1552,79 @@ body:not(.view-library) .library-view {
        the page on shorter viewports. */
     display: grid;
     grid-template-columns: minmax(0, 1fr) clamp(240px, 21vw, 330px);
-    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr);
     grid-template-areas:
         "header  header"
         "chart   railsearch"
+        "chart   railpresets"
         "chart   rail";
     column-gap: 18px;
     min-height: 0;
 }
 
 .graph-card .card-header { grid-area: header; }
+
+/* Insight presets: one-click chips shown both above the chat input (fire a
+   prompt at the AI) and above the channel rail (select the channels). */
+.chat-presets,
+.rail-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.chat-presets { margin-bottom: 10px; }
+
+/* The rail chips sit above the scrolling channel list. */
+.rail-presets {
+    grid-area: railpresets;
+    margin-top: 12px;
+}
+
+.chat-presets:empty,
+.rail-presets:empty { display: none; }
+
+.preset-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    padding: 5px 10px;
+    background: rgba(var(--fg-rgb), 0.04);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+}
+
+.preset-chip::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.7;
+}
+
+.preset-chip:hover {
+    color: var(--text-primary);
+    border-color: rgba(var(--accent-rgb), 0.6);
+    background: rgba(var(--accent-rgb), 0.08);
+}
+
+.preset-chip:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.preset-chip.active {
+    color: var(--text-primary);
+    border-color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.12);
+}
 
 /* Top legend is redundant once the rail shows each channel's value — hide it. */
 .graph-card .chart-legend { display: none; }
@@ -1614,6 +1677,7 @@ body.focus-mode .graph-card.rail-collapsed {
 }
 
 .graph-card.rail-collapsed .toggle-search-wrap,
+.graph-card.rail-collapsed .rail-presets,
 .graph-card.rail-collapsed .parameter-toggles {
     display: none;
 }
@@ -2083,6 +2147,117 @@ body.focus-mode .graph-card {
 
 .collapse-chevron.rotated {
     transform: rotate(180deg);
+}
+
+.collapsible-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Edit (pencil) button in the Session Metrics header. */
+.metrics-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.metrics-edit-btn:hover {
+    color: var(--accent);
+    border-color: rgba(var(--accent-rgb), 0.6);
+    background: rgba(var(--accent-rgb), 0.08);
+}
+
+/* Session Metrics editor modal rows */
+.metrics-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 52vh;
+    overflow-y: auto;
+}
+
+.metrics-editor-empty {
+    color: var(--text-secondary);
+    font-style: italic;
+    padding: 8px 0;
+}
+
+.metrics-editor-row {
+    display: grid;
+    grid-template-columns: auto minmax(90px, 1.1fr) minmax(120px, 1.6fr) auto 52px 64px auto auto;
+    align-items: center;
+    gap: 8px;
+}
+
+.metrics-editor-row .input-modern,
+.metrics-editor-row .select-modern {
+    min-width: 0;
+    padding: 6px 8px;
+    font-size: 12px;
+}
+
+.mer-reorder {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.mer-move {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 9px;
+    line-height: 1;
+    padding: 1px 2px;
+}
+
+.mer-move:disabled { opacity: 0.25; cursor: default; }
+.mer-move:not(:disabled):hover { color: var(--accent); }
+
+.mer-decimals { text-align: center; }
+
+.mer-danger {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.mer-remove {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.mer-remove:hover { color: var(--danger); }
+
+@media (max-width: 768px) {
+    .metrics-editor-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        padding: 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+    }
+    .metrics-editor-row .mer-channel { grid-column: 1 / -1; }
 }
 
 .metric-item {
