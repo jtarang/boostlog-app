@@ -19,9 +19,12 @@ def test_upload_and_visualize(authenticated_page: Page):
     expect(page.locator("#chartOverlay")).to_be_hidden()
     expect(page.locator("canvas#mainChart")).to_be_visible()
     
-    # 3. Verify metrics are calculated
-    expect(page.locator("#valBoost")).not_to_have_text("--")
-    expect(page.locator("#valRpm")).to_have_text("3000")
+    # 3. Verify metrics are calculated. Tiles are config-driven and reorderable,
+    # so locate them by label rather than a fixed id.
+    boost_value = page.locator(".metric-item").filter(has_text="Max Boost").locator(".value")
+    rpm_value = page.locator(".metric-item").filter(has_text="Peak RPM").locator(".value")
+    expect(boost_value).not_to_have_text("--")
+    expect(rpm_value).to_have_text("3000")
     
     # Clean up
     if os.path.exists(csv_path):
