@@ -14,6 +14,10 @@ import { renameLog, closeRenameModal, submitRename, closeDeleteModal } from './m
 import { switchView, toggleMetrics, filterToggles, toggleFocusMode, toggleChannelRail } from './modules/view.js';
 import { toggleAllParams } from './modules/chart.js';
 import {
+    openMetricsEditor, closeMetricsEditor, addMetricRow,
+    resetMetricsEditor, saveMetricsEditor, renderMetricTiles,
+} from './modules/metrics.js';
+import {
     openUploadModal, closeUploadModal,
     submitUrlImportModal, handleUrlImport, wireDropZones,
     downloadLog,
@@ -70,6 +74,11 @@ const actions = {
     toggleFocusMode,
     toggleChannelRail,
     toggleAllParams: (el) => toggleAllParams(el.dataset.checked === 'true'),
+    openMetricsEditor,
+    closeMetricsEditor,
+    addMetricRow,
+    resetMetricsEditor,
+    saveMetricsEditor,
 
     // AI drawer
     toggleAiDrawer,
@@ -173,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     wireDropZones();
+    renderMetricTiles(); // show the (empty) metric tiles before a log is loaded
 
     const params = new URLSearchParams(window.location.search);
     if (params.has('token')) {
@@ -217,8 +227,10 @@ initNative();
 
 // Optional motion / WebGL layers — progressive enhancement only, never fatal.
 import('./modules/motion.js?v=7.1').then(m => m.initMotion()).catch(() => { });
+// Animated WebGL backdrop runs on the login screen only. It used to also run
+// app-wide on #appScene, where it showed through behind the dyno/graph and was
+// distracting (and cost an extra GPU context).
 import('/static/landing/modules/background.js?v=1.3').then(m => {
-    m.initBackground(document.getElementById('appScene'));
     m.initBackground(document.getElementById('authScene'));
 }).catch(console.error);
 

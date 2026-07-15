@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { getAuthHeaders } from './utils.js';
 import { refreshLogList } from './sidebar.js';
-import { setGraphChannelsByKeywords } from './chart.js';
+import { setGraphChannelsByKeywords, INSIGHT_PRESETS } from './chart.js';
 
 function handleGraphCommands(text) {
     const regex = /\[GRAPH:\s*([^\]]+)\]/g;
@@ -94,6 +94,7 @@ export function loadAnalysisHistory(filename) {
                 if (btnRerun) { btnRerun.style.display = 'none'; }
                 const chatForm = document.getElementById('chatForm');
                 if (chatForm) chatForm.style.display = 'none';
+                renderChatPresets(); // static chips even before analyzing (channel-select only)
                 if (fabAi) fabAi.disabled = false;
                 return;
             }
@@ -122,6 +123,7 @@ export function loadAnalysisHistory(filename) {
             if (btnRerun) { btnRerun.disabled = state.analysisRunning; btnRerun.style.display = 'inline-block'; }
             const chatForm = document.getElementById('chatForm');
             if (chatForm) chatForm.style.display = 'flex';
+            renderChatPresets();
             if (fabAi) fabAi.disabled = false;
         })
         .catch(() => {
@@ -132,6 +134,7 @@ export function loadAnalysisHistory(filename) {
             if (btnRerun) { btnRerun.style.display = 'none'; }
             const chatForm = document.getElementById('chatForm');
             if (chatForm) chatForm.style.display = 'none';
+            renderChatPresets(); // static chips even if history fetch failed
             if (fabAi) fabAi.disabled = false;
         });
 }
@@ -174,15 +177,46 @@ function renderAnalysisContent(a) {
         .catch(err => console.error("Failed to load chat history:", err));
 }
 
-export async function submitChat() {
+// Render the Insight preset chips above the chat input. Shown as soon as a log
+// is loaded (even before an analysis exists). Clicking one always selects the
+// preset's channels on the graph immediately; if the chat is live (an analysis
+// exists) it also asks the AI the tailored question.
+export function renderChatPresets() {
+    const wrap = document.getElementById('chatPresets');
+    if (!wrap) return;
+
+    wrap.innerHTML = INSIGHT_PRESETS.map((p, i) => `
+        <button type="button" class="preset-chip" data-idx="${i}" title="${p.desc.replace(/"/g, '&quot;')}">${p.label}</button>
+    `).join('');
+
+    wrap.querySelectorAll('.preset-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            if (state.chatSending) return;
+            const preset = INSIGHT_PRESETS[Number(chip.dataset.idx)];
+            // Always pull up the channels client-side so the graph updates
+            // reliably, regardless of whether the AI emits a [GRAPH:] command.
+            setGraphChannelsByKeywords(preset.keywords, { wholeWord: true });
+            // If an analysis exists the chat is live — also ask the AI.
+            const chatForm = document.getElementById('chatForm');
+            if (chatForm && chatForm.style.display !== 'none') submitChat(preset.prompt);
+        });
+    });
+}
+
+// `presetMessage` (a string) lets an Insight chip drive the chat; without it
+// we read the text input as before. The form-submit handler passes no args.
+export async function submitChat(presetMessage) {
     const input = document.getElementById('chatInput');
     const chatBox = document.getElementById('chatBox');
-    const msg = input.value.trim();
-    if (!msg || !state.currentServerFile) return;
+    const fromPreset = typeof presetMessage === 'string';
+    const msg = (fromPreset ? presetMessage : input.value).trim();
+    if (!msg || !state.currentServerFile || state.chatSending) return;
 
-    input.value = '';
+    if (!fromPreset) input.value = '';
+    state.chatSending = true;
     const btnSend = document.getElementById('btnSendChat');
     btnSend.disabled = true;
+    document.querySelectorAll('#chatPresets .preset-chip').forEach(c => c.disabled = true);
 
     // Append user message
     const userDiv = document.createElement('div');
@@ -221,7 +255,9 @@ export async function submitChat() {
         aiDiv.innerHTML = `<span style="color: var(--danger);">${err.message}</span>`;
         currentChatHistory.pop(); // Remove the user message from history so they can retry
     } finally {
+        state.chatSending = false;
         btnSend.disabled = false;
+        document.querySelectorAll('#chatPresets .preset-chip').forEach(c => c.disabled = false);
         scrollToBottom();
         input.focus();
     }

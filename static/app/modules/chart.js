@@ -1,4 +1,5 @@
 import { state, lineColors } from './state.js';
+import { calculateMetrics } from './metrics.js';
 
 // Match Chart.js canvas font to the app's Inter body font stack.
 Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
@@ -8,6 +9,121 @@ Chart.defaults.font.size   = 12;
 window.addEventListener('themechange', () => {
     if (state.currentChart) renderChart();
 });
+
+// Y-axis layout mode. Persisted so the choice sticks across reloads.
+//   'grouped'     - channels of the same family share one axis (default)
+//   'single'      - every channel on one common y-scale
+//   'independent' - every channel auto-fits its own range (own axis)
+const AXIS_MODE_KEY = 'boostlog_axis_mode';
+const VALID_AXIS_MODES = ['grouped', 'single', 'independent'];
+
+export function getAxisMode() {
+    const m = localStorage.getItem(AXIS_MODE_KEY);
+    return VALID_AXIS_MODES.includes(m) ? m : 'grouped';
+}
+
+export function setAxisMode(mode) {
+    if (!VALID_AXIS_MODES.includes(mode)) return;
+    localStorage.setItem(AXIS_MODE_KEY, mode);
+    const sel = document.getElementById('axisModeSelect');
+    if (sel && sel.value !== mode) sel.value = mode;
+    if (state.currentChart) renderChart();
+}
+
+// Padded min/max for an axis from its (unsorted) values, using the
+// 1st–99th percentile so outliers don't flatten the line.
+function suggestedRange(vals) {
+    const sorted = vals.filter(v => v !== null && !isNaN(v)).sort((a, b) => a - b);
+    if (sorted.length <= 1) return {};
+    const lo = sorted[Math.max(0, Math.floor(sorted.length * 0.01))];
+    const hi = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.99))];
+    const range = hi - lo || Math.abs(hi) || 1;
+    return { suggestedMin: lo - range * 0.05, suggestedMax: hi + range * 0.10 };
+}
+
+// Robust bounds for the x-axis. Some logs contain a stray sample (e.g. a
+// leftover pre-trigger row with Time=799 while the real pull is 0–17s). On a
+// linear x-axis that single point stretches the scale and squashes the whole
+// curve into a flat sliver. We drop x-values outside 3×IQR of the quartiles,
+// which removes only true garbage and never legitimate telemetry.
+function robustXBounds(xs) {
+    const s = xs.filter(v => v !== null && !isNaN(v)).sort((a, b) => a - b);
+    if (s.length < 4) return null;
+    const q = p => s[Math.min(s.length - 1, Math.floor(s.length * p))];
+    const q1 = q(0.25), q3 = q(0.75);
+    const iqr = (q3 - q1) || Math.abs(q3) || 1;
+    return { lo: q1 - iqr * 3, hi: q3 + iqr * 3 };
+}
+
+// Insights: curated presets surfaced as one-click prompts in the AI chat.
+// Clicking one sends `prompt` to the AI, which answers and (via its [GRAPH:]
+// replies) pulls up `keywords`. `label` is the compact chip text; `desc` is
+// the hover tooltip. See renderChatPresets() in analysis.js.
+export const INSIGHT_PRESETS = [
+    {
+        label: 'Boost Control',
+        desc: 'Evaluates whether boost targets are being met and how the wastegate responds.',
+        keywords: ['boost', 'wgdc', 'map'],
+        prompt: 'How is boost control on this log — is it hitting target, and how does the wastegate (WGDC) respond? Show me the relevant channels.',
+    },
+    {
+        label: 'Driver Demand',
+        desc: 'Correlates accelerator pedal and throttle position against engine RPM and speed.',
+        keywords: ['accel', 'engine speed', 'throttle angle', 'vehicle speed'],
+        prompt: 'How does driver demand (accelerator pedal and throttle) track against engine speed and vehicle speed here? Show the relevant channels.',
+    },
+    {
+        label: 'Fueling / AFR',
+        desc: 'Checks if the engine is running lean or rich, plus fuel-pressure delivery.',
+        keywords: ['lambda', 'afr', 'stft', 'ltft', 'fuel pressure', 'hpfp', 'lpfp'],
+        prompt: 'Is the fueling correct on this log? Check the air-fuel ratio for lean or rich spots, fuel trims, and fuel pressure. Show the relevant channels.',
+    },
+    {
+        label: 'Timing & Knock',
+        desc: 'Analyzes ignition timing, per-cylinder corrections, and knock events.',
+        keywords: ['ignition', 'knock', 'timing corr'],
+        prompt: 'Analyze ignition timing on this log, including per-cylinder timing corrections and any knock events. Show the relevant channels.',
+    },
+    {
+        label: 'Load & Torque',
+        desc: 'Compares commanded vs actual load and torque, alongside airflow.',
+        keywords: ['load', 'torque at clutch', 'maf'],
+        prompt: 'How is load and torque performance on this log? Compare commanded vs actual, and factor in airflow (MAF). Show the relevant channels.',
+    },
+    {
+        label: 'Thermals',
+        desc: 'Monitors coolant and intake-air temperatures during the pull.',
+        keywords: ['coolant', 'iat'],
+        prompt: 'Are the thermal conditions healthy during this pull? Look at coolant and intake-air temperatures. Show the relevant channels.',
+    },
+    {
+        label: 'WGDC & Vanos',
+        desc: 'Reviews wastegate duty cycle and its control gains, plus Vanos cam timing.',
+        keywords: ['wgdc', 'vanos'],
+        prompt: 'Review the wastegate duty cycle (and its control gains) and the Vanos cam timing behavior on this log. Show the relevant channels.',
+    },
+];
+
+// Render the Insight preset chips above the channel rail. These are pure
+// channel selectors (no AI) — clicking one picks that preset's channels.
+export function renderRailPresets() {
+    const wrap = document.getElementById('railPresets');
+    if (!wrap) return;
+    if (!state.currentData) { wrap.innerHTML = ''; return; }
+
+    wrap.innerHTML = INSIGHT_PRESETS.map((p, i) => `
+        <button type="button" class="preset-chip" data-idx="${i}" title="${p.desc.replace(/"/g, '&quot;')}">${p.label}</button>
+    `).join('');
+
+    wrap.querySelectorAll('.preset-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const preset = INSIGHT_PRESETS[Number(chip.dataset.idx)];
+            setGraphChannelsByKeywords(preset.keywords, { wholeWord: true });
+            wrap.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+        });
+    });
+}
 
 // Theme-aware colors for the canvas (grid / ticks / tooltip / crosshair)
 function chartTheme() {
@@ -129,90 +245,21 @@ export function processDataForGraph() {
         xAxisSelect._renderBound = true;
     }
 
+    // Reflect the persisted axis mode in the inline toggle and bind it once.
+    const axisModeSelect = document.getElementById('axisModeSelect');
+    if (axisModeSelect) {
+        axisModeSelect.value = getAxisMode();
+        if (!axisModeSelect._renderBound) {
+            axisModeSelect.addEventListener('change', () => setAxisMode(axisModeSelect.value));
+            axisModeSelect._renderBound = true;
+        }
+    }
+
     calculateMetrics();
     renderChart();
+    renderRailPresets();
 
     document.getElementById('btnAnalyze').disabled = state.analysisRunning;
-}
-
-export function calculateMetrics() {
-    let maxB = null, maxR = null, maxT = null, maxTrq = null, maxFuel = null, maxSpd = null;
-
-    const headers = state.currentHeaders;
-    const boostCol = headers.find(h => h.toLowerCase().includes('boost') && !h.toLowerCase().includes('target'));
-    const rpmCol = headers.find(h => h.toLowerCase() === 'rpm' || h.toLowerCase().includes('engine speed'));
-    const timingCol = headers.find(h => h.toLowerCase().includes('timing corr'));
-    const torqueCol = headers.find(h => h.toLowerCase().includes('torque at clutch (actual)')) || headers.find(h => h.toLowerCase().includes('torque') || h.toLowerCase().includes('trq'));
-    const fuelCol = headers.find(h => h.toLowerCase().includes('pi fuel pressure')) || headers.find(h => h.toLowerCase().includes('low pressure fuel')) || headers.find(h => h.toLowerCase().includes('fuel pressure'));
-    const speedCol = headers.find(h => h.toLowerCase().includes('speed') && !h.toLowerCase().includes('engine'));
-
-    state.currentData.forEach(row => {
-        if (boostCol) {
-            let v = parseFloat(row[boostCol]);
-            if (!isNaN(v) && v < 200 && (maxB === null || v > maxB)) maxB = v;
-        }
-        if (rpmCol) {
-            let v = parseFloat(row[rpmCol]);
-            if (!isNaN(v) && v < 20000 && (maxR === null || v > maxR)) maxR = v;
-        }
-        if (timingCol) {
-            let v = parseFloat(row[timingCol]);
-            if (!isNaN(v) && v > -100 && (maxT === null || v < maxT)) maxT = v;
-        }
-        if (torqueCol) {
-            let v = parseFloat(row[torqueCol]);
-            if (!isNaN(v) && v !== 1024 && v !== 16777216 && v < 10000 && (maxTrq === null || v > maxTrq)) maxTrq = v;
-        }
-        if (speedCol) {
-            let v = parseFloat(row[speedCol]);
-            if (!isNaN(v) && v < 500 && (maxSpd === null || v > maxSpd)) maxSpd = v;
-        }
-        if (fuelCol) {
-            let v = parseFloat(row[fuelCol]);
-            if (!isNaN(v) && v < 2000 && (maxFuel === null || v > maxFuel)) maxFuel = v;
-        }
-    });
-
-    updateLiveMetrics({
-        boostCol, rpmCol, timingCol, torqueCol, fuelCol, speedCol,
-        maxB, maxR, maxT, maxTrq, maxFuel, maxSpd
-    }, true);
-}
-
-// Called during playback to show instantaneous values, or by calculateMetrics to show max values.
-export function updateLiveMetrics(rowOrMax, isMax = false) {
-    const $ = id => document.getElementById(id);
-    
-    if (isMax) {
-        $('valBoost').textContent = rowOrMax.boostCol && rowOrMax.maxB !== null ? rowOrMax.maxB.toFixed(1) : '--';
-        $('valRpm').textContent = rowOrMax.rpmCol && rowOrMax.maxR !== null ? rowOrMax.maxR.toFixed(0) : '--';
-        $('valTiming').textContent = rowOrMax.timingCol && rowOrMax.maxT !== null ? rowOrMax.maxT.toFixed(1) : '--';
-        $('valTorque').textContent = rowOrMax.torqueCol && rowOrMax.maxTrq !== null ? rowOrMax.maxTrq.toFixed(0) : '--';
-        $('valFuelPressure').textContent = rowOrMax.fuelCol && rowOrMax.maxFuel !== null ? rowOrMax.maxFuel.toFixed(1) : '--';
-        $('valSpeed').textContent = rowOrMax.speedCol && rowOrMax.maxSpd !== null ? rowOrMax.maxSpd.toFixed(0) : '--';
-    } else {
-        const headers = state.currentHeaders;
-        const boostCol = headers.find(h => h.toLowerCase().includes('boost') && !h.toLowerCase().includes('target'));
-        const rpmCol = headers.find(h => h.toLowerCase() === 'rpm' || h.toLowerCase().includes('engine speed'));
-        const timingCol = headers.find(h => h.toLowerCase().includes('timing corr'));
-        const torqueCol = headers.find(h => h.toLowerCase().includes('torque at clutch (actual)')) || headers.find(h => h.toLowerCase().includes('torque') || h.toLowerCase().includes('trq'));
-        const fuelCol = headers.find(h => h.toLowerCase().includes('pi fuel pressure')) || headers.find(h => h.toLowerCase().includes('low pressure fuel')) || headers.find(h => h.toLowerCase().includes('fuel pressure'));
-        const speedCol = headers.find(h => h.toLowerCase().includes('speed') && !h.toLowerCase().includes('engine'));
-
-        const vB = boostCol ? parseFloat(rowOrMax[boostCol]) : NaN;
-        const vR = rpmCol ? parseFloat(rowOrMax[rpmCol]) : NaN;
-        const vT = timingCol ? parseFloat(rowOrMax[timingCol]) : NaN;
-        const vTrq = torqueCol ? parseFloat(rowOrMax[torqueCol]) : NaN;
-        const vF = fuelCol ? parseFloat(rowOrMax[fuelCol]) : NaN;
-        const vS = speedCol ? parseFloat(rowOrMax[speedCol]) : NaN;
-
-        $('valBoost').textContent = !isNaN(vB) ? vB.toFixed(1) : '--';
-        $('valRpm').textContent = !isNaN(vR) ? vR.toFixed(0) : '--';
-        $('valTiming').textContent = !isNaN(vT) ? vT.toFixed(1) : '--';
-        $('valTorque').textContent = !isNaN(vTrq) ? vTrq.toFixed(0) : '--';
-        $('valFuelPressure').textContent = !isNaN(vF) ? vF.toFixed(1) : '--';
-        $('valSpeed').textContent = !isNaN(vS) ? vS.toFixed(0) : '--';
-    }
 }
 
 export function renderChart() {
@@ -241,9 +288,9 @@ export function renderChart() {
     };
 
     const t = chartTheme();
+    const mode = getAxisMode();
     const legendItems = [];
 
-    const stackPrimaryAxis = {};
     const scalesConfig = {
         x: {
             type: 'linear',
@@ -252,6 +299,9 @@ export function renderChart() {
         }
     };
 
+    // First pass: gather per-series info (data, family, values) so shared
+    // axes (single/grouped) can pool ranges across their members.
+    const series = [];
     checkboxes.forEach((cb) => {
         const header = cb.value;
         const color = lineColors[state.currentHeaders.indexOf(header) % lineColors.length];
@@ -277,55 +327,98 @@ export function renderChart() {
         else if (lh.includes('afr') || lh.includes('lambda') || lh.includes('fuel') ||
                  lh.includes('stft') || lh.includes('ltft')) stackID = 'y-fuel';
 
-        const uniqueAxisID = 'y_' + header.replace(/[^a-zA-Z0-9]/g, '_');
-        const isPrimary = !stackPrimaryAxis[stackID];
-        if (isPrimary) stackPrimaryAxis[stackID] = uniqueAxisID;
+        series.push({ cb, header, color, data, lh, isHighPress, stackID });
+    });
 
-        const meta = stackMeta[stackID];
+    // Drop stray x-axis outliers (see robustXBounds) so a single bad sample
+    // can't squash the real curve. Bounds are pooled across all series since
+    // they all share the same x column, then re-derive each series' y values.
+    const xb = robustXBounds(series.flatMap(s => s.data.map(pt => pt.x)));
+    series.forEach(s => {
+        if (xb) s.data = s.data.filter(pt => pt.x >= xb.lo && pt.x <= xb.hi);
+        s.validVals = s.data.map(pt => pt.y).filter(v => v !== null);
+    });
 
-        const validVals = data.map(pt => pt.y).filter(v => v !== null).sort((a, b) => a - b);
-        let suggestedMin, suggestedMax;
-        if (validVals.length > 1) {
-            const lo = validVals[Math.max(0, Math.floor(validVals.length * 0.01))];
-            const hi = validVals[Math.min(validVals.length - 1, Math.floor(validVals.length * 0.99))];
-            const range = hi - lo || Math.abs(hi) || 1;
-            suggestedMin = lo - range * 0.05;
-            suggestedMax = hi + range * 0.10;
+    // Which axis each series lands on, depending on the mode.
+    const axisIdFor = (s) => {
+        if (mode === 'single') return 'y';
+        if (mode === 'grouped') return s.stackID;
+        return 'y_' + s.header.replace(/[^a-zA-Z0-9]/g, '_'); // independent: one per series
+    };
+
+    // Group series by axis so we can pool ranges and pick a representative
+    // (first-seen) member for each axis's position/color/label.
+    const axes = {};
+    series.forEach(s => {
+        const id = axisIdFor(s);
+        (axes[id] || (axes[id] = { members: [] })).members.push(s);
+    });
+
+    // In independent mode we still only *display* one axis per family to avoid
+    // a wall of axes; other channels of that family share its ticks visually.
+    const shownFamilies = new Set();
+    let gridDrawn = false;
+
+    Object.entries(axes).forEach(([axisId, group]) => {
+        const rep = group.members[0];
+        const pooled = suggestedRange(group.members.flatMap(m => m.validVals));
+
+        let position, tickColor, display;
+        if (mode === 'single') {
+            position = 'left';
+            tickColor = t.ticks;
+            display = true;
+        } else {
+            const meta = stackMeta[rep.stackID];
+            position = meta.position;
+            tickColor = meta.color;
+            if (mode === 'grouped') {
+                display = true;
+            } else { // independent
+                display = !shownFamilies.has(rep.stackID);
+                if (display) shownFamilies.add(rep.stackID);
+            }
         }
 
-        scalesConfig[uniqueAxisID] = {
+        // Draw the chart-area grid from only the first visible axis so the
+        // gridlines from multiple axes don't stack into visual noise.
+        const drawGrid = display && !gridDrawn;
+        if (drawGrid) gridDrawn = true;
+
+        scalesConfig[axisId] = {
             type: 'linear',
-            display: isPrimary,
-            position: meta.position,
-            grid: isPrimary ? { color: t.grid } : { drawOnChartArea: false },
-            ticks: isPrimary ? { color: meta.color } : { display: false },
-            title: isPrimary
-                ? { display: true, text: meta.label, font: { size: 10, weight: '700', family: "'Inter', system-ui, sans-serif" } }
-                : { display: false },
-            ...(suggestedMin !== undefined ? { suggestedMin, suggestedMax } : {})
+            display,
+            position,
+            grid: drawGrid ? { color: t.grid } : { drawOnChartArea: false },
+            ticks: display ? { color: tickColor } : { display: false },
+            title: { display: false },
+            ...pooled
         };
+    });
 
-        const isWhole = lh.includes('rpm') || isHighPress || lh.includes('speed');
+    // Second pass: build datasets + legend/peak labels.
+    series.forEach(s => {
+        const isWhole = s.lh.includes('rpm') || s.isHighPress || s.lh.includes('speed');
         let peakLabel = null;
-        if (validVals.length > 0) {
-            const maxVal = Math.max(...validVals);
+        if (s.validVals.length > 0) {
+            const maxVal = Math.max(...s.validVals);
             peakLabel = maxVal.toFixed(isWhole ? 0 : 1);
-            const span = cb.parentElement.querySelector('span');
-            if (span) span.textContent = `${header} ↗ ${peakLabel}`;
+            const span = s.cb.parentElement.querySelector('span');
+            if (span) span.textContent = `${s.header} ↗ ${peakLabel}`;
         }
 
-        legendItems.push({ header, color, val: peakLabel });
+        legendItems.push({ header: s.header, color: s.color, val: peakLabel });
 
         datasets.push({
-            label: header,
-            data,
-            borderColor: color,
+            label: s.header,
+            data: s.data,
+            borderColor: s.color,
             borderWidth: 2,
             pointRadius: 0,
             pointHoverRadius: 4,
             tension: 0.4,
             spanGaps: true,
-            yAxisID: uniqueAxisID
+            yAxisID: axisIdFor(s)
         });
     });
 
@@ -396,10 +489,21 @@ export function toggleAllParams(checked) {
 /**
  * Sets graph channels based on keywords.
  * @param {string[]} keywords - List of keywords to match against channel names.
+ * @param {object} [opts]
+ * @param {boolean} [opts.wholeWord] - Match keywords on word boundaries only,
+ *   so "iat" won't match "deviation" and "map" won't match "clamp". Used by
+ *   Insight presets; the default substring behavior is kept for the AI path.
  */
-export function setGraphChannelsByKeywords(keywords) {
+export function setGraphChannelsByKeywords(keywords, { wholeWord = false } = {}) {
     if (!keywords || keywords.length === 0) return;
-    
+
+    const matchers = keywords.map(k => {
+        const kw = k.toLowerCase();
+        if (!wholeWord) return (text) => text.includes(kw);
+        const re = new RegExp('\\b' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b');
+        return (text) => re.test(text);
+    });
+
     const checkboxes = document.querySelectorAll('#paramToggles input[type="checkbox"]');
     const paramToggles = document.getElementById('paramToggles');
     let matchedAny = false;
@@ -415,8 +519,8 @@ export function setGraphChannelsByKeywords(keywords) {
     // Second pass: check matches and move to top
     checkboxes.forEach(cb => {
         const labelText = cb.value.toLowerCase();
-        const shouldBeChecked = keywords.some(k => labelText.includes(k.toLowerCase()));
-        
+        const shouldBeChecked = matchers.some(m => m(labelText));
+
         if (shouldBeChecked) {
             cb.checked = true;
             matchedAny = true;

@@ -393,8 +393,9 @@
                             <div class="input-group">
                                 <label>Graph Layout Mode</label>
                                 <select id="setGraphMode" class="select-modern">
-                                    <option value="single">Single Stacked (Default)</option>
-                                    <option value="multi">Multiple Overlay</option>
+                                    <option value="grouped">Grouped by family (Default)</option>
+                                    <option value="single">Single shared Y-axis</option>
+                                    <option value="independent">Independent per channel</option>
                                 </select>
                             </div>
                         </div>
@@ -673,6 +674,12 @@
                                 <option value="">X-Axis</option>
                             </select>
 
+                            <select class="select-modern" id="axisModeSelect" title="Y-axis layout">
+                                <option value="grouped">Axis: Grouped</option>
+                                <option value="single">Axis: Single</option>
+                                <option value="independent">Axis: Independent</option>
+                            </select>
+
                             <button class="btn-focus-mode" id="btnPlayLog" title="Play Datalog">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
@@ -732,6 +739,9 @@
                             <button type="button" data-action="toggleAllParams" data-checked="false">None</button>
                         </div>
                     </div>
+                    <div class="rail-presets" id="railPresets">
+                        <!-- Insight preset chips: quick channel selectors -->
+                    </div>
                     <div class="parameter-toggles" id="paramToggles">
                         <!-- Dynamic checkboxes for Y axes -->
                     </div>
@@ -740,37 +750,19 @@
                 <div class="stats-card col-span-2">
                     <div class="collapsible-header" data-action="toggleMetrics">
                         <h3>Session Metrics</h3>
-                        <svg class="collapse-chevron" id="metricsChevron" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <polyline points="18 15 12 9 6 15"></polyline>
-                        </svg>
+                        <div class="collapsible-header-actions">
+                            <button class="metrics-edit-btn" data-action="openMetricsEditor" title="Configure metrics">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                            </button>
+                            <svg class="collapse-chevron" id="metricsChevron" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <polyline points="18 15 12 9 6 15"></polyline>
+                            </svg>
+                        </div>
                     </div>
                     <div class="metrics-grid collapsible-body" id="metricsBody">
-                        <div class="metric-item">
-                            <span class="label">Max Boost</span>
-                            <span class="value" id="valBoost" data-scramble="true">-- </span><span class="unit">psi</span>
-                        </div>
-                        <div class="metric-item">
-                            <span class="label">Peak RPM</span>
-                            <span class="value" id="valRpm" data-scramble="true">-- </span><span class="unit">rpm</span>
-                        </div>
-                        <div class="metric-item danger">
-                            <span class="label">Max Timing Corr.</span>
-                            <span class="value" id="valTiming" data-scramble="true">-- </span><span class="unit">deg</span>
-                        </div>
-                        <div class="metric-item">
-                            <span class="label">PI Fuel Pressure</span>
-                            <span class="value" id="valFuelPressure" data-scramble="true">-- </span><span class="unit">psi</span>
-                        </div>
-                        <div class="metric-item">
-                            <span class="label">Torque at Clutch</span>
-                            <span class="value" id="valTorque" data-scramble="true">-- </span><span class="unit">Nm</span>
-                        </div>
-                        <div class="metric-item">
-                            <span class="label">Max Vehicle Speed</span>
-                            <span class="value" id="valSpeed" data-scramble="true">-- </span><span class="unit">mph</span>
-                        </div>
+                        <!-- Session metric tiles rendered from config by metrics.js -->
                     </div>
                 </div>
 
@@ -831,6 +823,9 @@
         </div>
         <div class="ai-drawer-actions" style="border-top: 1px solid var(--border-color); padding: 16px; background: var(--bg-card); position: sticky; bottom: 0; z-index: 10;">
             <button class="btn-primary" data-scramble="true" id="btnAnalyze" disabled data-action="triggerAnalysis" style="width: 100%;">Start Analysis</button>
+            <div class="chat-presets" id="chatPresets">
+                <!-- Insight preset chips: one-click AI prompts -->
+            </div>
             <form id="chatForm" style="display: none; width: 100%; gap: 12px; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 2px; padding: 4px 4px 4px 16px;">
                 <input type="text" id="chatInput" placeholder="Ask a follow-up question..." autocomplete="off" style="flex: 1; border: none; background: transparent; color: var(--text-primary); font-family: inherit; font-size: 14px; outline: none; padding: 8px 0;">
                 <button type="submit" class="btn-primary" data-scramble="true" id="btnSendChat" style="padding: 8px; border-radius: 2px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -912,6 +907,26 @@
             <div class="modal-footer" style="display: flex; gap: 12px; margin-top: 24px;">
                 <button class="btn-secondary" data-scramble="true" data-action="closeRenameModal" style="flex: 1;">Cancel</button>
                 <button class="btn-primary" data-scramble="true" id="renameModalConfirm" data-action="submitRename" style="flex: 1;">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session Metrics Editor Modal -->
+    <div id="metricsEditorModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card modal-large">
+            <div class="modal-header">
+                <h3>Configure Session Metrics</h3>
+                <button class="modal-close" data-action="closeMetricsEditor">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 14px; font-size: 13px; color: var(--text-secondary);">Add, remove, or reorder the stat tiles. Each metric picks a channel, how to summarize it across the log (max / min / average), and how to display it.</p>
+                <div class="metrics-editor" id="metricsEditorRows"></div>
+                <button type="button" class="btn-secondary metrics-editor-add" data-action="addMetricRow" style="margin-top: 12px;">+ Add metric</button>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 12px; margin-top: 24px;">
+                <button class="btn-secondary" data-scramble="true" data-action="resetMetricsEditor" style="margin-right: auto;">Reset to defaults</button>
+                <button class="btn-secondary" data-scramble="true" data-action="closeMetricsEditor">Cancel</button>
+                <button class="btn-primary" data-scramble="true" data-action="saveMetricsEditor">Save</button>
             </div>
         </div>
     </div>
