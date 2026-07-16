@@ -39,6 +39,36 @@ def test_upload_and_list_logs(client):
     assert res.status_code == 200
     assert b"Time,RPM,Boost" in res.content
 
+def test_delete_log(client):
+    headers = get_auth_headers(client)
+
+    file_bytes = io.BytesIO(b"Time,RPM\n0,1000\n1,2000")
+    file_bytes.name = "delete_me.csv"
+    res = client.post("/api/upload", files={"file": ("delete_me.csv", file_bytes, "text/csv")}, headers=headers)
+    assert res.status_code == 200
+    log_id = res.json()["datalog_id"]
+    stored_filename = client.get("/api/logs", headers=headers).json()["logs"][0]["url"].split("/")[-1]
+
+    # Delete it
+    res = client.delete(f"/api/logs/{log_id}", headers=headers)
+    assert res.status_code == 200
+    assert res.json()["status"] == "deleted"
+
+    # Gone from the list, and the file is no longer accessible (get_log returns
+    # 403 once the owning DB row is gone).
+    assert client.get("/api/logs", headers=headers).json()["logs"] == []
+    assert client.get(f"/api/logs/{stored_filename}", headers=headers).status_code == 403
+
+    # Deleting again / a missing id is a 404
+    assert client.delete(f"/api/logs/{log_id}", headers=headers).status_code == 404
+
+
+def test_delete_log_unauthorized(client):
+    headers = get_auth_headers(client)
+    # No such log for this user
+    assert client.delete("/api/logs/99999", headers=headers).status_code == 404
+
+
 def test_analyze_and_cache(client):
     headers = get_auth_headers(client)
     

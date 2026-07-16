@@ -1,6 +1,7 @@
 import { state } from './state.js';
 import { showToast } from './toast.js';
-import { renameLog } from './modals.js';
+import { getAuthHeaders, escapeHtml } from './utils.js';
+import { renameLog, openConfirmDeleteModal } from './modals.js';
 import { switchView } from './view.js';
 import { loadServerLog, refreshLogList } from './sidebar.js';
 import { preSelectTuningLogs } from './tuning.js';
@@ -256,6 +257,12 @@ function buildLogCard(log) {
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
                 </button>
+                <button class="log-card-btn log-card-btn-danger" data-act="delete" title="Delete">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
             </div>
         </div>
     `;
@@ -281,9 +288,38 @@ function buildLogCard(log) {
         e.stopPropagation();
         renameLog(log.id, log.name);
     });
+    card.querySelector('[data-act="delete"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteLogFromLibrary(log);
+    });
     card.querySelector('.log-card-body').addEventListener('click', () => openLogFromLibrary(log));
 
     return card;
+}
+
+function deleteLogFromLibrary(log) {
+    openConfirmDeleteModal({
+        title: 'Delete Log',
+        subtitle: 'This also removes its AI analyses and chat history.',
+        body: `Permanently delete <strong>"${escapeHtml(log.name)}"</strong>? This can't be undone.`,
+        confirmText: 'Delete Log',
+        onConfirm: async () => {
+            try {
+                const res = await fetch(`/api/logs/${log.id}`, { method: 'DELETE', headers: getAuthHeaders() });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || `Delete failed (${res.status})`);
+                }
+                state.bulkSelection.delete(log.id);
+                showToast('Log deleted');
+                await refreshLogList();   // refresh sidebar + state.currentLogs
+                renderLibraryLogs();      // re-render the library grid
+                refreshBulkBar();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        },
+    });
 }
 
 function openLogFromLibrary(log) {

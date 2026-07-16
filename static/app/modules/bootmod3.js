@@ -7,7 +7,7 @@
 import { state } from './state.js';
 import { showToast } from './toast.js';
 import { getAuthHeaders, escapeHtml, timeAgo } from './utils.js';
-import { refreshLogList } from './sidebar.js';
+import { refreshLogList, loadServerLog } from './sidebar.js';
 
 // Module-local cache + selection for the remote-log tab (kept out of global
 // `state` so it can't collide with the local-log bulk selection).
@@ -125,22 +125,80 @@ function normalizeRemoteLogs(payload) {
         for (const k of keys) if (o[k] != null && o[k] !== '') return o[k];
         return null;
     };
-    return arr.map((o) => {
+    // A value that parses to a plausible datalog date (not e.g. a duration in
+    // seconds landing in 1970, or a count) — else null.
+    const plausible = (v) => {
+        const d = toDate(v);
+        return d && d.getFullYear() >= 2005 && d.getTime() <= Date.now() + 2 * 864e5 ? v : null;
+    };
+    // The bm3 date field name isn't contractual, so try known keys, then any
+    // date-ish key whose value actually parses to a real date.
+    const pickDate = (o) => {
+        const known = [
+            'date', 'created', 'created_at', 'createdAt', 'dateCreated', 'date_created',
+            'timestamp', 'uploaded_at', 'uploadedAt', 'dateUploaded', 'date_uploaded',
+            'uploadDate', 'upload_date', 'logDate', 'log_date', 'dateAdded', 'added', 'time',
+        ];
+        for (const k of known) {
+            if (o[k] != null && o[k] !== '' && plausible(o[k])) return o[k];
+        }
+        for (const [k, v] of Object.entries(o)) {
+            if (v == null || v === '' || !/(date|time|created|upload|added)/i.test(k)) continue;
+            if (plausible(v)) return v;
+        }
+        return null;
+    };
+    const out = arr.map((o) => {
         if (o == null || typeof o !== 'object') return { id: String(o), name: String(o), subtitle: '' };
         const id = pick(o, ['id', '_id', 'logid', 'log_id', 'logId', 'uuid']);
         const name = pick(o, ['name', 'title', 'filename', 'vehicle', 'car', 'notes', 'description']);
-        const date = pick(o, ['date', 'created', 'created_at', 'createdAt', 'timestamp', 'uploaded_at']);
+        const date = pickDate(o);
         return {
             id: id != null ? String(id) : null,
             name: name != null ? String(name) : (id != null ? `Log ${id}` : 'Untitled log'),
             subtitle: date != null ? String(date) : '',
         };
     }).filter((l) => l.id != null);
+
+    // If no log yielded a date, surface the raw keys once so the correct bm3
+    // field can be identified and added above.
+    if (out.length && !out.some((l) => l.subtitle)) {
+        const sample = arr.find((o) => o && typeof o === 'object');
+        if (sample) console.debug('[bootmod3] no date field matched; available keys:', Object.keys(sample));
+    }
+    return out;
+}
+
+// The local log that a remote bootmod3 id was imported into, or null.
+function importedLocalLog(remoteId) {
+    const target = `dlog_${remoteId}.csv`;
+    return (state.currentLogs || []).find((l) => l.name === target) || null;
 }
 
 function alreadyImported(remoteId) {
-    const target = `dlog_${remoteId}.csv`;
-    return state.currentLogs.some((l) => l.name === target);
+    return importedLocalLog(remoteId) != null;
+}
+
+// bootmod3 dates arrive as ISO strings or epoch (sec/ms) — parse defensively.
+function toDate(raw) {
+    if (raw == null || raw === '') return null;
+    if (typeof raw === 'number' || /^\d+$/.test(String(raw))) {
+        let n = Number(raw);
+        if (n < 1e12) n *= 1000; // seconds → ms
+        const d = new Date(n);
+        return isNaN(d.getTime()) ? null : d;
+    }
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+// Absolute date + time for the row, e.g. "Jul 15, 2026, 3:42 PM".
+function formatWhen(raw) {
+    const d = toDate(raw);
+    if (!d) return raw ? String(raw) : '';
+    return d.toLocaleString(undefined, {
+        month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
+    });
 }
 
 export async function refreshRemoteLogs() {
@@ -249,22 +307,47 @@ function renderPanelInto(grid) {
     }
 
     const rows = logs.map((l) => {
-        const imported = alreadyImported(l.id);
+        const local = importedLocalLog(l.id);
+        const when = formatWhen(l.subtitle);
+        const rel = timeAgo(l.subtitle);
+        // Absolute date+time is the primary stamp; relative goes in the tooltip.
+        const sub = `ID ${escapeHtml(l.id)}${when ? ' • ' + escapeHtml(when) : ''}`;
+        const relAttr = rel ? ` title="${escapeHtml(rel)}"` : '';
+
+        if (local) {
+            // Imported → clickable row that opens the local log.
+            return `
+                <div class="bm3-row imported" role="button" tabindex="0"
+                     data-id="${escapeHtml(l.id)}" data-local-id="${escapeHtml(String(local.id))}"
+                     title="Open this log">
+                    <div class="bm3-row-main">
+                        <span class="bm3-row-name">${escapeHtml(l.name)}</span>
+                        <span class="bm3-row-sub"${relAttr}>${sub}</span>
+                    </div>
+                    <span class="bm3-open-badge">Open ↗</span>
+                </div>`;
+        }
+
         const checked = bm3.selection.has(l.id) ? 'checked' : '';
-        const rel = timeAgo(l.subtitle) || escapeHtml(l.subtitle || '');
         return `
-            <label class="bm3-row ${imported ? 'imported' : ''} ${checked ? 'selected' : ''}" data-id="${escapeHtml(l.id)}">
-                <input type="checkbox" ${checked} ${imported ? 'disabled' : ''}>
+            <label class="bm3-row ${checked ? 'selected' : ''}" data-id="${escapeHtml(l.id)}">
+                <input type="checkbox" ${checked}>
                 <div class="bm3-row-main">
                     <span class="bm3-row-name">${escapeHtml(l.name)}</span>
-                    <span class="bm3-row-sub">ID ${escapeHtml(l.id)}${rel ? ' • ' + rel : ''}</span>
+                    <span class="bm3-row-sub"${relAttr}>${sub}</span>
                 </div>
-                ${imported ? '<span class="bm3-imported-badge">Imported</span>' : ''}
             </label>`;
     }).join('');
 
     grid.innerHTML = toolbar + `<div class="bm3-list">${rows}</div>`;
     wirePanel(grid);
+}
+
+// Open the local log an imported row points at, by its local id.
+function openLocalLogById(localId) {
+    const log = (state.currentLogs || []).find((l) => String(l.id) === String(localId));
+    if (log) loadServerLog(log); // handles the switch to the dashboard view
+    else showToast('That log is no longer in your library', 'error');
 }
 
 function wirePanel(grid) {
@@ -278,6 +361,15 @@ function wirePanel(grid) {
             // Update toolbar in place (re-rendering the list would drop DOM nodes
             // and break rapid multi-select / lose scroll position).
             updateToolbar(grid);
+        });
+    });
+
+    // Imported rows open the local log on click (or Enter/Space for a11y).
+    grid.querySelectorAll('.bm3-row.imported').forEach((row) => {
+        const open = () => openLocalLogById(row.dataset.localId);
+        row.addEventListener('click', open);
+        row.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
         });
     });
 }
@@ -318,6 +410,7 @@ export async function importSelectedBootmod3() {
 
     let ok = 0;
     const failures = [];
+    const importedIds = [];
     for (const id of ids) {
         try {
             const res = await fetch('/api/bootmod3/import', {
@@ -328,6 +421,7 @@ export async function importSelectedBootmod3() {
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
             ok += 1;
+            importedIds.push(id);
         } catch (err) {
             failures.push(`${id}: ${err.message}`);
         }
@@ -335,7 +429,7 @@ export async function importSelectedBootmod3() {
     }
 
     bm3.selection.clear();
-    await refreshLogList();          // pull the new local logs (updates "Imported" badges)
+    await refreshLogList();          // pull the new local logs (updates the rows)
     renderPanelInto(document.getElementById('libraryGrid'));
 
     if (failures.length) {
@@ -343,5 +437,12 @@ export async function importSelectedBootmod3() {
         console.warn('bootmod3 import failures:', failures);
     } else {
         showToast(`Imported ${ok} log${ok === 1 ? '' : 's'} from bootmod3`);
+    }
+
+    // Open the log right after importing a single one (multi-imports would be
+    // ambiguous — those rows are now clickable to open individually).
+    if (importedIds.length === 1) {
+        const local = importedLocalLog(importedIds[0]);
+        if (local) loadServerLog(local);
     }
 }
