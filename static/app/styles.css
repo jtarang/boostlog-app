@@ -1240,6 +1240,10 @@ body:not(.view-library) .library-view {
     color: var(--accent);
 }
 
+.log-card-btn-danger:hover {
+    color: var(--danger);
+}
+
 .library-empty {
     text-align: center;
     color: var(--text-secondary);
@@ -4581,8 +4585,21 @@ body::before {
     border-color: var(--accent);
     background: rgba(var(--accent-rgb), 0.07);
 }
-.bm3-row.imported { opacity: 0.6; cursor: default; }
+.bm3-row.imported { cursor: pointer; }
+.bm3-row.imported:hover { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.06); }
 .bm3-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; }
+.bm3-open-badge {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    border: 1px solid rgba(var(--accent-rgb), 0.5);
+    border-radius: 2px;
+    padding: 2px 6px;
+    flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+}
+.bm3-row.imported:hover .bm3-open-badge { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.1); }
 .bm3-row-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .bm3-row-name {
     font-weight: 600;

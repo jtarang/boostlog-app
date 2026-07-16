@@ -132,3 +132,28 @@ async def rename_log(log_id: int, rename_data: LogRename, current_user: User = D
     db.commit()
 
     return {"id": datalog.id, "name": datalog.display_name}
+
+
+@router.delete("/api/logs/{log_id}")
+async def delete_log(log_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    datalog = db.query(Datalog).filter(
+        Datalog.id == log_id,
+        Datalog.user_id == current_user.id,
+    ).first()
+
+    if not datalog:
+        raise HTTPException(status_code=404, detail="Log not found")
+
+    # Remove the stored file (best-effort; the DB row is the source of truth).
+    file_path = os.path.join(config.UPLOAD_DIR, datalog.stored_filename)
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+    except OSError:
+        pass
+
+    # ORM cascade deletes the log's analyses + chat history; build_id is SET NULL.
+    db.delete(datalog)
+    db.commit()
+
+    return {"status": "deleted", "id": log_id}
