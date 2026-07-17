@@ -35,6 +35,9 @@ import {
 import {
     saveUserSettings, updateUsername, registerPasskey,
     renamePasskey, deletePasskey, openUpgradeModal, closeUpgradeModal, submitUpgrade, downgradeToFree,
+    deletePaymentMethod, setDefaultPaymentMethod, openAddCardModal, closeAddCardModal, submitAddCard,
+    toggleNewCardForm, reactivateSubscription,
+    openEmailRequiredModal, closeEmailRequiredModal, submitAccountEmail,
 } from './modules/settings.js';
 import { initTheme, toggleTheme, setPalette } from './modules/theme.js';
 import { generateTuningModule, swapTuningLogs } from './modules/tuning.js';
@@ -123,6 +126,18 @@ const actions = {
     closeUpgradeModal,
     submitUpgrade,
     downgradeToFree,
+    reactivateSubscription,
+    toggleNewCardForm,
+
+    // Payment methods
+    deletePaymentMethod: (el) => deletePaymentMethod(parseInt(el.dataset.id, 10), el.dataset.lastFour),
+    setDefaultPaymentMethod: (el) => setDefaultPaymentMethod(parseInt(el.dataset.id, 10)),
+    openAddCardModal,
+    closeAddCardModal,
+    submitAddCard,
+    openEmailRequiredModal,
+    closeEmailRequiredModal,
+    submitAccountEmail,
 
     // bootmod3 linked account
     linkBootmod3,

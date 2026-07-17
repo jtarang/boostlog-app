@@ -1,10 +1,11 @@
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 
 class UserCreate(BaseModel):
     username: str
+    email: EmailStr
     password: str
 
 
@@ -31,7 +32,7 @@ class BuildUpdate(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    email: Optional[str] = None
+    email: Optional[EmailStr] = None
     full_name: Optional[str] = None
     settings_json: Optional[str] = None
 
@@ -69,3 +70,8 @@ class Bootmod3Link(BaseModel):
 class Bootmod3Import(BaseModel):
     log_id: str
     build_id: Optional[int] = None
+
+
+class StripePaymentIntent(BaseModel):
+    tier: str
+    payment_method_id: Optional[str] = None

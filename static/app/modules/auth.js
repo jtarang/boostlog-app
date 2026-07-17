@@ -60,12 +60,16 @@ export function switchAuthTab(mode) {
     state.authMode = mode;
     const tabs = document.querySelectorAll('.auth-tabs .tab');
     tabs.forEach(t => t.classList.remove('active'));
+    const emailInput = document.getElementById('authEmail');
     if (mode === 'login') {
         tabs[0].classList.add('active');
         document.getElementById('authSubmitBtn').textContent = 'Login';
+        if (emailInput) { emailInput.style.display = 'none'; emailInput.required = false; }
     } else {
         tabs[1].classList.add('active');
         document.getElementById('authSubmitBtn').textContent = 'Register';
+        // Email is required to register (it keys the billing customer).
+        if (emailInput) { emailInput.style.display = 'block'; emailInput.required = true; }
     }
     document.getElementById('authError').textContent = '';
 }
@@ -74,15 +78,17 @@ export async function handleAuth(e) {
     e.preventDefault();
     const u = document.getElementById('authUsername').value;
     const p = document.getElementById('authPassword').value;
+    const email = document.getElementById('authEmail').value.trim();
     const errorEl = document.getElementById('authError');
     errorEl.textContent = '';
 
     try {
         if (state.authMode === 'register') {
+            if (!email) throw new Error('Email is required to register');
             const res = await fetch('/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: u, password: p })
+                body: JSON.stringify({ username: u, email, password: p })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'Registration failed');

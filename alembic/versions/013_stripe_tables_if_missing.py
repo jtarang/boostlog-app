@@ -1,9 +1,15 @@
-"""add stripe payment and subscription models
+"""create stripe tables if missing
 
-Revision ID: 011_add_stripe_models
-Revises: 010_add_subscription_tiers
-Create Date: 2026-05-04 23:30:00.000000
+Revision ID: 013_stripe_tables_if_missing
+Revises: 012_add_bootmod3_link
+Create Date: 2026-07-17 00:00:00.000000
 
+Databases created before the Stripe work was cherry-picked were stamped past
+revision 011 while it was still a no-op stub, so Alembic will never re-run 011
+to create the `payment_methods` / `user_subscriptions` tables. This migration
+creates them idempotently (guarded on table existence) so already-migrated
+environments pick them up. Fresh databases get the tables from 011 and skip
+the creates here.
 """
 from typing import Sequence, Union
 
@@ -11,8 +17,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = '011_add_stripe_models'
-down_revision: Union[str, None] = '010_add_subscription_tiers'
+revision: str = '013_stripe_tables_if_missing'
+down_revision: Union[str, None] = '012_add_bootmod3_link'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -64,5 +70,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_table('user_subscriptions')
-    op.drop_table('payment_methods')
+    # Non-destructive: these tables are owned jointly with revision 011.
+    # Downgrading past 011 is what drops them; this revision is create-only.
+    pass

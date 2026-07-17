@@ -13,6 +13,15 @@ services:
       - db
     restart: unless-stopped
 
+  stripe:
+    image: stripe/stripe-cli:latest
+    command: listen --forward-to web:8000/webhooks/stripe --skip-verify
+    env_file:
+      - .env.dev
+    depends_on:
+      - web
+    restart: unless-stopped
+
   db:
     image: postgres:15-alpine
     env_file:
