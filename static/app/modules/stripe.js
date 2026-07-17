@@ -12,7 +12,6 @@ export async function initializeStripe(publishableKey) {
     }
 
     stripe = Stripe(publishableKey);
-    const elements = stripe.elements();
 
     const cardStyle = {
         style: {
@@ -27,9 +26,12 @@ export async function initializeStripe(publishableKey) {
         }
     };
 
+    // Stripe allows only one Element of a given type per Elements *group*, so the
+    // upgrade-modal card and the add-card-modal card each need their own group —
+    // otherwise the second create() throws "Can only create one Element of type card".
     const cardElementDiv = document.getElementById('card-element');
     if (cardElementDiv) {
-        cardElement = elements.create('card', cardStyle);
+        cardElement = stripe.elements().create('card', cardStyle);
         cardElement.mount('#card-element');
         cardElement.addEventListener('change', (event) => {
             const el = document.getElementById('upgradeError');
@@ -39,7 +41,7 @@ export async function initializeStripe(publishableKey) {
 
     const addCardDiv = document.getElementById('add-card-element');
     if (addCardDiv) {
-        addCardElement = elements.create('card', cardStyle);
+        addCardElement = stripe.elements().create('card', cardStyle);
         addCardElement.mount('#add-card-element');
         addCardElement.addEventListener('change', (event) => {
             const el = document.getElementById('addCardError');
