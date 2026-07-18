@@ -356,14 +356,16 @@ def handle_webhook_event(db: Session, event) -> dict:
     return {"status": "unhandled_event"}
 
 
-def _handle_subscription_updated(db: Session, subscription: dict) -> dict:
+def _handle_subscription_updated(db: Session, subscription) -> dict:
     """Handle subscription update events."""
+    sub_id = _read(subscription, "id")
     user_sub = db.query(UserSubscription).filter(
-        UserSubscription.stripe_subscription_id == subscription.get("id")
+        UserSubscription.stripe_subscription_id == sub_id
     ).first()
 
     if user_sub:
-        user_sub.status = subscription.get("status", user_sub.status)
+        status = _read(subscription, "status")
+        user_sub.status = status if status is not None else user_sub.status
         period_start, period_end = _extract_period(subscription)
         if period_start:
             user_sub.current_period_start = datetime.fromtimestamp(period_start, tz=timezone.utc)
@@ -381,10 +383,11 @@ def _handle_subscription_updated(db: Session, subscription: dict) -> dict:
     return {"status": "subscription_not_found"}
 
 
-def _handle_subscription_deleted(db: Session, subscription: dict) -> dict:
+def _handle_subscription_deleted(db: Session, subscription) -> dict:
     """Handle subscription deletion events."""
+    sub_id = _read(subscription, "id")
     user_sub = db.query(UserSubscription).filter(
-        UserSubscription.stripe_subscription_id == subscription.get("id")
+        UserSubscription.stripe_subscription_id == sub_id
     ).first()
 
     if user_sub:
@@ -399,9 +402,9 @@ def _handle_subscription_deleted(db: Session, subscription: dict) -> dict:
     return {"status": "subscription_not_found"}
 
 
-def _handle_payment_failed(db: Session, invoice: dict) -> dict:
+def _handle_payment_failed(db: Session, invoice) -> dict:
     """Handle payment failure events."""
-    customer_id = invoice.get("customer")
+    customer_id = _read(invoice, "customer")
     user_sub = db.query(UserSubscription).filter(
         UserSubscription.stripe_customer_id == customer_id
     ).first()
