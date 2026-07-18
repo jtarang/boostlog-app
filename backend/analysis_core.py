@@ -51,14 +51,16 @@ def aggregate_wot_summary(file_path: str) -> dict:
     This is the canonical summary used for AI analysis. Kept identical to the
     original inline logic in the analyze router so prompts stay stable.
     """
-    df = pl.read_csv(file_path, ignore_errors=True)
+    # comment_prefix skips MHD's leading padding (#Encoding / #Ecu CALID /
+    # #Ecu PRGID / #VIN) plus its UTF-8 BOM; bm3 logs have no such lines.
+    df = pl.read_csv(file_path, ignore_errors=True, comment_prefix="#")
     cols = df.columns
 
     rpm_col = _find_col(cols, ["engine rpm", "engine speed", "rpm", "1/min"])
-    boost_act_col = _find_col(cols, ["boost pressure (actual)", "map", "manifold absolute pressure"])
-    boost_tgt_col = _find_col(cols, ["boost pressure (target)"])
-    timing_cols = [c for c in cols if "timing corr" in c.lower()]
-    torque_col = _find_col(cols, ["torque at clutch", "torque (actual)"])
+    boost_act_col = _find_col(cols, ["boost pressure (actual)", "boost (psi)", "map", "manifold absolute pressure"])
+    boost_tgt_col = _find_col(cols, ["boost pressure (target)", "boost target"])
+    timing_cols = [c for c in cols if "timing cor" in c.lower()]  # bm3 "Corr", MHD "Cor"
+    torque_col = _find_col(cols, ["torque at clutch", "torque act", "torque (actual)"])
     afr_col = _find_col(cols, ["afr", "lambda", "air/fuel"])
     iat_col = _find_col(cols, ["iat", "intake air temp", "charge air temp"])
 
@@ -125,13 +127,14 @@ def rpm_power_curve(file_path: str, bins: int = 12) -> dict | None:
     Power estimate uses the metric relation P(hp) = T(Nm) * N(rpm) / 7127.
     """
     try:
-        df = pl.read_csv(file_path, ignore_errors=True)
+        df = pl.read_csv(file_path, ignore_errors=True, comment_prefix="#")
     except Exception:
         return None
 
     cols = df.columns
     rpm_col = _find_col(cols, ["engine rpm", "engine speed", "rpm", "1/min"])
-    torque_col = _find_col(cols, ["torque at clutch", "torque (actual)", "torque"])
+    # No bare "torque" alias: it would match MHD's "Status Torque limiter" first.
+    torque_col = _find_col(cols, ["torque at clutch", "torque act", "torque (actual)"])
     if not rpm_col or not torque_col:
         return None
 

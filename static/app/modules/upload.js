@@ -18,6 +18,7 @@ export function handleFile(file) {
         header: true,
         dynamicTyping: true,
         skipEmptyLines: true,
+        comments: '#',  // skip MHD padding lines (#Encoding, #Ecu…, #VIN)
         complete: function (results) {
             console.log("Parsed CSV:", results.data.length, "rows");
             state.currentData = results.data;

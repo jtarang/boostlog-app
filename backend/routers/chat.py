@@ -56,8 +56,9 @@ async def chat_about_log(filename: str, request: ChatRequest, current_user: User
     csv_content = ""
     if os.path.exists(file_path):
         try:
-            # Use Polars for smart downsampling to save tokens
-            df = pl.read_csv(file_path, ignore_errors=True)
+            # Use Polars for smart downsampling to save tokens.
+            # comment_prefix skips MHD's leading padding (#Encoding/#Ecu/#VIN) + BOM.
+            df = pl.read_csv(file_path, ignore_errors=True, comment_prefix="#")
             
             # Find pedal column for WOT detection
             cols = df.columns
