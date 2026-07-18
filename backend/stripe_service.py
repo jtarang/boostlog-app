@@ -340,10 +340,11 @@ def cancel_subscription(db: Session, user: User) -> dict:
         raise Exception(f"Failed to cancel subscription: {str(e)}")
 
 
-def handle_webhook_event(db: Session, event: dict) -> dict:
+def handle_webhook_event(db: Session, event) -> dict:
     """Handle incoming Stripe webhook events."""
-    event_type = event.get("type")
-    data = event.get("data", {}).get("object", {})
+    event_type = _read(event, "type")
+    data_container = _read(event, "data")
+    data = _read(data_container, "object") if data_container else {}
 
     if event_type == "customer.subscription.updated":
         return _handle_subscription_updated(db, data)

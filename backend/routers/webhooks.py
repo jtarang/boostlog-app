@@ -40,4 +40,5 @@ async def handle_stripe_webhook(request: Request, db: Session = Depends(get_db))
             raise HTTPException(status_code=400, detail="Invalid signature")
 
     result = stripe_service.handle_webhook_event(db, event)
-    return {"status": "received", "event_type": event.get("type"), "result": result}
+    event_type = stripe_service._read(event, "type")
+    return {"status": "received", "event_type": event_type, "result": result}
