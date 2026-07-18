@@ -73,6 +73,8 @@ jobs:
           echo "github_client_secret = \"${{ secrets.GH_CLIENT_SECRET }}\"" >> "$TFVARS"
           echo "google_client_id = \"${{ secrets.GOOGLE_CLIENT_ID }}\"" >> "$TFVARS"
           echo "google_client_secret = \"${{ secrets.GOOGLE_CLIENT_SECRET }}\"" >> "$TFVARS"
+          echo "microsoft_client_id = \"${{ secrets.MICROSOFT_CLIENT_ID }}\"" >> "$TFVARS"
+          echo "microsoft_client_secret = \"${{ secrets.MICROSOFT_CLIENT_SECRET }}\"" >> "$TFVARS"
           echo "cloudflare_tunnel_token = \"${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}\"" >> "$TFVARS"
           echo "db_password = \"${{ secrets.DB_PASSWORD }}\"" >> "$TFVARS"
           echo "stripe_publishable_key = \"${{ secrets.STRIPE_PUBLISHABLE_KEY }}\"" >> "$TFVARS"

@@ -60,14 +60,22 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
 GITHUB_CLIENT_ID = aws_secrets.get("GITHUB_CLIENT_ID") or os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = aws_secrets.get("GITHUB_CLIENT_SECRET") or os.getenv("GITHUB_CLIENT_SECRET")
 
-# Google OAuth. The redirect URI must exactly match one registered on the OAuth
-# client in Google Cloud Console (per environment). Defaults to local dev.
+# OAuth / SSO (handled by fastapi-sso in backend/auth/sso.py).
 GOOGLE_CLIENT_ID = aws_secrets.get("GOOGLE_CLIENT_ID") or os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = aws_secrets.get("GOOGLE_CLIENT_SECRET") or os.getenv("GOOGLE_CLIENT_SECRET")
-GOOGLE_REDIRECT_URI = (
-    aws_secrets.get("GOOGLE_REDIRECT_URI")
-    or os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback")
-)
+
+MICROSOFT_CLIENT_ID = aws_secrets.get("MICROSOFT_CLIENT_ID") or os.getenv("MICROSOFT_CLIENT_ID")
+MICROSOFT_CLIENT_SECRET = aws_secrets.get("MICROSOFT_CLIENT_SECRET") or os.getenv("MICROSOFT_CLIENT_SECRET")
+# "common" allows both work/school (Entra) and personal Microsoft accounts.
+MICROSOFT_TENANT = aws_secrets.get("MICROSOFT_TENANT") or os.getenv("MICROSOFT_TENANT", "common")
+
+# Base URL used to build each provider's redirect URI as
+# {base}/api/auth/{provider}/callback. Must exactly match the redirect URIs
+# registered with each provider (per environment). Defaults to local dev.
+OAUTH_REDIRECT_BASE = (
+    aws_secrets.get("OAUTH_REDIRECT_BASE")
+    or os.getenv("OAUTH_REDIRECT_BASE", "http://localhost:8000")
+).rstrip("/")
 
 # Feature flags per username. Add a username → list[str] entry to grant flags.
 # The list is embedded in the JWT so no extra DB call is needed on each request.

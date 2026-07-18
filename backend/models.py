@@ -15,6 +15,7 @@ class User(Base):
     hashed_password = Column(String, nullable=True)
     github_id = Column(String, unique=True, index=True, nullable=True)
     google_id = Column(String, unique=True, index=True, nullable=True)
+    microsoft_id = Column(String, unique=True, index=True, nullable=True)
     settings_json = Column(Text, nullable=True)
 
     # Linked bootmod3 account. Tokens are Fernet-encrypted (see backend.crypto);
