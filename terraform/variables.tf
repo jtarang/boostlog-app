@@ -92,6 +92,20 @@ variable "github_client_secret" {
   default     = ""
 }
 
+variable "google_client_id" {
+  description = "Google OAuth Client ID — set in GitHub Secrets (GOOGLE_CLIENT_ID)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "google_client_secret" {
+  description = "Google OAuth Client Secret — set in GitHub Secrets (GOOGLE_CLIENT_SECRET)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "github_client_key" {
   description = "App SECRET_KEY for JWT (deprecated/unused as it's now auto-generated)"
   type        = string

@@ -60,6 +60,15 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
 GITHUB_CLIENT_ID = aws_secrets.get("GITHUB_CLIENT_ID") or os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = aws_secrets.get("GITHUB_CLIENT_SECRET") or os.getenv("GITHUB_CLIENT_SECRET")
 
+# Google OAuth. The redirect URI must exactly match one registered on the OAuth
+# client in Google Cloud Console (per environment). Defaults to local dev.
+GOOGLE_CLIENT_ID = aws_secrets.get("GOOGLE_CLIENT_ID") or os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = aws_secrets.get("GOOGLE_CLIENT_SECRET") or os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_REDIRECT_URI = (
+    aws_secrets.get("GOOGLE_REDIRECT_URI")
+    or os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback")
+)
+
 # Feature flags per username. Add a username → list[str] entry to grant flags.
 # The list is embedded in the JWT so no extra DB call is needed on each request.
 # Supported flags: "palette_switcher"

@@ -8,6 +8,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from backend import config, db
 from backend.auth import github as github_router
+from backend.auth import google as google_router
 from backend.auth import passwords as passwords_router
 from backend.auth import webauthn as webauthn_router
 from backend.auth.core import get_password_hash
@@ -122,6 +123,7 @@ async def service_worker():
 app.include_router(passwords_router.router)
 app.include_router(webauthn_router.router)
 app.include_router(github_router.router)
+app.include_router(google_router.router)
 app.include_router(webhooks.router)
 app.include_router(analyze.router)
 app.include_router(chat.router)

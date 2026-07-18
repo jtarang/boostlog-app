@@ -38,6 +38,9 @@ resource "aws_secretsmanager_secret_version" "boostlog_secrets_version" {
   secret_string = jsonencode({
     GITHUB_CLIENT_ID        = var.github_client_id
     GITHUB_CLIENT_SECRET    = var.github_client_secret
+    GOOGLE_CLIENT_ID        = var.google_client_id
+    GOOGLE_CLIENT_SECRET    = var.google_client_secret
+    GOOGLE_REDIRECT_URI     = "https://${var.domain_name}/api/auth/google/callback"
     STRIPE_PUBLISHABLE_KEY  = var.stripe_publishable_key
     STRIPE_SECRET_KEY       = var.stripe_secret_key
     STRIPE_PRICE_ID_PRO     = var.stripe_price_id_pro
