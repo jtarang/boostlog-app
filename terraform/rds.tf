@@ -53,9 +53,12 @@ resource "aws_db_subnet_group" "shared" {
 #   * dev EC2 is in a DIFFERENT VPC -> it resolves to the public IP and connects
 #     over the internet, so RDS sees the dev EIP -> allow it by CIDR.
 resource "aws_security_group" "rds" {
-  count       = local.create_rds ? 1 : 0
-  name        = "boostlog-rds-sg"
-  description = "Postgres 5432: prd via SG (private path), dev via EIP (public path)"
+  count = local.create_rds ? 1 : 0
+  name  = "boostlog-rds-sg"
+  # NOTE: description is immutable in AWS — changing it forces SG replacement
+  # (destroy/recreate), which detaches the live RDS ENI. Keep this string
+  # stable; the real behavior is documented in the comment block above.
+  description = "Allow Postgres 5432 from boostlog EC2 Elastic IPs only"
   vpc_id      = aws_vpc.main.id
 
   ingress {
