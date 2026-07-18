@@ -204,7 +204,10 @@ async def create_payment_intent(payload: StripePaymentIntent, current_user: User
         if not customer_id:
             customer_id = stripe_service.create_stripe_customer(db, current_user, current_user.email)
 
-        stripe_service.create_payment_method(db, current_user, payload.payment_method_id)
+        # The card is NOT saved to the account here — it is persisted only once
+        # payment is confirmed (sync_subscription_status / the subscription
+        # webhook), so an abandoned or failed 3-D Secure attempt leaves no card
+        # on file.
         return stripe_service.create_subscription(db, current_user, payload.tier, payload.payment_method_id)
 
     except stripe_service.stripe.error.StripeError as e:

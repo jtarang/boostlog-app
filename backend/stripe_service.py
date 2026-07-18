@@ -259,6 +259,26 @@ def create_subscription(db: Session, user: User, tier: str, payment_method_id: s
         raise Exception(f"Failed to create subscription: {str(e)}")
 
 
+def _persist_default_card(db: Session, user: User, stripe_sub) -> None:
+    """Save the subscription's default payment method to the user's saved cards.
+
+    Called only once the subscription is active (payment confirmed), so a card
+    used for a subscription that never completed — e.g. an abandoned or failed
+    3-D Secure challenge — is never persisted to the account. Idempotent via
+    create_payment_method, and best-effort: card persistence must never fail the
+    entitlement grant.
+    """
+    pm_id = _read(stripe_sub, "default_payment_method")
+    if pm_id is not None and not isinstance(pm_id, str):
+        pm_id = _read(pm_id, "id")  # may arrive expanded rather than as an id
+    if not pm_id:
+        return
+    try:
+        create_payment_method(db, user, pm_id)
+    except Exception:
+        pass
+
+
 def sync_subscription_status(db: Session, user: User) -> dict:
     """Re-fetch the subscription from Stripe and reconcile local state.
 
@@ -280,6 +300,7 @@ def sync_subscription_status(db: Session, user: User) -> dict:
 
     if stripe_sub.status in ACTIVE_STATUSES:
         user.subscription_tier = sub.tier
+        _persist_default_card(db, user, stripe_sub)
     db.commit()
 
     return {"status": stripe_sub.status, "tier": user.subscription_tier}
@@ -352,6 +373,7 @@ def _handle_subscription_updated(db: Session, subscription: dict) -> dict:
         # tier. This is the authoritative counterpart to sync_subscription_status.
         if user_sub.status in ACTIVE_STATUSES and user_sub.tier and user_sub.tier != "free":
             user_sub.user.subscription_tier = user_sub.tier
+            _persist_default_card(db, user_sub.user, subscription)
         db.commit()
         return {"status": "updated"}
 
