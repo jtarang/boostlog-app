@@ -46,6 +46,8 @@ jobs:
           echo "github_client_secret = \"${{ secrets.GH_CLIENT_SECRET }}\"" >> environments/prd.tfvars
           echo "cloudflare_tunnel_token = \"${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}\"" >> environments/prd.tfvars
           echo "db_password = \"${{ secrets.DB_PASSWORD }}\"" >> environments/prd.tfvars
+          echo "stripe_publishable_key = \"${{ secrets.STRIPE_PUBLISHABLE_KEY }}\"" >> environments/prd.tfvars
+          echo "stripe_secret_key = \"${{ secrets.STRIPE_SECRET_KEY }}\"" >> environments/prd.tfvars
 
       - name: Terraform Apply (Prod)
         run: |

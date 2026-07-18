@@ -26,3 +26,10 @@ android/build/
 android/app/build/
 android/local.properties
 .DS_Store
+
+# Terraform local state & provider cache
+terraform/.terraform/
+**/.terraform/
+*.tfstate
+*.tfstate.*
+terraform/.terraform.lock.hcl

@@ -65,6 +65,8 @@ jobs:
           echo "github_client_secret = \"${{ secrets.GH_CLIENT_SECRET }}\"" >> environments/dev.tfvars
           echo "cloudflare_tunnel_token = \"${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}\"" >> environments/dev.tfvars
           echo "db_password = \"${{ secrets.DB_PASSWORD }}\"" >> environments/dev.tfvars
+          echo "stripe_publishable_key = \"${{ secrets.STRIPE_PUBLISHABLE_KEY }}\"" >> environments/dev.tfvars
+          echo "stripe_secret_key = \"${{ secrets.STRIPE_SECRET_KEY }}\"" >> environments/dev.tfvars
           terraform apply -var-file="environments/dev.tfvars" -auto-approve
 
       - name: Log in to the Container registry
