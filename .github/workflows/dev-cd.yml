@@ -1,0 +1,66 @@
+name: CD (dev)
+
+# Deploy-only workflow for the dev EC2. It does NOT build an image — dev runs the
+# same `latest` image that the prd CD builds from main. Redeploys pick up the
+# current image plus a fresh copy of the dev secret (e.g. after a Terraform apply
+# rewrites DATABASE_URL).
+#
+# Fire it either by bumping the trigger file (mirrors the prd release-trigger
+# pattern) or from the Actions tab (workflow_dispatch).
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/triggers/release-trigger-dev'
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy (e.g. sha-abc1234). Defaults to latest.'
+        type: string
+        default: latest
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: jtarang/boostlog-app
+
+jobs:
+  deploy-dev:
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      id-token: write # AWS OIDC
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials for SSM
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Trigger EC2 Deployment via SSM
+        run: |
+          TAG="${{ github.event.inputs.image_tag || 'latest' }}"
+          aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=tag:Name,Values=boostlog-web-dev" \
+            --parameters "commands=[
+              \"cd /app\",
+              \"sudo mkdir -p /app/data\",
+              \"sudo chown -R 1000:1000 /app/data\",
+              \"which jq > /dev/null || sudo apt-get update -y\",
+              \"which jq > /dev/null || sudo apt-get install -y jq\",
+              \"wget -q --header='Authorization: token ${{ secrets.GITHUB_TOKEN }}' -O docker-compose.yml https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/docker/docker-compose.dev.yml\",
+              \"echo ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin\",
+              \"docker pull ghcr.io/jtarang/boostlog-app:$TAG\",
+              \"docker-compose down\",
+              \"docker system prune --all --force\",
+              \"aws secretsmanager get-secret-value --secret-id boostlog.app/dev/secrets --query SecretString --output text | jq -r 'to_entries[] | .key + \\\"=\\\" + (.value|tostring)' > .env.dev\",
+              \"echo IMAGE_TAG=$TAG >> .env.dev\",
+              \"docker-compose --env-file .env.dev up -d --force-recreate\"
+            ]" \
+            --comment "Deploying ghcr.io/jtarang/boostlog-app:$TAG to dev"
