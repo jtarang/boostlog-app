@@ -6,7 +6,7 @@ from backend.integrations import bootmod3
 
 
 def get_auth_headers(client):
-    client.post("/register", json={"username": "bm3user", "password": "testpassword"})
+    client.post("/register", json={"username": "bm3user", "email": "bm3user@example.com", "password": "testpassword"})
     res = client.post("/token", data={"username": "bm3user", "password": "testpassword"})
     return {"Authorization": f"Bearer {res.json()['access_token']}"}
 

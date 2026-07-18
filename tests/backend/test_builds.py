@@ -2,7 +2,7 @@ import io
 
 
 def auth(client, username="testuser", password="testpassword"):
-    client.post("/register", json={"username": username, "password": password})
+    client.post("/register", json={"username": username, "email": f"{username}@example.com", "password": password})
     res = client.post("/token", data={"username": username, "password": password})
     return {"Authorization": f"Bearer {res.json()['access_token']}"}
 

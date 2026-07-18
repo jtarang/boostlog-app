@@ -58,6 +58,7 @@ def authenticated_page(page):
     # Register/Login flow
     page.locator(".auth-tabs .tab:nth-child(2)").click()
     page.locator("#authUsername").fill(username)
+    page.locator("#authEmail").fill(f"{username}@example.com")
     page.locator("#authPassword").fill("password123")
     page.locator("#authSubmitBtn").click()
     # Wait for login to complete
