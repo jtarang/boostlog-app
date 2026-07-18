@@ -52,11 +52,15 @@ resource "aws_security_group" "rds" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description = "Postgres from allowlisted EIPs (prd EIP auto-added + var.db_allowed_cidrs)"
+    description = "Postgres from the prd + dev EC2 Elastic IPs (auto) plus any extra db_allowed_cidrs"
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
-    cidr_blocks = concat(["${aws_eip.web_eip.public_ip}/32"], var.db_allowed_cidrs)
+    cidr_blocks = concat(
+      ["${aws_eip.web_eip.public_ip}/32"],                                # prd EIP (this workspace)
+      ["${data.terraform_remote_state.dev[0].outputs.ec2_public_ip}/32"], # dev EIP (read from dev state)
+      var.db_allowed_cidrs,
+    )
   }
 
   egress {
@@ -136,14 +140,25 @@ resource "aws_secretsmanager_secret_version" "rds_master" {
   })
 }
 
-# ── Cross-workspace read: the `dev` workspace pulls the endpoint/creds from the
-#    `prd` workspace state (only when actually cutting over to RDS) ─────────────
+# ── Cross-workspace reads (S3 backend workspace layout: env:/<ws>/<key>) ──────
+# prd reads the dev workspace to auto-allowlist the dev EC2 EIP on the RDS SG.
+data "terraform_remote_state" "dev" {
+  count   = local.create_rds ? 1 : 0
+  backend = "s3"
+  config = {
+    bucket = "boostlog-tfstate-jtarang"
+    key    = "env:/dev/boostlog/terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+
+# dev reads the prd workspace for the shared RDS endpoint/creds when using RDS.
 data "terraform_remote_state" "prd" {
   count   = (!local.is_prd && var.use_rds) ? 1 : 0
   backend = "s3"
   config = {
     bucket = "boostlog-tfstate-jtarang"
-    key    = "env:/prd/boostlog/terraform.tfstate" # S3 backend workspace layout
+    key    = "env:/prd/boostlog/terraform.tfstate"
     region = "us-east-1"
   }
 }
