@@ -67,6 +67,9 @@ jobs:
           echo "db_password = \"${{ secrets.DB_PASSWORD }}\"" >> environments/dev.tfvars
           echo "stripe_publishable_key = \"${{ secrets.STRIPE_PUBLISHABLE_KEY }}\"" >> environments/dev.tfvars
           echo "stripe_secret_key = \"${{ secrets.STRIPE_SECRET_KEY }}\"" >> environments/dev.tfvars
+          echo "stripe_price_id_pro = \"${{ secrets.STRIPE_PRICE_ID_PRO }}\"" >> environments/dev.tfvars
+          echo "stripe_price_id_tuner = \"${{ secrets.STRIPE_PRICE_ID_TUNER }}\"" >> environments/dev.tfvars
+          echo "stripe_webhook_secret = \"${{ secrets.STRIPE_WEBHOOK_SECRET }}\"" >> environments/dev.tfvars
           terraform apply -var-file="environments/dev.tfvars" -auto-approve
 
       - name: Log in to the Container registry

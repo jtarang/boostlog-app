@@ -62,6 +62,9 @@ jobs:
           echo "db_password = \"${{ secrets.DB_PASSWORD }}\"" >> ${{ steps.env.outputs.tfvars_file }}
           echo "stripe_publishable_key = \"${{ secrets.STRIPE_PUBLISHABLE_KEY }}\"" >> ${{ steps.env.outputs.tfvars_file }}
           echo "stripe_secret_key = \"${{ secrets.STRIPE_SECRET_KEY }}\"" >> ${{ steps.env.outputs.tfvars_file }}
+          echo "stripe_price_id_pro = \"${{ secrets.STRIPE_PRICE_ID_PRO }}\"" >> ${{ steps.env.outputs.tfvars_file }}
+          echo "stripe_price_id_tuner = \"${{ secrets.STRIPE_PRICE_ID_TUNER }}\"" >> ${{ steps.env.outputs.tfvars_file }}
+          echo "stripe_webhook_secret = \"${{ secrets.STRIPE_WEBHOOK_SECRET }}\"" >> ${{ steps.env.outputs.tfvars_file }}
 
       - name: Terraform Plan
         run: |

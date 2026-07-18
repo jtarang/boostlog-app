@@ -95,3 +95,24 @@ variable "stripe_secret_key" {
   sensitive   = true
   default     = ""
 }
+
+variable "stripe_price_id_pro" {
+  description = "Stripe price ID for the Pro tier (price_...) — environment-specific (sandbox vs live)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "stripe_price_id_tuner" {
+  description = "Stripe price ID for the Tuner tier (price_...) — environment-specific (sandbox vs live)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "stripe_webhook_secret" {
+  description = "Stripe webhook signing secret (whsec_...) — from the webhook endpoint in the Stripe Dashboard"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
