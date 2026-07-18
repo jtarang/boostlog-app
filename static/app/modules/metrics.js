@@ -21,9 +21,9 @@ const METRICS_KEY = 'boostlog_session_metrics';
 export const DEFAULT_METRICS = [
     { label: 'Max Boost',        unit: 'psi', decimals: 1, agg: 'max', match: ['boost'], exclude: ['target'], clampMax: 200 },
     { label: 'Peak RPM',         unit: 'rpm', decimals: 0, agg: 'max', match: ['rpm', 'engine speed'], clampMax: 20000 },
-    { label: 'Max Timing Corr.', unit: 'deg', decimals: 1, agg: 'min', match: ['timing corr'], clampMin: -100, danger: true },
+    { label: 'Max Timing Corr.', unit: 'deg', decimals: 1, agg: 'min', match: ['timing corr', 'timing cor'], clampMin: -100, danger: true },
     { label: 'PI Fuel Pressure', unit: 'psi', decimals: 1, agg: 'max', match: ['pi fuel pressure', 'low pressure fuel', 'fuel pressure'], clampMax: 2000 },
-    { label: 'Torque at Clutch', unit: 'Nm',  decimals: 0, agg: 'max', match: ['torque at clutch (actual)', 'torque', 'trq'], drop: [1024, 16777216], clampMax: 10000 },
+    { label: 'Torque at Clutch', unit: 'Nm',  decimals: 0, agg: 'max', match: ['torque at clutch (actual)', 'torque act. clutch', 'torque', 'trq'], exclude: ['status', 'limit', 'limiter'], drop: [1024, 16777216], clampMax: 10000 },
     { label: 'Max Vehicle Speed', unit: 'mph', decimals: 0, agg: 'max', match: ['speed'], exclude: ['engine'], clampMax: 500 },
 ];
 

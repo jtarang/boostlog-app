@@ -153,6 +153,7 @@ export function loadServerLog(log, listItem = null) {
                 header: true,
                 dynamicTyping: true,
                 skipEmptyLines: true,
+                comments: '#',  // skip MHD padding lines (#Encoding, #Ecu…, #VIN)
                 complete: function (results) {
                     state.currentData = results.data;
                     state.currentHeaders = results.meta.fields;
