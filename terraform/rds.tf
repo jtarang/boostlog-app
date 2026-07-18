@@ -44,20 +44,34 @@ resource "aws_db_subnet_group" "shared" {
   tags = { Name = "boostlog-db-subnet-group" }
 }
 
-# ── Security group: Postgres only from our EC2 Elastic IPs ────────────────────
+# ── Security group for the RDS instance ───────────────────────────────────────
+# Two access paths, because the instance is publicly_accessible but shared across
+# VPCs:
+#   * prd EC2 is in THIS VPC -> VPC DNS resolves the endpoint to the private IP,
+#     so it reaches RDS over the private network. The source is the EC2's private
+#     IP (NOT its EIP), so we allow it by referencing the prd web SG.
+#   * dev EC2 is in a DIFFERENT VPC -> it resolves to the public IP and connects
+#     over the internet, so RDS sees the dev EIP -> allow it by CIDR.
 resource "aws_security_group" "rds" {
   count       = local.create_rds ? 1 : 0
   name        = "boostlog-rds-sg"
-  description = "Allow Postgres 5432 from boostlog EC2 Elastic IPs only"
+  description = "Postgres 5432: prd via SG (private path), dev via EIP (public path)"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description = "Postgres from the prd + dev EC2 Elastic IPs (auto) plus any extra db_allowed_cidrs"
+    description     = "Postgres from the prd EC2 in this VPC (private path) via its SG"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.web.id]
+  }
+
+  ingress {
+    description = "Postgres from the dev EC2 EIP (cross-VPC public path) plus any extra db_allowed_cidrs"
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
     cidr_blocks = concat(
-      ["${aws_eip.web_eip.public_ip}/32"],                                # prd EIP (this workspace)
       ["${data.terraform_remote_state.dev[0].outputs.ec2_public_ip}/32"], # dev EIP (read from dev state)
       var.db_allowed_cidrs,
     )

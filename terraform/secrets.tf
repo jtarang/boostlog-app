@@ -51,5 +51,8 @@ resource "aws_secretsmanager_secret_version" "boostlog_secrets_version" {
     DATABASE_URL            = local.database_url
     LLM_MODEL               = "bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0"
     AWS_REGION_NAME         = var.aws_region
+    # Env-aware secret name so the app (config.py) re-fetches ITS OWN secret,
+    # not the prd default — the dev EC2 role can't read the prd secret.
+    AWS_SECRET_NAME = var.secret_name
   })
 }
