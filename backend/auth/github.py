@@ -57,16 +57,40 @@ async def github_callback(code: str, state: str = "web", db: Session = Depends(g
         if not github_id or not username:
             raise HTTPException(status_code=400, detail="Failed to fetch GitHub profile")
 
+        # /user only exposes a PUBLIC email; fetch the primary verified address
+        # from /user/emails (covered by the `user` scope) so we can link to an
+        # existing account instead of creating a duplicate.
+        email = None
+        email_verified = False
+        try:
+            emails_res = await client.get(
+                "https://api.github.com/user/emails",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            if emails_res.status_code == 200:
+                for e in emails_res.json():
+                    if e.get("primary") and e.get("verified"):
+                        email = e.get("email")
+                        email_verified = True
+                        break
+        except Exception:
+            pass
+
         user = db.query(User).filter(User.github_id == github_id).first()
         if not user:
-            base_username = username
-            counter = 1
-            while db.query(User).filter(User.username == username).first():
-                username = f"{base_username}_{counter}"
-                counter += 1
-
-            user = User(username=username, github_id=github_id)
-            db.add(user)
+            # Link to an existing account with the same verified email, else create.
+            if email and email_verified:
+                user = db.query(User).filter(User.email == email).first()
+            if user:
+                user.github_id = github_id
+            else:
+                base_username = username
+                counter = 1
+                while db.query(User).filter(User.username == username).first():
+                    username = f"{base_username}_{counter}"
+                    counter += 1
+                user = User(username=username, github_id=github_id, email=email)
+                db.add(user)
             db.commit()
             db.refresh(user)
 
