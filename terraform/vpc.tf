@@ -27,6 +27,19 @@ resource "aws_subnet" "public" {
   }
 }
 
+# Second public subnet in a different AZ. RDS DB subnet groups require subnets
+# in at least two AZs; this subnet is otherwise unused (no cost when empty).
+resource "aws_subnet" "public_b" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = var.subnet_b_cidr
+  map_public_ip_on_launch = true
+  availability_zone       = "${var.aws_region}b"
+
+  tags = {
+    Name = "boostlog-public-subnet-b-${var.environment}"
+  }
+}
+
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -42,5 +55,10 @@ resource "aws_route_table" "public" {
 
 resource "aws_route_table_association" "public" {
   subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_route_table_association" "public_b" {
+  subnet_id      = aws_subnet.public_b.id
   route_table_id = aws_route_table.public.id
 }

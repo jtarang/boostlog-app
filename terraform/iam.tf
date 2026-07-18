@@ -23,9 +23,10 @@ data "aws_iam_policy_document" "secrets_access" {
     actions = [
       "secretsmanager:GetSecretValue"
     ]
-    resources = [
-      aws_secretsmanager_secret.boostlog_secrets.arn
-    ]
+    resources = concat(
+      [aws_secretsmanager_secret.boostlog_secrets.arn],
+      local.create_rds ? [aws_secretsmanager_secret.rds_master[0].arn] : []
+    )
   }
 
   statement {

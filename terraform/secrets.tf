@@ -20,6 +20,19 @@ resource "random_password" "app_secret_key" {
   special = true
 }
 
+# ── Resolve the DATABASE_URL. When use_rds is false we keep the in-VM Postgres
+#    container (@db:5432). When true we point at the shared RDS: the prd
+#    workspace reads the instance directly; the dev workspace reads the prd
+#    workspace's outputs via remote state and targets the boostlog_dev database.
+locals {
+  rds_host = local.is_prd ? (local.create_rds ? aws_db_instance.shared[0].address : null) : (var.use_rds ? data.terraform_remote_state.prd[0].outputs.rds_endpoint : null)
+  rds_user = local.is_prd ? (local.create_rds ? aws_db_instance.shared[0].username : null) : (var.use_rds ? data.terraform_remote_state.prd[0].outputs.rds_master_username : null)
+  rds_pass = local.is_prd ? (local.create_rds ? random_password.db_master[0].result : null) : (var.use_rds ? data.terraform_remote_state.prd[0].outputs.rds_master_password : null)
+  rds_db   = local.is_prd ? "boostlog_prd" : "boostlog_dev"
+
+  database_url = var.use_rds ? "postgresql://${local.rds_user}:${local.rds_pass}@${local.rds_host}:5432/${local.rds_db}?sslmode=require" : "postgresql://boostuser:${var.db_password}@db:5432/boostlog"
+}
+
 resource "aws_secretsmanager_secret_version" "boostlog_secrets_version" {
   secret_id = aws_secretsmanager_secret.boostlog_secrets.id
   secret_string = jsonencode({
@@ -35,7 +48,7 @@ resource "aws_secretsmanager_secret_version" "boostlog_secrets_version" {
     POSTGRES_USER           = "boostuser"
     POSTGRES_PASSWORD       = var.db_password
     POSTGRES_DB             = "boostlog"
-    DATABASE_URL            = "postgresql://boostuser:${var.db_password}@db:5432/boostlog"
+    DATABASE_URL            = local.database_url
     LLM_MODEL               = "bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0"
     AWS_REGION_NAME         = var.aws_region
   })
