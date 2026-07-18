@@ -28,12 +28,17 @@ router = APIRouter()
 
 @router.post("/register")
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.username == user.username).first()
-    if db_user:
+    if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(status_code=400, detail="Username already registered")
 
+    # Email is required and unique — it is the identity we key the billing
+    # customer on. Normalize to lowercase so lookups are case-insensitive.
+    email = user.email.strip().lower()
+    if db.query(User).filter(User.email == email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+
     hashed_password = get_password_hash(user.password)
-    new_user = User(username=user.username, hashed_password=hashed_password)
+    new_user = User(username=user.username, email=email, hashed_password=hashed_password)
     db.add(new_user)
     db.commit()
     return {"message": "User registered successfully"}

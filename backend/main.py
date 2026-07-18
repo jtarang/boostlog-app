@@ -12,7 +12,7 @@ from backend.auth import passwords as passwords_router
 from backend.auth import webauthn as webauthn_router
 from backend.auth.core import get_password_hash
 from backend.models import User, SubscriptionTier
-from backend.routers import analyze, chat, logs, builds, users, tuning
+from backend.routers import analyze, chat, logs, builds, users, tuning, webhooks
 from backend.routers import bootmod3 as bootmod3_router
 
 
@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
             default_tiers = [
                 ("free", 50_000),
                 ("pro", 5_000_000),
-                ("enterprise", 100_000_000),
+                ("tuner", 100_000_000),
             ]
             for name, limit in default_tiers:
                 exists = session.query(SubscriptionTier).filter(SubscriptionTier.name == name).first()
@@ -122,6 +122,7 @@ async def service_worker():
 app.include_router(passwords_router.router)
 app.include_router(webauthn_router.router)
 app.include_router(github_router.router)
+app.include_router(webhooks.router)
 app.include_router(analyze.router)
 app.include_router(chat.router)
 app.include_router(logs.router)

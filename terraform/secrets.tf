@@ -25,6 +25,11 @@ resource "aws_secretsmanager_secret_version" "boostlog_secrets_version" {
   secret_string = jsonencode({
     GITHUB_CLIENT_ID        = var.github_client_id
     GITHUB_CLIENT_SECRET    = var.github_client_secret
+    STRIPE_PUBLISHABLE_KEY  = var.stripe_publishable_key
+    STRIPE_SECRET_KEY       = var.stripe_secret_key
+    STRIPE_PRICE_ID_PRO     = var.stripe_price_id_pro
+    STRIPE_PRICE_ID_TUNER   = var.stripe_price_id_tuner
+    STRIPE_WEBHOOK_SECRET   = var.stripe_webhook_secret
     SECRET_KEY              = random_password.app_secret_key.result
     CLOUDFLARE_TUNNEL_TOKEN = var.cloudflare_tunnel_token
     POSTGRES_USER           = "boostuser"

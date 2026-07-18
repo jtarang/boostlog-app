@@ -6,7 +6,7 @@ from fastapi import HTTPException
 import io
 
 def get_auth_headers(client, username="usage_user"):
-    client.post("/register", json={"username": username, "password": "testpassword"})
+    client.post("/register", json={"username": username, "email": f"{username}@example.com", "password": "testpassword"})
     res = client.post("/token", data={"username": username, "password": "testpassword"})
     token = res.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}

@@ -2,7 +2,7 @@ import io
 import pytest
 
 def get_auth_headers(client):
-    client.post("/register", json={"username": "testuser", "password": "testpassword"})
+    client.post("/register", json={"username": "testuser", "email": "testuser@example.com", "password": "testpassword"})
     res = client.post("/token", data={"username": "testuser", "password": "testpassword"})
     token = res.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}

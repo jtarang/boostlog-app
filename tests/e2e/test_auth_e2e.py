@@ -9,8 +9,9 @@ def test_login_flow(page: Page):
     # Switch to register
     page.locator(".auth-tabs .tab:nth-child(2)").click() # Assuming child 2 is Register
     
-    # Fill in register credentials
+    # Fill in register credentials (email is required in register mode)
     page.locator("#authUsername").fill("e2e_user")
+    page.locator("#authEmail").fill("e2e_user@example.com")
     page.locator("#authPassword").fill("e2e_password")
     
     # By clicking register, it should auto-login and hide the overlay based on app.js `handleAuth`

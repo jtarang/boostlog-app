@@ -13,6 +13,8 @@
         rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <!-- Stripe Elements (must load from Stripe's domain, cannot be bundled) -->
+    <script src="https://js.stripe.com/v3/"></script>
     <!-- PWA: installable app -->
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#0f172a">
@@ -88,6 +90,7 @@
 
             <form id="authForm">
                 <input type="text" id="authUsername" placeholder="Username" required class="input-modern" autocomplete="username webauthn">
+                <input type="email" id="authEmail" placeholder="Email" class="input-modern" autocomplete="email" style="display: none;">
                 <input type="password" id="authPassword" placeholder="Password" required class="input-modern" autocomplete="current-password">
                 
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
@@ -469,6 +472,7 @@
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px;">
                             <span id="currentTierBadge" style="padding: 6px 12px; background: rgba(131, 56, 236, 0.2); border: 1px solid var(--accent); border-radius: 2px; font-weight: 600; font-size: 12px; color: var(--accent);">Free</span>
                             <span id="tierPriceLabel" style="font-size: 12px; color: var(--text-secondary);"></span>
+                            <button id="reactivateSubBtn" class="btn-secondary" data-scramble="true" data-action="reactivateSubscription" style="display: none; margin-left: auto; padding: 6px 12px; font-size: 12px; background: transparent; border: 1px solid var(--accent); color: var(--accent);">Reactivate</button>
                         </div>
                         <div style="margin-bottom: 20px;">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px;">
@@ -501,6 +505,15 @@
                                 <button class="btn-primary" data-scramble="true" id="upgradeTunerUpBtn" data-action="openUpgradeModal" data-tier="tuner" data-price="29" style="width: 100%; padding: 8px; font-size: 12px;">Upgrade</button>
                                 <button class="btn-primary" data-scramble="true" id="upgradeTunerBut" data-action="openUpgradeModal" data-tier="tuner" data-price="29" style="width: 100%; padding: 8px; font-size: 12px; display: none;">Current</button>
                             </div>
+                        </div>
+
+                        <!-- Saved payment methods -->
+                        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Payment Methods</span>
+                                <button class="btn-secondary" data-scramble="true" data-action="openAddCardModal" style="padding: 6px 12px; font-size: 12px;">+ Add Card</button>
+                            </div>
+                            <div id="paymentMethodList" style="display: flex; flex-direction: column; gap: 8px;"></div>
                         </div>
                     </div>
 
@@ -1087,20 +1100,17 @@
                     <div style="font-weight: 600; font-size: 16px; color: var(--accent);" id="upgradeModalPlan">Pro</div>
                     <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-top: 8px;"><span id="upgradeModalPrice">$14</span><span style="font-size: 12px; color: var(--text-secondary); font-weight: 400;">/month</span></div>
                 </div>
-                <form id="upgradeForm" style="display: flex; flex-direction: column; gap: 12px;">
-                    <div class="input-group">
-                        <label>Card Number</label>
-                        <input type="text" id="cardNumber" class="input-modern" placeholder="4242 4242 4242 4242" maxlength="19">
+                <form id="upgradeForm" style="display: flex; flex-direction: column; gap: 12px;" onsubmit="return false;">
+                    <!-- Saved cards (shown when the user has payment methods on file) -->
+                    <div id="savedCardsSection" style="display: none;">
+                        <label style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; display: block;">Pay with</label>
+                        <div id="savedCardsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                        <button type="button" id="btnUseNewCard" class="btn-secondary" data-action="toggleNewCardForm" style="margin-top: 10px; padding: 6px 12px; font-size: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.15);">Use a different card</button>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                        <div class="input-group">
-                            <label>Expiry (MM/YY)</label>
-                            <input type="text" id="cardExpiry" class="input-modern" placeholder="12/25" maxlength="5">
-                        </div>
-                        <div class="input-group">
-                            <label>CVV</label>
-                            <input type="text" id="cardCvv" class="input-modern" placeholder="123" maxlength="4">
-                        </div>
+                    <!-- New card (Stripe Elements) -->
+                    <div id="newCardSection">
+                        <label style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; display: block;">Card details</label>
+                        <div id="card-element" class="input-modern" style="padding: 12px;"></div>
                     </div>
                     <p id="upgradeError" class="auth-error" style="text-align: left;"></p>
                 </form>
@@ -1108,6 +1118,48 @@
             <div class="modal-footer" style="padding-top: 12px;">
                 <button class="btn-secondary" data-scramble="true" data-action="closeUpgradeModal">Cancel</button>
                 <button class="btn-primary" data-scramble="true" id="btnUpgradeConfirm" data-action="submitUpgrade" style="flex: 1;">Pay Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Required Modal (shown before subscribing if the account has no email) -->
+    <div id="emailRequiredModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card" style="max-width: 420px;">
+            <div class="modal-header">
+                <h3>Add your email</h3>
+                <button class="modal-close" data-action="closeEmailRequiredModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">We need an email address for your receipts and subscription before you can upgrade.</p>
+                <form id="emailRequiredForm" style="display: flex; flex-direction: column; gap: 12px;" onsubmit="return false;">
+                    <input type="email" id="emailRequiredInput" class="input-modern" placeholder="you@example.com" autocomplete="email">
+                    <p id="emailRequiredError" class="auth-error" style="text-align: left;"></p>
+                </form>
+            </div>
+            <div class="modal-footer" style="padding-top: 12px;">
+                <button class="btn-secondary" data-scramble="true" data-action="closeEmailRequiredModal">Cancel</button>
+                <button class="btn-primary" data-scramble="true" data-action="submitAccountEmail" style="flex: 1;">Save & Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Card Modal -->
+    <div id="addCardModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card" style="max-width: 420px;">
+            <div class="modal-header">
+                <h3>Add Payment Method</h3>
+                <button class="modal-close" data-action="closeAddCardModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="addCardForm" style="display: flex; flex-direction: column; gap: 12px;" onsubmit="return false;">
+                    <label style="font-size: 12px; color: var(--text-secondary); display: block;">Card details</label>
+                    <div id="add-card-element" class="input-modern" style="padding: 12px;"></div>
+                    <p id="addCardError" class="auth-error" style="text-align: left;"></p>
+                </form>
+            </div>
+            <div class="modal-footer" style="padding-top: 12px;">
+                <button class="btn-secondary" data-scramble="true" data-action="closeAddCardModal">Cancel</button>
+                <button class="btn-primary" data-scramble="true" data-action="submitAddCard" style="flex: 1;">Save Card</button>
             </div>
         </div>
     </div>

@@ -32,6 +32,8 @@ class User(Base):
     datalogs = relationship("Datalog", back_populates="owner", cascade="all, delete-orphan")
     builds = relationship("Build", back_populates="owner", cascade="all, delete-orphan")
     credentials = relationship("UserCredential", back_populates="user", cascade="all, delete-orphan")
+    payment_methods = relationship("PaymentMethod", back_populates="user", cascade="all, delete-orphan")
+    subscription = relationship("UserSubscription", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
 
 class UserCredential(Base):
@@ -117,4 +119,38 @@ class SubscriptionTier(Base):
 
     name = Column(String, primary_key=True)  # e.g., 'free', 'pro'
     token_limit = Column(Integer, nullable=False)
+
+
+class PaymentMethod(Base):
+    __tablename__ = "payment_methods"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    stripe_payment_method_id = Column(String, unique=True, index=True, nullable=False)
+    card_last_four = Column(String, nullable=False)
+    card_brand = Column(String, nullable=False)  # e.g., 'visa', 'mastercard'
+    exp_month = Column(Integer, nullable=False)
+    exp_year = Column(Integer, nullable=False)
+    is_default = Column(Integer, default=0)  # SQLite doesn't have bool
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", back_populates="payment_methods")
+
+
+class UserSubscription(Base):
+    __tablename__ = "user_subscriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+    stripe_customer_id = Column(String, unique=True, index=True, nullable=True)  # null until a real Stripe customer is created
+    stripe_subscription_id = Column(String, unique=True, index=True, nullable=True)  # null if on free tier
+    tier = Column(String, nullable=False, default="free")  # free, pro, tuner
+    status = Column(String, default="inactive")  # inactive, active, past_due, cancelled
+    current_period_start = Column(DateTime(timezone=True), nullable=True)
+    current_period_end = Column(DateTime(timezone=True), nullable=True)
+    cancel_at_period_end = Column(Integer, default=0)  # SQLite bool
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    cancelled_at = Column(DateTime(timezone=True), nullable=True)
+
+    user = relationship("User", back_populates="subscription")
 
