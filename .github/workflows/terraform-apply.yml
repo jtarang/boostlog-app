@@ -1,12 +1,24 @@
 name: Terraform Apply
 
 on:
+  # Auto-apply prd on merge to main (unchanged behavior).
   push:
     branches:
       - main
     paths:
       - 'terraform/**'
       - '.github/triggers/terraform-trigger'
+  # Manual apply for either environment (used for the dev workspace, which has
+  # no auto-apply trigger). Pick the environment from the Actions tab.
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to apply'
+        type: choice
+        options:
+          - dev
+          - prd
+        default: dev
 
 permissions:
   id-token: write # Required for AWS OIDC
@@ -15,7 +27,9 @@ permissions:
 jobs:
   apply:
     runs-on: ubuntu-latest
-    environment: prd
+    # Resolve the GitHub Environment (and thus its scoped secrets) from the
+    # trigger: manual dispatch uses the chosen input; a push to main is prd.
+    environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'prd' }}
     defaults:
       run:
         working-directory: ./terraform
@@ -23,6 +37,18 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Determine Environment
+        id: env
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            ENV="${{ github.event.inputs.environment }}"
+          else
+            ENV="prd"
+          fi
+          echo "name=$ENV" >> "$GITHUB_OUTPUT"
+          echo "tfvars=environments/$ENV.tfvars" >> "$GITHUB_OUTPUT"
+          echo "Applying environment: $ENV"
 
       - name: Configure AWS Credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
@@ -38,21 +64,22 @@ jobs:
       - name: Terraform Init
         run: |
           terraform init
-          terraform workspace select prd || terraform workspace new prd
+          terraform workspace select ${{ steps.env.outputs.name }} || terraform workspace new ${{ steps.env.outputs.name }}
 
       - name: Inject GitHub Secrets into tfvars
         run: |
-          echo "github_client_id = \"${{ secrets.GH_CLIENT_ID }}\"" >> environments/prd.tfvars
-          echo "github_client_secret = \"${{ secrets.GH_CLIENT_SECRET }}\"" >> environments/prd.tfvars
-          echo "cloudflare_tunnel_token = \"${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}\"" >> environments/prd.tfvars
-          echo "db_password = \"${{ secrets.DB_PASSWORD }}\"" >> environments/prd.tfvars
-          echo "stripe_publishable_key = \"${{ secrets.STRIPE_PUBLISHABLE_KEY }}\"" >> environments/prd.tfvars
-          echo "stripe_secret_key = \"${{ secrets.STRIPE_SECRET_KEY }}\"" >> environments/prd.tfvars
-          echo "stripe_price_id_pro = \"${{ secrets.STRIPE_PRICE_ID_PRO }}\"" >> environments/prd.tfvars
-          echo "stripe_price_id_tuner = \"${{ secrets.STRIPE_PRICE_ID_TUNER }}\"" >> environments/prd.tfvars
-          echo "stripe_webhook_secret = \"${{ secrets.STRIPE_WEBHOOK_SECRET }}\"" >> environments/prd.tfvars
+          TFVARS="${{ steps.env.outputs.tfvars }}"
+          echo "github_client_id = \"${{ secrets.GH_CLIENT_ID }}\"" >> "$TFVARS"
+          echo "github_client_secret = \"${{ secrets.GH_CLIENT_SECRET }}\"" >> "$TFVARS"
+          echo "cloudflare_tunnel_token = \"${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}\"" >> "$TFVARS"
+          echo "db_password = \"${{ secrets.DB_PASSWORD }}\"" >> "$TFVARS"
+          echo "stripe_publishable_key = \"${{ secrets.STRIPE_PUBLISHABLE_KEY }}\"" >> "$TFVARS"
+          echo "stripe_secret_key = \"${{ secrets.STRIPE_SECRET_KEY }}\"" >> "$TFVARS"
+          echo "stripe_price_id_pro = \"${{ secrets.STRIPE_PRICE_ID_PRO }}\"" >> "$TFVARS"
+          echo "stripe_price_id_tuner = \"${{ secrets.STRIPE_PRICE_ID_TUNER }}\"" >> "$TFVARS"
+          echo "stripe_webhook_secret = \"${{ secrets.STRIPE_WEBHOOK_SECRET }}\"" >> "$TFVARS"
 
-      - name: Terraform Apply (Prod)
+      - name: Terraform Apply
         run: |
-          terraform workspace select prd
-          terraform apply -var-file="environments/prd.tfvars" -auto-approve
+          terraform workspace select ${{ steps.env.outputs.name }}
+          terraform apply -var-file="${{ steps.env.outputs.tfvars }}" -auto-approve

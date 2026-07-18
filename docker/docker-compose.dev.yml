@@ -7,17 +7,11 @@ services:
       - ./data:/app/data
     env_file:
       - .env.dev
-    depends_on:
-      - db
     restart: unless-stopped
 
-  db:
-    image: postgres:15-alpine
-    env_file:
-      - .env.dev
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
+  # Postgres now runs on the shared RDS instance (DATABASE_URL points at it).
+  # The in-VM `db` container and its postgres_data volume have been retired —
+  # see terraform/RDS.md.
 
   tunnel:
     image: cloudflare/cloudflared:latest
@@ -28,6 +22,3 @@ services:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
     depends_on:
       - web
-
-volumes:
-  postgres_data:
