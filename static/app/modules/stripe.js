@@ -10,6 +10,10 @@ export async function initializeStripe(publishableKey) {
         console.warn('Stripe publishable key not configured');
         return;
     }
+    // loadUserSettings can run more than once (e.g. re-entering the settings
+    // view). Mount the Card Elements only once — re-creating them mounts a
+    // second iframe into the same node and Stripe warns / renders broken.
+    if (stripe) return;
 
     stripe = Stripe(publishableKey);
 
