@@ -21,6 +21,37 @@ variable "subnet_cidr" {
   default     = "10.0.1.0/24"
 }
 
+variable "subnet_b_cidr" {
+  description = "CIDR block for the second public subnet (AZ b), required for the RDS subnet group"
+  type        = string
+  default     = "10.0.2.0/24"
+}
+
+# ── Shared RDS (managed Postgres) ────────────────────────────────────────────
+variable "db_instance_class" {
+  description = "RDS instance class for the shared Postgres"
+  type        = string
+  default     = "db.t4g.micro"
+}
+
+variable "db_engine_version" {
+  description = "RDS Postgres engine version (must match parameter group family postgres16)"
+  type        = string
+  default     = "16.4"
+}
+
+variable "db_allowed_cidrs" {
+  description = "Extra CIDRs (e.g. the dev EC2 Elastic IP as x.x.x.x/32) allowed to reach RDS on 5432. The prd EIP is added automatically."
+  type        = list(string)
+  default     = []
+}
+
+variable "use_rds" {
+  description = "When true, DATABASE_URL points at the shared RDS instead of the in-VM Postgres container. Flip per environment to cut over."
+  type        = bool
+  default     = false
+}
+
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
