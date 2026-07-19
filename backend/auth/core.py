@@ -55,11 +55,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        sub = payload.get("sub")
-        if sub is None:
+        user_id = payload.get("sub")  # the user's UUID; legacy tokens won't match → re-login
+        if not user_id:
             raise credentials_exception
-        user_id = int(sub)  # `sub` is the user id; legacy username tokens fail here → re-login
-    except (jwt.PyJWTError, TypeError, ValueError):
+    except jwt.PyJWTError:
         raise credentials_exception
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
