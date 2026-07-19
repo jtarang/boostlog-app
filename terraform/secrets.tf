@@ -38,6 +38,18 @@ resource "aws_secretsmanager_secret_version" "boostlog_secrets_version" {
   secret_string = jsonencode({
     GITHUB_CLIENT_ID        = var.github_client_id
     GITHUB_CLIENT_SECRET    = var.github_client_secret
+    GOOGLE_CLIENT_ID        = var.google_client_id
+    GOOGLE_CLIENT_SECRET    = var.google_client_secret
+    MICROSOFT_CLIENT_ID     = var.microsoft_client_id
+    MICROSOFT_CLIENT_SECRET = var.microsoft_client_secret
+    DISCORD_CLIENT_ID       = var.discord_client_id
+    DISCORD_CLIENT_SECRET   = var.discord_client_secret
+    APPLE_CLIENT_ID         = var.apple_client_id
+    APPLE_TEAM_ID           = var.apple_team_id
+    APPLE_KEY_ID            = var.apple_key_id
+    APPLE_PRIVATE_KEY_B64   = var.apple_private_key_b64
+    # One base for all providers: {base}/api/auth/{provider}/callback
+    OAUTH_REDIRECT_BASE     = "https://${var.domain_name}"
     STRIPE_PUBLISHABLE_KEY  = var.stripe_publishable_key
     STRIPE_SECRET_KEY       = var.stripe_secret_key
     STRIPE_PRICE_ID_PRO     = var.stripe_price_id_pro

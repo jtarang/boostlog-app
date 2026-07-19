@@ -58,6 +58,16 @@ jobs:
         run: |
           echo "github_client_id = \"${{ secrets.GH_CLIENT_ID }}\"" >> ${{ steps.env.outputs.tfvars_file }}
           echo "github_client_secret = \"${{ secrets.GH_CLIENT_SECRET }}\"" >> ${{ steps.env.outputs.tfvars_file }}
+          echo "google_client_id = \"${{ secrets.GOOGLE_CLIENT_ID }}\"" >> ${{ steps.env.outputs.tfvars_file }}
+          echo "google_client_secret = \"${{ secrets.GOOGLE_CLIENT_SECRET }}\"" >> ${{ steps.env.outputs.tfvars_file }}
+          echo "microsoft_client_id = \"${{ secrets.MICROSOFT_CLIENT_ID }}\"" >> ${{ steps.env.outputs.tfvars_file }}
+          echo "microsoft_client_secret = \"${{ secrets.MICROSOFT_CLIENT_SECRET }}\"" >> ${{ steps.env.outputs.tfvars_file }}
+          echo "discord_client_id = \"${{ secrets.DISCORD_CLIENT_ID }}\"" >> ${{ steps.env.outputs.tfvars_file }}
+          echo "discord_client_secret = \"${{ secrets.DISCORD_CLIENT_SECRET }}\"" >> ${{ steps.env.outputs.tfvars_file }}
+          echo "apple_client_id = \"${{ secrets.APPLE_CLIENT_ID }}\"" >> ${{ steps.env.outputs.tfvars_file }}
+          echo "apple_team_id = \"${{ secrets.APPLE_TEAM_ID }}\"" >> ${{ steps.env.outputs.tfvars_file }}
+          echo "apple_key_id = \"${{ secrets.APPLE_KEY_ID }}\"" >> ${{ steps.env.outputs.tfvars_file }}
+          echo "apple_private_key_b64 = \"${{ secrets.APPLE_PRIVATE_KEY_B64 }}\"" >> ${{ steps.env.outputs.tfvars_file }}
           echo "cloudflare_tunnel_token = \"${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}\"" >> ${{ steps.env.outputs.tfvars_file }}
           echo "db_password = \"${{ secrets.DB_PASSWORD }}\"" >> ${{ steps.env.outputs.tfvars_file }}
           echo "stripe_publishable_key = \"${{ secrets.STRIPE_PUBLISHABLE_KEY }}\"" >> ${{ steps.env.outputs.tfvars_file }}

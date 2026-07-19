@@ -27,3 +27,4 @@ playwright
 moto==5.0.5
 psycopg2-binary
 webauthn
+fastapi-sso==0.20.0
