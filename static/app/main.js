@@ -204,6 +204,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('resetPasswordModal').style.display = 'flex';
     }
 
+    // Surface a failed SSO round-trip (redirected here by the auth callback).
+    if (params.has('auth_error')) {
+        const el = document.getElementById('authError');
+        if (el) el.textContent = params.get('auth_error') || 'Sign-in failed. Please try again.';
+        const url = new URL(window.location);
+        url.searchParams.delete('auth_error');
+        window.history.replaceState({}, '', url);
+    }
+
     const drawer = document.getElementById('aiDrawer');
     const resizer = document.getElementById('aiDrawerResizer');
     if (drawer && resizer) {

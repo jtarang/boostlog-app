@@ -13,20 +13,22 @@ account's own managed email.
 """
 import base64
 import json
+import logging
 import re
 import time
 from typing import Callable, Optional
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 import httpx
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi_sso.sso.base import SSOBase
+from fastapi_sso.sso.base import SSOBase, SSOLoginError
 from fastapi_sso.sso.discord import DiscordSSO
 from fastapi_sso.sso.github import GithubSSO
 from fastapi_sso.sso.google import GoogleSSO
 from fastapi_sso.sso.microsoft import MicrosoftSSO
+from oauthlib.oauth2.rfc6749.errors import OAuth2Error
 from sqlalchemy.orm import Session
 
 from backend import config
@@ -35,6 +37,7 @@ from backend.db import get_db
 from backend.models import User
 
 router = APIRouter()
+log = logging.getLogger(__name__)
 
 APPLE_AUTH_URL = "https://appleid.apple.com/auth/authorize"
 APPLE_TOKEN_URL = "https://appleid.apple.com/auth/token"
@@ -146,6 +149,14 @@ def _upsert_user(db: Session, provider: str, provider_id: str,
     return user
 
 
+def _login_error_redirect(provider: str):
+    """Send the user back to the login page with a friendly message instead of a
+    500 when a provider round-trip fails (expired/reused code, denied consent,
+    unverified email, provider outage, …)."""
+    msg = quote(f"{provider.title()} sign-in failed or expired — please try again.")
+    return RedirectResponse(url=f"/app?auth_error={msg}", status_code=303)
+
+
 def _issue_token_response(user: User, provider: str, state: str):
     token = create_access_token(data={"sub": user.username, "features": get_user_features(user.username)})
     # Native app: hand the token back via a deep link (embedded-webview OAuth is
@@ -208,37 +219,42 @@ async def apple_callback(request: Request, db: Session = Depends(get_db)):
     state = form.get("state", "web")
     user_field = form.get("user")  # JSON with the name, first authorization only
     if not code:
-        raise HTTPException(status_code=400, detail="Missing authorization code from Apple")
+        return _login_error_redirect("apple")
 
-    async with httpx.AsyncClient() as client:
-        token_res = await client.post(APPLE_TOKEN_URL, data={
-            "client_id": config.APPLE_CLIENT_ID,
-            "client_secret": _apple_client_secret(),
-            "code": code,
-            "grant_type": "authorization_code",
-            "redirect_uri": _redirect_uri("apple"),
-        })
-    id_token = token_res.json().get("id_token")
-    if not id_token:
-        raise HTTPException(status_code=400, detail="Apple token exchange failed")
+    try:
+        async with httpx.AsyncClient() as client:
+            token_res = await client.post(APPLE_TOKEN_URL, data={
+                "client_id": config.APPLE_CLIENT_ID,
+                "client_secret": _apple_client_secret(),
+                "code": code,
+                "grant_type": "authorization_code",
+                "redirect_uri": _redirect_uri("apple"),
+            })
+        id_token = token_res.json().get("id_token")
+        if not id_token:
+            log.warning("Apple token exchange returned no id_token: %s", token_res.text[:300])
+            return _login_error_redirect("apple")
 
-    # id_token came directly from Apple's token endpoint over TLS, so we read its
-    # claims without re-verifying the signature.
-    claims = jwt.decode(id_token, options={"verify_signature": False})
-    apple_id = claims.get("sub")
-    if not apple_id:
-        raise HTTPException(status_code=400, detail="Apple id_token missing subject")
-    email = claims.get("email")
+        # id_token came directly from Apple's token endpoint over TLS, so we read
+        # its claims without re-verifying the signature.
+        claims = jwt.decode(id_token, options={"verify_signature": False})
+        apple_id = claims.get("sub")
+        if not apple_id:
+            return _login_error_redirect("apple")
+        email = claims.get("email")
 
-    display_name = None
-    if user_field:
-        try:
-            name = json.loads(user_field).get("name", {})
-            display_name = " ".join(filter(None, [name.get("firstName"), name.get("lastName")])) or None
-        except (ValueError, TypeError):
-            pass
+        display_name = None
+        if user_field:
+            try:
+                name = json.loads(user_field).get("name", {})
+                display_name = " ".join(filter(None, [name.get("firstName"), name.get("lastName")])) or None
+            except (ValueError, TypeError):
+                pass
 
-    user = _upsert_user(db, "apple", apple_id, email, display_name)
+        user = _upsert_user(db, "apple", apple_id, email, display_name)
+    except Exception:
+        log.exception("Unexpected Apple callback error")
+        return _login_error_redirect("apple")
     return _issue_token_response(user, "apple", state)
 
 
@@ -260,10 +276,16 @@ async def sso_callback(provider: str, request: Request, state: str = "web", db: 
         # Apple uses response_mode=form_post → see the POST route above.
         raise HTTPException(status_code=405, detail="Apple uses a POST callback")
     sso = _get_sso(provider)
-    async with sso:
-        sso_user = await sso.verify_and_process(request)
-    if sso_user is None:
-        raise HTTPException(status_code=400, detail=f"Failed to authenticate with {provider}")
-
-    user = _upsert_user(db, provider, sso_user.id, sso_user.email, sso_user.display_name)
+    try:
+        async with sso:
+            sso_user = await sso.verify_and_process(request)
+        if sso_user is None:
+            return _login_error_redirect(provider)
+        user = _upsert_user(db, provider, sso_user.id, sso_user.email, sso_user.display_name)
+    except (OAuth2Error, SSOLoginError) as e:
+        log.warning("SSO %s sign-in failed: %s", provider, e)
+        return _login_error_redirect(provider)
+    except Exception:
+        log.exception("Unexpected SSO %s callback error", provider)
+        return _login_error_redirect(provider)
     return _issue_token_response(user, provider, state)
