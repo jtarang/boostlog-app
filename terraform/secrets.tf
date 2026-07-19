@@ -61,6 +61,7 @@ resource "aws_secretsmanager_secret_version" "boostlog_secrets_version" {
     POSTGRES_PASSWORD       = var.db_password
     POSTGRES_DB             = "boostlog"
     DATABASE_URL            = local.database_url
+    LOG_BUCKET              = aws_s3_bucket.logs.bucket
     LLM_MODEL               = "bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0"
     AWS_REGION_NAME         = var.aws_region
     # Env-aware secret name so the app (config.py) re-fetches ITS OWN secret,

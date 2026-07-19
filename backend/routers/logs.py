@@ -1,14 +1,13 @@
 import os
-import shutil
 import uuid
 from urllib.parse import urlparse
 
 import httpx
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from backend import config
+from backend import storage
 from backend.auth.core import get_current_user
 from backend.db import get_db
 from backend.models import Datalog, User
@@ -40,10 +39,7 @@ async def upload_log(file: UploadFile = File(...), current_user: User = Depends(
 
     file_id = str(uuid.uuid4())
     stored_filename = f"{current_user.id}_{file_id}_{safe_filename}"
-    file_path = os.path.join(config.UPLOAD_DIR, stored_filename)
-
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    storage.save_fileobj(stored_filename, file.file)
 
     datalog = Datalog(user_id=current_user.id, stored_filename=stored_filename, display_name=safe_filename, source_filename=safe_filename)
     db.add(datalog)
@@ -94,9 +90,12 @@ async def get_log(filename: str, current_user: User = Depends(get_current_user),
     if not datalog:
         raise HTTPException(status_code=403, detail="Not authorized to access this log")
 
-    file_path = os.path.join(config.UPLOAD_DIR, filename)
-    if os.path.exists(file_path):
-        return FileResponse(file_path, filename=datalog.display_name, content_disposition_type="attachment")
+    if storage.exists(filename):
+        return Response(
+            content=storage.read_bytes(filename),
+            media_type="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{datalog.display_name}"'},
+        )
     raise HTTPException(status_code=404, detail="File not found")
 
 
@@ -144,13 +143,8 @@ async def delete_log(log_id: int, current_user: User = Depends(get_current_user)
     if not datalog:
         raise HTTPException(status_code=404, detail="Log not found")
 
-    # Remove the stored file (best-effort; the DB row is the source of truth).
-    file_path = os.path.join(config.UPLOAD_DIR, datalog.stored_filename)
-    try:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-    except OSError:
-        pass
+    # Remove the stored blob (best-effort; the DB row is the source of truth).
+    storage.delete(datalog.stored_filename)
 
     # ORM cascade deletes the log's analyses + chat history; build_id is SET NULL.
     db.delete(datalog)

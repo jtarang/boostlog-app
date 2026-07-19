@@ -4,7 +4,7 @@ import os
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from backend import config
+from backend import storage
 from backend.analysis_core import aggregate_wot_summary, resolve_llm_model
 from backend.auth.core import get_current_user
 from backend.db import get_db
@@ -31,14 +31,14 @@ async def analyze_log(filename: str, current_user: User = Depends(get_current_us
     if _analysis_in_progress:
         raise HTTPException(status_code=429, detail="An analysis is already running. Please wait for it to finish.")
 
-    file_path = os.path.join(config.UPLOAD_DIR, filename)
-    if not os.path.exists(file_path):
+    if not storage.exists(filename):
         raise HTTPException(status_code=404, detail="Log file not found")
 
     _analysis_in_progress = True
     try:
         try:
-            summary = aggregate_wot_summary(file_path)
+            with storage.local_path(filename) as file_path:
+                summary = aggregate_wot_summary(file_path)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to aggregate CSV parameters: {str(e)}")
 

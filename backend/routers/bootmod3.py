@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from backend import config
+from backend import config, storage
 from backend.auth.core import get_current_user
 from backend.crypto import encrypt, try_decrypt
 from backend.db import get_db
@@ -156,8 +156,7 @@ async def import_log(
 
     file_id = str(uuid.uuid4())
     stored_filename = f"{current_user.id}_{file_id}_{source_filename}"
-    with open(f"{config.UPLOAD_DIR}/{stored_filename}", "wb") as f:
-        f.write(content)
+    storage.save(stored_filename, content)
 
     datalog = Datalog(
         user_id=current_user.id,

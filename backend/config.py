@@ -53,6 +53,10 @@ def get_secret(secret_name):
 aws_secrets_str = get_secret(os.getenv("AWS_SECRET_NAME", "boostlog.app/prd/secrets"))
 aws_secrets = json.loads(aws_secrets_str) if aws_secrets_str else {}
 
+# When set, user log blobs are stored in this S3 bucket instead of local disk
+# (see backend/storage.py). Metadata always stays in the DB.
+LOG_BUCKET = aws_secrets.get("LOG_BUCKET") or os.getenv("LOG_BUCKET")
+
 SECRET_KEY = aws_secrets.get("SECRET_KEY") or os.getenv("SECRET_KEY", "fallback_local_secret_key")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
