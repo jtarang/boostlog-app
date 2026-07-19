@@ -72,6 +72,15 @@ MICROSOFT_TENANT = aws_secrets.get("MICROSOFT_TENANT") or os.getenv("MICROSOFT_T
 DISCORD_CLIENT_ID = aws_secrets.get("DISCORD_CLIENT_ID") or os.getenv("DISCORD_CLIENT_ID")
 DISCORD_CLIENT_SECRET = aws_secrets.get("DISCORD_CLIENT_SECRET") or os.getenv("DISCORD_CLIENT_SECRET")
 
+# Apple ("Sign in with Apple"). No static client secret — it's an ES256 JWT
+# signed at request time from the .p8 key (see backend/auth/sso.py).
+# APPLE_CLIENT_ID is the Services ID (e.g. app.boostlog.web). APPLE_PRIVATE_KEY
+# is the .p8 contents, base64-encoded so it survives single-line env/tfvars.
+APPLE_CLIENT_ID = aws_secrets.get("APPLE_CLIENT_ID") or os.getenv("APPLE_CLIENT_ID")
+APPLE_TEAM_ID = aws_secrets.get("APPLE_TEAM_ID") or os.getenv("APPLE_TEAM_ID")
+APPLE_KEY_ID = aws_secrets.get("APPLE_KEY_ID") or os.getenv("APPLE_KEY_ID")
+APPLE_PRIVATE_KEY_B64 = aws_secrets.get("APPLE_PRIVATE_KEY_B64") or os.getenv("APPLE_PRIVATE_KEY_B64")
+
 # Base URL used to build each provider's redirect URI as
 # {base}/api/auth/{provider}/callback. Must exactly match the redirect URIs
 # registered with each provider (per environment). Defaults to local dev.

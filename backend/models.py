@@ -17,6 +17,7 @@ class User(Base):
     google_id = Column(String, unique=True, index=True, nullable=True)
     microsoft_id = Column(String, unique=True, index=True, nullable=True)
     discord_id = Column(String, unique=True, index=True, nullable=True)
+    apple_id = Column(String, unique=True, index=True, nullable=True)
     settings_json = Column(Text, nullable=True)
 
     # Linked bootmod3 account. Tokens are Fernet-encrypted (see backend.crypto);

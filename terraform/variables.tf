@@ -134,6 +134,36 @@ variable "discord_client_secret" {
   default     = ""
 }
 
+# Sign in with Apple. APPLE_CLIENT_ID is the Services ID; the private key (.p8)
+# is passed base64-encoded so it stays single-line. All set in GitHub Secrets.
+variable "apple_client_id" {
+  description = "Apple Services ID (e.g. app.boostlog.web)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "apple_team_id" {
+  description = "Apple Developer Team ID"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "apple_key_id" {
+  description = "Apple Sign-in Key ID (the .p8 key's Key ID)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "apple_private_key_b64" {
+  description = "Apple .p8 private key contents, base64-encoded"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "github_client_key" {
   description = "App SECRET_KEY for JWT (deprecated/unused as it's now auto-generated)"
   type        = string
