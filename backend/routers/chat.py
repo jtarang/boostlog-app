@@ -51,14 +51,14 @@ async def chat_about_log(filename: str, request: ChatRequest, current_user: User
     if not latest_analysis:
         raise HTTPException(status_code=400, detail="Please run the initial analysis first.")
 
-    from backend import config
-    file_path = os.path.join(config.UPLOAD_DIR, filename)
+    from backend import storage
     csv_content = ""
-    if os.path.exists(file_path):
+    if storage.exists(filename):
         try:
             # Use Polars for smart downsampling to save tokens.
             # comment_prefix skips MHD's leading padding (#Encoding/#Ecu/#VIN) + BOM.
-            df = pl.read_csv(file_path, ignore_errors=True, comment_prefix="#")
+            with storage.local_path(filename) as file_path:
+                df = pl.read_csv(file_path, ignore_errors=True, comment_prefix="#")
             
             # Find pedal column for WOT detection
             cols = df.columns

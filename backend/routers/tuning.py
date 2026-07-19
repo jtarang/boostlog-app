@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from backend import config
+from backend import storage
 from backend.analysis_core import aggregate_wot_summary, resolve_llm_model, rpm_power_curve
 from backend.auth.core import get_current_user
 from backend.db import get_db
@@ -34,8 +34,7 @@ def _resolve_log(db: Session, user: User, stored_filename: str) -> Datalog:
     ).first()
     if not datalog:
         raise HTTPException(status_code=403, detail=f"Not authorized to access log: {stored_filename}")
-    file_path = os.path.join(config.UPLOAD_DIR, stored_filename)
-    if not os.path.exists(file_path):
+    if not storage.exists(stored_filename):
         raise HTTPException(status_code=404, detail="Log file not found")
     return datalog
 
@@ -66,12 +65,11 @@ async def compare_logs(req: CompareRequest, current_user: User = Depends(get_cur
     base_log = _resolve_log(db, current_user, req.baseline)
     opt_log = _resolve_log(db, current_user, req.optimized)
 
-    base_path = os.path.join(config.UPLOAD_DIR, base_log.stored_filename)
-    opt_path = os.path.join(config.UPLOAD_DIR, opt_log.stored_filename)
-
     try:
-        baseline = _metrics_for(base_path)
-        optimized = _metrics_for(opt_path)
+        with storage.local_path(base_log.stored_filename) as base_path, \
+                storage.local_path(opt_log.stored_filename) as opt_path:
+            baseline = _metrics_for(base_path)
+            optimized = _metrics_for(opt_path)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to compare logs: {str(e)}")
 
@@ -86,12 +84,11 @@ async def recommend(req: CompareRequest, current_user: User = Depends(get_curren
     base_log = _resolve_log(db, current_user, req.baseline)
     opt_log = _resolve_log(db, current_user, req.optimized)
 
-    base_path = os.path.join(config.UPLOAD_DIR, base_log.stored_filename)
-    opt_path = os.path.join(config.UPLOAD_DIR, opt_log.stored_filename)
-
     try:
-        base_summary = aggregate_wot_summary(base_path)
-        opt_summary = aggregate_wot_summary(opt_path)
+        with storage.local_path(base_log.stored_filename) as base_path, \
+                storage.local_path(opt_log.stored_filename) as opt_path:
+            base_summary = aggregate_wot_summary(base_path)
+            opt_summary = aggregate_wot_summary(opt_path)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to aggregate logs: {str(e)}")
 
