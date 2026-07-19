@@ -4,9 +4,9 @@ from pydantic import BaseModel, EmailStr
 
 
 class UserCreate(BaseModel):
-    username: str
     email: EmailStr
     password: str
+    username: Optional[str] = None  # optional display handle; auto-derived if omitted
 
 
 class LogRename(BaseModel):

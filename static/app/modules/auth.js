@@ -7,10 +7,9 @@ import { loadUserSettings } from './settings.js';
 export function initAuth() {
     if (state.authToken) {
         const payload = parseJwt(state.authToken);
-        if (payload && payload.sub) {
-            const usernameEl = document.getElementById('navUsername');
-            if (usernameEl) usernameEl.textContent = payload.sub;
-        }
+        const usernameEl = document.getElementById('navUsername');
+        // `name` is the display handle; `sub` is now the user id (fallback only).
+        if (usernameEl && payload) usernameEl.textContent = payload.name || 'Account';
         document.getElementById('authOverlay').style.display = 'none';
         refreshLogList(null, true);
         // Pull account settings (units, axis mode, session-metric config) so
@@ -60,43 +59,37 @@ export function switchAuthTab(mode) {
     state.authMode = mode;
     const tabs = document.querySelectorAll('.auth-tabs .tab');
     tabs.forEach(t => t.classList.remove('active'));
-    const emailInput = document.getElementById('authEmail');
     if (mode === 'login') {
         tabs[0].classList.add('active');
         document.getElementById('authSubmitBtn').textContent = 'Login';
-        if (emailInput) { emailInput.style.display = 'none'; emailInput.required = false; }
     } else {
         tabs[1].classList.add('active');
         document.getElementById('authSubmitBtn').textContent = 'Register';
-        // Email is required to register (it keys the billing customer).
-        if (emailInput) { emailInput.style.display = 'block'; emailInput.required = true; }
     }
     document.getElementById('authError').textContent = '';
 }
 
 export async function handleAuth(e) {
     e.preventDefault();
-    const u = document.getElementById('authUsername').value;
     const p = document.getElementById('authPassword').value;
     const email = document.getElementById('authEmail').value.trim();
     const errorEl = document.getElementById('authError');
     errorEl.textContent = '';
 
     try {
+        if (!email) throw new Error('Email is required');
         if (state.authMode === 'register') {
-            if (!email) throw new Error('Email is required to register');
             const res = await fetch('/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: u, email, password: p })
+                body: JSON.stringify({ email, password: p })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'Registration failed');
             switchAuthTab('login');
-            await performLogin(u, p);
-        } else {
-            await performLogin(u, p);
         }
+        // Login by email (the OAuth2 form field is named `username`).
+        await performLogin(email, p);
     } catch (err) {
         errorEl.textContent = err.message;
     }
@@ -137,13 +130,9 @@ export function logout() {
 }
 
 export async function loginWithPasskey() {
-    const username = document.getElementById('authUsername').value.trim();
+    // Usernameless (discoverable) passkey login — no username field to key off.
     try {
-        if (username) {
-            await loginWithPasskeyForUser(username);
-        } else {
-            await loginWithDiscoverablePasskey();
-        }
+        await loginWithDiscoverablePasskey();
     } catch (err) {
         console.error(err);
         showToast(err.message, 'error');

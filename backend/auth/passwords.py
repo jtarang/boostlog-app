@@ -1,4 +1,5 @@
 import os
+import re
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -7,10 +8,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from backend.auth.core import (
-    create_access_token,
+    build_access_token,
     get_current_user,
     get_password_hash,
-    get_user_features,
     verify_password,
 )
 from backend.config import RP_ID
@@ -26,19 +26,35 @@ from backend.schemas import (
 router = APIRouter()
 
 
+def _unique_handle(db: Session, base: str) -> str:
+    """Derive a unique display handle from an email/name (username is now just a
+    display handle, no longer the login identity)."""
+    base = re.sub(r"[^a-zA-Z0-9_]", "_", (base or "").split("@")[0]).strip("_") or "user"
+    handle = base
+    n = 1
+    while db.query(User).filter(User.username == handle).first():
+        handle = f"{base}_{n}"
+        n += 1
+    return handle
+
+
 @router.post("/register")
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    if db.query(User).filter(User.username == user.username).first():
-        raise HTTPException(status_code=400, detail="Username already registered")
-
-    # Email is required and unique — it is the identity we key the billing
-    # customer on. Normalize to lowercase so lookups are case-insensitive.
+    # Email is the identity (login + billing customer). Normalize to lowercase.
     email = user.email.strip().lower()
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
 
+    # Username is an optional display handle; auto-derive one if not supplied.
+    username = (user.username or "").strip()
+    if username:
+        if db.query(User).filter(User.username == username).first():
+            raise HTTPException(status_code=400, detail="Username already taken")
+    else:
+        username = _unique_handle(db, email)
+
     hashed_password = get_password_hash(user.password)
-    new_user = User(username=user.username, email=email, hashed_password=hashed_password)
+    new_user = User(username=username, email=email, hashed_password=hashed_password)
     db.add(new_user)
     db.commit()
     return {"message": "User registered successfully"}
@@ -46,12 +62,16 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/token")
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == form_data.username).first()
+    # The OAuth2 form field is named `username` but now carries the email. Accept
+    # a legacy username too so existing accounts aren't locked out.
+    ident = form_data.username.strip()
+    user = db.query(User).filter(
+        (User.email == ident.lower()) | (User.username == ident)
+    ).first()
     if not user or not user.hashed_password or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
+        raise HTTPException(status_code=401, detail="Incorrect email or password")
 
-    access_token = create_access_token(data={"sub": user.username, "features": get_user_features(user.username)})
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": build_access_token(user), "token_type": "bearer"}
 
 
 @router.post("/api/auth/reset-password/request")
@@ -104,5 +124,6 @@ def change_username(payload: UsernameUpdate, current_user: User = Depends(get_cu
     current_user.username = new_username
     db.commit()
 
-    access_token = create_access_token(data={"sub": current_user.username, "features": get_user_features(current_user.username)})
-    return {"status": "success", "access_token": access_token}
+    # sub is the user id, so the session stays valid; re-issue only so the `name`
+    # claim (nav display) reflects the new handle immediately.
+    return {"status": "success", "access_token": build_access_token(current_user)}

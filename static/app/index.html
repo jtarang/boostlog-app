@@ -106,8 +106,7 @@
             </div>
 
             <form id="authForm">
-                <input type="text" id="authUsername" placeholder="Username" required class="input-modern" autocomplete="username webauthn">
-                <input type="email" id="authEmail" placeholder="Email" class="input-modern" autocomplete="email" style="display: none;">
+                <input type="email" id="authEmail" placeholder="Email" required class="input-modern" autocomplete="email webauthn">
                 <input type="password" id="authPassword" placeholder="Password" required class="input-modern" autocomplete="current-password">
                 
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
@@ -1181,7 +1180,7 @@
         </div>
     </div>
 
-    <script type="module" src="/static/app/main.js?v=8.7"></script>
+    <script type="module" src="/static/app/main.js?v=8.8"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
