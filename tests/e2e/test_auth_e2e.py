@@ -9,8 +9,7 @@ def test_login_flow(page: Page):
     # Switch to register
     page.locator(".auth-tabs .tab:nth-child(2)").click() # Assuming child 2 is Register
     
-    # Fill in register credentials (email is required in register mode)
-    page.locator("#authUsername").fill("e2e_user")
+    # Register with email + password (username is auto-derived from the email).
     page.locator("#authEmail").fill("e2e_user@example.com")
     page.locator("#authPassword").fill("e2e_password")
     
@@ -27,8 +26,8 @@ def test_login_flow(page: Page):
 def test_login_error_shows(page: Page):
     page.goto("http://127.0.0.1:8001/app")
     
-    # Wrong credentials to Login
-    page.locator("#authUsername").fill("e2e_user")
+    # Wrong credentials to Login (email is the identity now)
+    page.locator("#authEmail").fill("e2e_user@example.com")
     page.locator("#authPassword").fill("wrongpassword")
     page.locator("#authSubmitBtn").click()
     

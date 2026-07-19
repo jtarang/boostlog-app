@@ -57,7 +57,6 @@ def authenticated_page(page):
     page.goto("http://127.0.0.1:8001/app")
     # Register/Login flow
     page.locator(".auth-tabs .tab:nth-child(2)").click()
-    page.locator("#authUsername").fill(username)
     page.locator("#authEmail").fill(f"{username}@example.com")
     page.locator("#authPassword").fill("password123")
     page.locator("#authSubmitBtn").click()
