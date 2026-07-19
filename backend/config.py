@@ -69,6 +69,9 @@ MICROSOFT_CLIENT_SECRET = aws_secrets.get("MICROSOFT_CLIENT_SECRET") or os.geten
 # "common" allows both work/school (Entra) and personal Microsoft accounts.
 MICROSOFT_TENANT = aws_secrets.get("MICROSOFT_TENANT") or os.getenv("MICROSOFT_TENANT", "common")
 
+DISCORD_CLIENT_ID = aws_secrets.get("DISCORD_CLIENT_ID") or os.getenv("DISCORD_CLIENT_ID")
+DISCORD_CLIENT_SECRET = aws_secrets.get("DISCORD_CLIENT_SECRET") or os.getenv("DISCORD_CLIENT_SECRET")
+
 # Base URL used to build each provider's redirect URI as
 # {base}/api/auth/{provider}/callback. Must exactly match the redirect URIs
 # registered with each provider (per environment). Defaults to local dev.

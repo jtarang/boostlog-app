@@ -17,6 +17,7 @@ from typing import Callable, NamedTuple, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi_sso.sso.base import SSOBase
+from fastapi_sso.sso.discord import DiscordSSO
 from fastapi_sso.sso.github import GithubSSO
 from fastapi_sso.sso.google import GoogleSSO
 from fastapi_sso.sso.microsoft import MicrosoftSSO
@@ -66,10 +67,18 @@ def _microsoft() -> Optional[SSOBase]:
                         tenant=config.MICROSOFT_TENANT)
 
 
+def _discord() -> Optional[SSOBase]:
+    if not (config.DISCORD_CLIENT_ID and config.DISCORD_CLIENT_SECRET):
+        return None
+    return DiscordSSO(config.DISCORD_CLIENT_ID, config.DISCORD_CLIENT_SECRET,
+                      _redirect_uri("discord"), allow_insecure_http=_insecure())
+
+
 PROVIDERS = {
     "google": Provider(_google, "google_id"),
     "github": Provider(_github, "github_id"),
     "microsoft": Provider(_microsoft, "microsoft_id"),
+    "discord": Provider(_discord, "discord_id"),
 }
 
 

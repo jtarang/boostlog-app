@@ -42,6 +42,8 @@ resource "aws_secretsmanager_secret_version" "boostlog_secrets_version" {
     GOOGLE_CLIENT_SECRET    = var.google_client_secret
     MICROSOFT_CLIENT_ID     = var.microsoft_client_id
     MICROSOFT_CLIENT_SECRET = var.microsoft_client_secret
+    DISCORD_CLIENT_ID       = var.discord_client_id
+    DISCORD_CLIENT_SECRET   = var.discord_client_secret
     # One base for all providers: {base}/api/auth/{provider}/callback
     OAUTH_REDIRECT_BASE     = "https://${var.domain_name}"
     STRIPE_PUBLISHABLE_KEY  = var.stripe_publishable_key

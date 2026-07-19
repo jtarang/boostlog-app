@@ -67,6 +67,8 @@ jobs:
           echo "google_client_secret = \"${{ secrets.GOOGLE_CLIENT_SECRET }}\"" >> environments/dev.tfvars
           echo "microsoft_client_id = \"${{ secrets.MICROSOFT_CLIENT_ID }}\"" >> environments/dev.tfvars
           echo "microsoft_client_secret = \"${{ secrets.MICROSOFT_CLIENT_SECRET }}\"" >> environments/dev.tfvars
+          echo "discord_client_id = \"${{ secrets.DISCORD_CLIENT_ID }}\"" >> environments/dev.tfvars
+          echo "discord_client_secret = \"${{ secrets.DISCORD_CLIENT_SECRET }}\"" >> environments/dev.tfvars
           echo "cloudflare_tunnel_token = \"${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}\"" >> environments/dev.tfvars
           echo "db_password = \"${{ secrets.DB_PASSWORD }}\"" >> environments/dev.tfvars
           echo "stripe_publishable_key = \"${{ secrets.STRIPE_PUBLISHABLE_KEY }}\"" >> environments/dev.tfvars

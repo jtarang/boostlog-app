@@ -120,6 +120,20 @@ variable "microsoft_client_secret" {
   default     = ""
 }
 
+variable "discord_client_id" {
+  description = "Discord OAuth Client ID — set in GitHub Secrets (DISCORD_CLIENT_ID)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "discord_client_secret" {
+  description = "Discord OAuth Client Secret — set in GitHub Secrets (DISCORD_CLIENT_SECRET)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "github_client_key" {
   description = "App SECRET_KEY for JWT (deprecated/unused as it's now auto-generated)"
   type        = string
