@@ -4,11 +4,13 @@ from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Tex
 from sqlalchemy.orm import relationship
 
 from backend.db import Base
+from backend.ids import uuid7
 
 
 class User(Base):
     __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
+    # UUIDv7 (time-ordered) — non-enumerable external identity; also the JWT sub.
+    id = Column(String(36), primary_key=True, default=uuid7, index=True)
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True, nullable=True)
     full_name = Column(String, nullable=True)
@@ -43,7 +45,7 @@ class User(Base):
 class UserCredential(Base):
     __tablename__ = "user_credentials"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     credential_id = Column(String, unique=True, index=True, nullable=False)
     public_key = Column(String, nullable=False)
     sign_count = Column(Integer, default=0)
@@ -57,7 +59,7 @@ class UserCredential(Base):
 class Build(Base):
     __tablename__ = "builds"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
     vin = Column(String, nullable=True)
     vehicle_model = Column(String, nullable=True)
@@ -72,7 +74,7 @@ class Build(Base):
 class Datalog(Base):
     __tablename__ = "datalogs"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     build_id = Column(Integer, ForeignKey("builds.id", ondelete="SET NULL"), nullable=True)
     stored_filename = Column(String, unique=True, nullable=False)
     display_name = Column(String, nullable=False)
@@ -107,7 +109,7 @@ class ChatHistory(Base):
 class AIUsage(Base):
     __tablename__ = "ai_usage"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     tokens_used = Column(Integer, default=0)
     prompt_tokens = Column(Integer, default=0)
     completion_tokens = Column(Integer, default=0)
@@ -129,7 +131,7 @@ class PaymentMethod(Base):
     __tablename__ = "payment_methods"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     stripe_payment_method_id = Column(String, unique=True, index=True, nullable=False)
     card_last_four = Column(String, nullable=False)
     card_brand = Column(String, nullable=False)  # e.g., 'visa', 'mastercard'
@@ -145,7 +147,7 @@ class UserSubscription(Base):
     __tablename__ = "user_subscriptions"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, unique=True)
     stripe_customer_id = Column(String, unique=True, index=True, nullable=True)  # null until a real Stripe customer is created
     stripe_subscription_id = Column(String, unique=True, index=True, nullable=True)  # null if on free tier
     tier = Column(String, nullable=False, default="free")  # free, pro, tuner
