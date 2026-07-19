@@ -22,17 +22,25 @@ export function initNative() {
         Browser.open({ url: `${location.origin}${href}${sep}native=1` });
     });
 
-    // Return from OAuth: boostlog://auth/<provider>?token=<jwt>
+    // Return from OAuth: boostlog://auth/<provider>?token=<jwt> on success, or
+    // ?error=<message> on failure (expired/denied/etc.).
     App.addListener('appUrlOpen', ({ url }) => {
-        let token = null;
+        let params;
         try {
-            token = new URL(url).searchParams.get('token');
+            params = new URL(url).searchParams;
         } catch (_) {
             return;
         }
-        if (!token) return;
-        localStorage.setItem('boostlog_token', token);
-        Browser.close();
-        location.href = '/app';
+        const token = params.get('token');
+        const error = params.get('error');
+        if (token) {
+            localStorage.setItem('boostlog_token', token);
+            Browser.close();
+            location.href = '/app';
+        } else if (error) {
+            Browser.close();
+            // Reuse the login page's auth_error handling to show the message.
+            location.href = '/app?auth_error=' + encodeURIComponent(error);
+        }
     });
 }
