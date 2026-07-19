@@ -1433,6 +1433,29 @@ body:not(.view-library) .library-view {
     transform: translateY(0);
 }
 
+/* SSO provider icon buttons (login card). Purple accent highlight on hover,
+   matching the demo button's theme. No data-scramble — that effect wipes the
+   icon's SVG contents. */
+.sso-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: rgba(var(--fg-rgb), 0.04);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.sso-icon:hover {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.15), rgba(var(--accent-rgb), 0.30));
+    box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.3);
+    transform: translateY(-1px);
+}
+
 /* Main Content */
 .main-content {
     flex: 1;
