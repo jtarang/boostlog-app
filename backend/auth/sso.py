@@ -32,7 +32,7 @@ from oauthlib.oauth2.rfc6749.errors import OAuth2Error
 from sqlalchemy.orm import Session
 
 from backend import config
-from backend.auth.core import create_access_token, get_user_features
+from backend.auth.core import build_access_token
 from backend.db import get_db
 from backend.models import User
 
@@ -158,7 +158,7 @@ def _login_error_redirect(provider: str):
 
 
 def _issue_token_response(user: User, provider: str, state: str):
-    token = create_access_token(data={"sub": user.username, "features": get_user_features(user.username)})
+    token = build_access_token(user)
     # Native app: hand the token back via a deep link (embedded-webview OAuth is
     # discouraged by providers/app stores).
     if state == "native":

@@ -25,7 +25,7 @@ from webauthn.helpers.structs import (
 )
 
 from backend import config
-from backend.auth.core import create_access_token, get_current_user, get_user_features
+from backend.auth.core import build_access_token, get_current_user
 from backend.db import get_db
 from backend.models import User, UserCredential
 from backend.schemas import PasskeyRename
@@ -218,8 +218,7 @@ async def webauthn_login_verify(request: Request, payload: dict, username: str, 
     db_cred.sign_count = verification.new_sign_count
     db.commit()
 
-    access_token = create_access_token(data={"sub": user.username, "features": get_user_features(user.username)})
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": build_access_token(user), "token_type": "bearer"}
 
 
 # --- DISCOVERABLE-CREDENTIAL (USERNAMELESS / AUTOFILL) LOGIN ---
@@ -290,8 +289,7 @@ async def webauthn_login_discoverable_verify(request: Request, payload: dict, db
     db_cred.sign_count = verification.new_sign_count
     db.commit()
 
-    access_token = create_access_token(data={"sub": user.username, "features": get_user_features(user.username)})
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": build_access_token(user), "token_type": "bearer"}
 
 
 @router.get("/api/auth/passkeys")

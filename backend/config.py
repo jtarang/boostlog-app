@@ -89,9 +89,9 @@ OAUTH_REDIRECT_BASE = (
     or os.getenv("OAUTH_REDIRECT_BASE", "http://localhost:8000")
 ).rstrip("/")
 
-# Feature flags per username. Add a username → list[str] entry to grant flags.
-# The list is embedded in the JWT so no extra DB call is needed on each request.
-# Supported flags: "palette_switcher"
+# Feature flags per email (lowercased). Add an email → list[str] entry to grant
+# flags. The list is embedded in the JWT so no extra DB call is needed per
+# request. Supported flags: "palette_switcher"
 FEATURE_FLAGS: dict[str, list[str]] = {
-    "jtarang": ["palette_switcher"],
+    "jaytarang92@gmail.com": ["palette_switcher"],
 }
