@@ -149,11 +149,14 @@ def _upsert_user(db: Session, provider: str, provider_id: str,
     return user
 
 
-def _login_error_redirect(provider: str):
-    """Send the user back to the login page with a friendly message instead of a
+def _login_error_redirect(provider: str, state: str = "web"):
+    """Return the user to the login screen with a friendly message instead of a
     500 when a provider round-trip fails (expired/reused code, denied consent,
-    unverified email, provider outage, …)."""
+    unverified email, provider outage, …). On native we deep-link back to the app
+    (mirroring the success path) so the user isn't stranded in the browser."""
     msg = quote(f"{provider.title()} sign-in failed or expired — please try again.")
+    if state == "native":
+        return RedirectResponse(url=f"boostlog://auth/{provider}?error={msg}", status_code=303)
     return RedirectResponse(url=f"/app?auth_error={msg}", status_code=303)
 
 
@@ -219,7 +222,7 @@ async def apple_callback(request: Request, db: Session = Depends(get_db)):
     state = form.get("state", "web")
     user_field = form.get("user")  # JSON with the name, first authorization only
     if not code:
-        return _login_error_redirect("apple")
+        return _login_error_redirect("apple", state)
 
     try:
         async with httpx.AsyncClient() as client:
@@ -233,14 +236,14 @@ async def apple_callback(request: Request, db: Session = Depends(get_db)):
         id_token = token_res.json().get("id_token")
         if not id_token:
             log.warning("Apple token exchange returned no id_token: %s", token_res.text[:300])
-            return _login_error_redirect("apple")
+            return _login_error_redirect("apple", state)
 
         # id_token came directly from Apple's token endpoint over TLS, so we read
         # its claims without re-verifying the signature.
         claims = jwt.decode(id_token, options={"verify_signature": False})
         apple_id = claims.get("sub")
         if not apple_id:
-            return _login_error_redirect("apple")
+            return _login_error_redirect("apple", state)
         email = claims.get("email")
 
         display_name = None
@@ -254,7 +257,7 @@ async def apple_callback(request: Request, db: Session = Depends(get_db)):
         user = _upsert_user(db, "apple", apple_id, email, display_name)
     except Exception:
         log.exception("Unexpected Apple callback error")
-        return _login_error_redirect("apple")
+        return _login_error_redirect("apple", state)
     return _issue_token_response(user, "apple", state)
 
 
@@ -280,12 +283,12 @@ async def sso_callback(provider: str, request: Request, state: str = "web", db: 
         async with sso:
             sso_user = await sso.verify_and_process(request)
         if sso_user is None:
-            return _login_error_redirect(provider)
+            return _login_error_redirect(provider, state)
         user = _upsert_user(db, provider, sso_user.id, sso_user.email, sso_user.display_name)
     except (OAuth2Error, SSOLoginError) as e:
         log.warning("SSO %s sign-in failed: %s", provider, e)
-        return _login_error_redirect(provider)
+        return _login_error_redirect(provider, state)
     except Exception:
         log.exception("Unexpected SSO %s callback error", provider)
-        return _login_error_redirect(provider)
+        return _login_error_redirect(provider, state)
     return _issue_token_response(user, provider, state)
