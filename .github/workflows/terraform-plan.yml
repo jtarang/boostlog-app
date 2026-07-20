@@ -68,6 +68,7 @@ jobs:
           echo "apple_team_id = \"${{ secrets.APPLE_TEAM_ID }}\"" >> ${{ steps.env.outputs.tfvars_file }}
           echo "apple_key_id = \"${{ secrets.APPLE_KEY_ID }}\"" >> ${{ steps.env.outputs.tfvars_file }}
           echo "apple_private_key_b64 = \"${{ secrets.APPLE_PRIVATE_KEY_B64 }}\"" >> ${{ steps.env.outputs.tfvars_file }}
+          echo "resend_api_key = \"${{ secrets.RESEND_API_KEY }}\"" >> ${{ steps.env.outputs.tfvars_file }}
           echo "cloudflare_tunnel_token = \"${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}\"" >> ${{ steps.env.outputs.tfvars_file }}
           echo "db_password = \"${{ secrets.DB_PASSWORD }}\"" >> ${{ steps.env.outputs.tfvars_file }}
           echo "stripe_publishable_key = \"${{ secrets.STRIPE_PUBLISHABLE_KEY }}\"" >> ${{ steps.env.outputs.tfvars_file }}

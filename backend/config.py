@@ -57,6 +57,11 @@ aws_secrets = json.loads(aws_secrets_str) if aws_secrets_str else {}
 # (see backend/storage.py). Metadata always stays in the DB.
 LOG_BUCKET = aws_secrets.get("LOG_BUCKET") or os.getenv("LOG_BUCKET")
 
+# Transactional email (Resend). Unset → email is a no-op (local dev/tests).
+# MAIL_FROM e.g. "boostLog <noreply@boostlog.app>" (domain must be verified).
+RESEND_API_KEY = aws_secrets.get("RESEND_API_KEY") or os.getenv("RESEND_API_KEY")
+MAIL_FROM = aws_secrets.get("MAIL_FROM") or os.getenv("MAIL_FROM")
+
 SECRET_KEY = aws_secrets.get("SECRET_KEY") or os.getenv("SECRET_KEY", "fallback_local_secret_key")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
