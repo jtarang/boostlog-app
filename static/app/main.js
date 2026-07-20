@@ -131,7 +131,7 @@ const actions = {
 
     // Payment methods
     deletePaymentMethod: (el) => deletePaymentMethod(parseInt(el.dataset.id, 10), el.dataset.lastFour),
-    setDefaultPaymentMethod: (el) => setDefaultPaymentMethod(parseInt(el.dataset.id, 10)),
+    setDefaultPaymentMethod: (el) => setDefaultPaymentMethod(parseInt(el.dataset.id, 10), el),
     openAddCardModal,
     closeAddCardModal,
     submitAddCard,

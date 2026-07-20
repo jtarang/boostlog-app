@@ -4,6 +4,7 @@ import { showToast } from './toast.js';
 import { setActiveLog, refreshLogList } from './sidebar.js';
 import { processDataForGraph } from './chart.js';
 import { loadAnalysisHistory } from './analysis.js';
+import { switchView } from './view.js';
 
 export function handleFile(file) {
     if (!file.name.endsWith('.csv')) {
@@ -11,6 +12,10 @@ export function handleFile(file) {
         return;
     }
 
+    // Always surface the freshly uploaded log on the Dyno — the user may have
+    // triggered the upload from Garage or Datalogs, where the chart (which
+    // renders into the dashboard view) would otherwise be hidden.
+    switchView('dashboard');
     setActiveLog(null, file.name);
     uploadToBackend(file);
 

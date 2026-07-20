@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { getAuthHeaders, escapeHtml } from './utils.js';
+import { getAuthHeaders, escapeHtml, setButtonLoading } from './utils.js';
 import { showToast } from './toast.js';
 import { openRenameModal, openConfirmDeleteModal } from './modals.js';
 import { initializeStripe, submitStripePayment } from './stripe.js';
@@ -392,7 +392,8 @@ export function deletePaymentMethod(id, lastFour) {
     });
 }
 
-export async function setDefaultPaymentMethod(id) {
+export async function setDefaultPaymentMethod(id, btn) {
+    const restore = setButtonLoading(btn, 'Saving…');
     try {
         const res = await fetch(`/api/user/payment-methods/${id}/set-default`, { method: 'POST', headers: getAuthHeaders() });
         if (res.ok) {
@@ -402,7 +403,7 @@ export async function setDefaultPaymentMethod(id) {
             const err = await res.json().catch(() => ({}));
             showToast(err.detail || 'Failed to update default', 'error');
         }
-    } catch (err) { showToast(err.message, 'error'); }
+    } catch (err) { showToast(err.message, 'error'); } finally { restore(); }
 }
 
 export function openAddCardModal() {
@@ -414,15 +415,16 @@ export function closeAddCardModal() {
     document.getElementById('addCardModal').style.display = 'none';
 }
 
-export async function submitAddCard() {
+export async function submitAddCard(btn) {
     const { getAddCardElement, createNewPaymentMethod } = await import('./stripe.js');
     const addCardEl = getAddCardElement();
     if (!addCardEl) { showToast('Card input not ready', 'error'); return; }
 
-    const pmId = await createNewPaymentMethod(addCardEl, 'addCardError');
-    if (!pmId) return;
-
+    const restore = setButtonLoading(btn, 'Saving…');
     try {
+        const pmId = await createNewPaymentMethod(addCardEl, 'addCardError');
+        if (!pmId) return;
+
         const res = await fetch('/api/user/payment-methods/save', {
             method: 'POST',
             headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
@@ -438,6 +440,8 @@ export async function submitAddCard() {
         }
     } catch (err) {
         document.getElementById('addCardError').textContent = err.message;
+    } finally {
+        restore();
     }
 }
 
@@ -570,14 +574,22 @@ export function toggleNewCardForm() {
     }
 }
 
-export async function submitUpgrade() {
+export async function submitUpgrade(btn) {
     if (!targetUpgradeTier) return;
 
     const newCardSection = document.getElementById('newCardSection');
     const usingNewCard = newCardSection && newCardSection.style.display !== 'none';
     const pmId = usingNewCard ? null : selectedPaymentMethodId;
 
-    const result = await submitStripePayment(targetUpgradeTier, targetUpgradePrice, pmId);
+    // Covers the whole flow: tokenizing the card, creating the subscription, the
+    // 3-D Secure challenge, and the entitlement sync — which can take seconds.
+    const restore = setButtonLoading(btn, 'Processing…');
+    let result;
+    try {
+        result = await submitStripePayment(targetUpgradeTier, targetUpgradePrice, pmId);
+    } finally {
+        restore();
+    }
 
     if (result && result.success) {
         closeUpgradeModal();
@@ -585,7 +597,8 @@ export async function submitUpgrade() {
     }
 }
 
-export async function reactivateSubscription() {
+export async function reactivateSubscription(btn) {
+    const restore = setButtonLoading(btn, 'Reactivating…');
     try {
         const res = await fetch('/api/user/subscription/reactivate', {
             method: 'POST',
@@ -600,10 +613,13 @@ export async function reactivateSubscription() {
         }
     } catch (err) {
         showToast(err.message, 'error');
+    } finally {
+        restore();
     }
 }
 
-export async function downgradeToFree() {
+export async function downgradeToFree(btn) {
+    const restore = setButtonLoading(btn, 'Processing…');
     try {
         const res = await fetch('/api/user/subscription/upgrade', {
             method: 'POST',
@@ -628,5 +644,7 @@ export async function downgradeToFree() {
         }
     } catch (err) {
         showToast(err.message, 'error');
+    } finally {
+        restore();
     }
 }

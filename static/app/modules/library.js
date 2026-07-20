@@ -337,8 +337,10 @@ export function refreshBulkBar() {
         return;
     }
     bar.style.display = 'flex';
-    count.textContent = `${state.bulkSelection.size} selected`;
-    if (compareBtn) compareBtn.style.display = state.bulkSelection.size === 2 ? '' : 'none';
+    const n = state.bulkSelection.size;
+    // Nudge toward the compare flow: it needs exactly two logs.
+    count.textContent = n === 1 ? '1 selected · pick 1 more to compare' : `${n} selected`;
+    if (compareBtn) compareBtn.style.display = n === 2 ? '' : 'none';
 }
 
 export function compareSelectedLogs() {
