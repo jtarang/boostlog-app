@@ -1,4 +1,3 @@
-import os
 import re
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -13,7 +12,7 @@ from backend.auth.core import (
     get_password_hash,
     verify_password,
 )
-from backend.config import RP_ID
+from backend.config import OAUTH_REDIRECT_BASE, RP_ID
 from backend.db import get_db
 from backend.models import User
 from backend.schemas import (
@@ -88,7 +87,10 @@ def reset_password_request(payload: PasswordResetRequest, db: Session = Depends(
     user.password_reset_expiry = datetime.now(timezone.utc) + timedelta(hours=1)
     db.commit()
 
-    reset_url = f"{os.getenv('WP_ORIGIN', 'http://localhost:8000')}/reset-password?token={token}"
+    # Point at /app?token=… — main.js reads the token there and opens the reset
+    # modal (there is no /reset-password route). OAUTH_REDIRECT_BASE is the app's
+    # public origin, already set per-environment (localhost:8000 locally).
+    reset_url = f"{OAUTH_REDIRECT_BASE}/app?token={token}"
     print(f"DEBUG: Password reset for {user.username}: {reset_url}")
 
     return {"message": "Success", "debug_info": "Reset token generated" if RP_ID == "localhost" else None}
