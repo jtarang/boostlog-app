@@ -392,7 +392,8 @@ export function deletePaymentMethod(id, lastFour) {
     });
 }
 
-export async function setDefaultPaymentMethod(id) {
+export async function setDefaultPaymentMethod(id, btn) {
+    const restore = setButtonLoading(btn, 'Saving…');
     try {
         const res = await fetch(`/api/user/payment-methods/${id}/set-default`, { method: 'POST', headers: getAuthHeaders() });
         if (res.ok) {
@@ -402,7 +403,7 @@ export async function setDefaultPaymentMethod(id) {
             const err = await res.json().catch(() => ({}));
             showToast(err.detail || 'Failed to update default', 'error');
         }
-    } catch (err) { showToast(err.message, 'error'); }
+    } catch (err) { showToast(err.message, 'error'); } finally { restore(); }
 }
 
 export function openAddCardModal() {
