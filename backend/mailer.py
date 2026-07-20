@@ -95,12 +95,3 @@ def send_password_reset(to: Optional[str], reset_url: str) -> None:
         "1 hour. If you didn't request this, you can ignore this email.</p>",
         "Reset password", reset_url,
     ))
-
-
-def send_subscription_confirmation(to: Optional[str], tier: str) -> None:
-    send_email(to, f"You're on boostLog {tier.title()}", _layout(
-        f"You're on {tier.title()} 🎉",
-        f"<p style='margin:0'>Your <strong>{tier.title()}</strong> subscription is "
-        "active — thanks for supporting boostLog. Your higher usage limits are live now.</p>",
-        "Open boostLog", "https://boostlog.app/app",
-    ))
