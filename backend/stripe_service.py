@@ -2,7 +2,6 @@ import os
 from datetime import datetime, timezone
 import stripe
 from sqlalchemy.orm import Session
-from backend import mailer
 from backend.models import User, PaymentMethod, UserSubscription
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
@@ -31,15 +30,12 @@ ACTIVE_STATUSES = {"active", "trialing"}
 
 
 def _grant_tier(user: User, tier: str) -> None:
-    """Set the user's entitlement tier and, on a transition to a *paid* tier,
-    send a one-time confirmation email. Idempotent across the several grant paths
-    (create/switch, client-side sync, and the webhook): it only emails when the
-    tier actually changes, so repeated webhooks and renewals never re-send."""
+    """Set the user's entitlement tier. Idempotent across the several grant paths
+    (create/switch, client-side sync, and the webhook). Payment confirmation is
+    handled by Stripe's own receipt email, so we send nothing here."""
     if user.subscription_tier == tier:
         return
     user.subscription_tier = tier
-    if tier and tier != "free":
-        mailer.send_subscription_confirmation(user.email, tier)
 
 
 def _read(obj, key):
@@ -365,28 +361,8 @@ def handle_webhook_event(db: Session, event) -> dict:
         return _handle_subscription_deleted(db, data)
     elif event_type == "invoice.payment_failed":
         return _handle_payment_failed(db, data)
-    elif event_type == "invoice.payment_succeeded":
-        return _handle_invoice_paid(db, data)
 
     return {"status": "unhandled_event"}
-
-
-def _handle_invoice_paid(db: Session, invoice) -> dict:
-    """Have Stripe email the invoice/receipt on every successful payment (first
-    charge and renewals). Stripe doesn't auto-send for our API/SCA-created
-    subscriptions, so we trigger it explicitly — the same action as the
-    dashboard's "Send receipt". $0 invoices are skipped."""
-    invoice_id = _read(invoice, "id")
-    if not invoice_id:
-        return {"status": "no_invoice_id"}
-    if (_read(invoice, "amount_paid") or 0) <= 0:
-        return {"status": "ignored_zero_amount"}
-    try:
-        stripe.Invoice.send_invoice(invoice_id)
-    except stripe.error.StripeError as e:
-        print(f"send_invoice failed for {invoice_id}: {e}")
-        return {"status": "send_failed"}
-    return {"status": "invoice_sent"}
 
 
 def _handle_subscription_updated(db: Session, subscription) -> dict:
