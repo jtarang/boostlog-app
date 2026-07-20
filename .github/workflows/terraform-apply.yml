@@ -81,6 +81,7 @@ jobs:
           echo "apple_team_id = \"${{ secrets.APPLE_TEAM_ID }}\"" >> "$TFVARS"
           echo "apple_key_id = \"${{ secrets.APPLE_KEY_ID }}\"" >> "$TFVARS"
           echo "apple_private_key_b64 = \"${{ secrets.APPLE_PRIVATE_KEY_B64 }}\"" >> "$TFVARS"
+          echo "resend_api_key = \"${{ secrets.RESEND_API_KEY }}\"" >> "$TFVARS"
           echo "cloudflare_tunnel_token = \"${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}\"" >> "$TFVARS"
           echo "db_password = \"${{ secrets.DB_PASSWORD }}\"" >> "$TFVARS"
           echo "stripe_publishable_key = \"${{ secrets.STRIPE_PUBLISHABLE_KEY }}\"" >> "$TFVARS"

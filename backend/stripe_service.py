@@ -2,6 +2,7 @@ import os
 from datetime import datetime, timezone
 import stripe
 from sqlalchemy.orm import Session
+from backend import mailer
 from backend.models import User, PaymentMethod, UserSubscription
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
@@ -27,6 +28,18 @@ TIER_PRICES = {
 # be granted. Anything else (incomplete, past_due, unpaid, incomplete_expired)
 # means payment did not clear — we must NOT grant the paid tier.
 ACTIVE_STATUSES = {"active", "trialing"}
+
+
+def _grant_tier(user: User, tier: str) -> None:
+    """Set the user's entitlement tier and, on a transition to a *paid* tier,
+    send a one-time confirmation email. Idempotent across the several grant paths
+    (create/switch, client-side sync, and the webhook): it only emails when the
+    tier actually changes, so repeated webhooks and renewals never re-send."""
+    if user.subscription_tier == tier:
+        return
+    user.subscription_tier = tier
+    if tier and tier != "free":
+        mailer.send_subscription_confirmation(user.email, tier)
 
 
 def _read(obj, key):
@@ -174,7 +187,7 @@ def _switch_plan(db: Session, user: User, tier: str) -> dict:
     if period_end:
         sub.current_period_end = datetime.fromtimestamp(period_end, tz=timezone.utc)
     if updated.status in ACTIVE_STATUSES:
-        user.subscription_tier = tier
+        _grant_tier(user, tier)
     db.commit()
 
     return {
@@ -244,7 +257,7 @@ def create_subscription(db: Session, user: User, tier: str, payment_method_id: s
         # A subscription that is already active (e.g. a 100%-off coupon or a
         # trial with nothing to pay) needs no client confirmation — grant now.
         if stripe_sub.status in ACTIVE_STATUSES:
-            user.subscription_tier = tier
+            _grant_tier(user, tier)
         db.commit()
 
         return {
@@ -299,7 +312,7 @@ def sync_subscription_status(db: Session, user: User) -> dict:
         sub.current_period_end = datetime.fromtimestamp(period_end, tz=timezone.utc)
 
     if stripe_sub.status in ACTIVE_STATUSES:
-        user.subscription_tier = sub.tier
+        _grant_tier(user, sub.tier)
         _persist_default_card(db, user, stripe_sub)
     db.commit()
 
@@ -310,7 +323,7 @@ def cancel_subscription(db: Session, user: User) -> dict:
     """Schedule subscription to cancel at period end, downgrading to free."""
     # No Stripe subscription — just set the tier directly
     if not user.subscription or not user.subscription.stripe_subscription_id:
-        user.subscription_tier = "free"
+        _grant_tier(user, "free")
         if user.subscription:
             user.subscription.tier = "free"
             user.subscription.status = "inactive"
@@ -375,7 +388,7 @@ def _handle_subscription_updated(db: Session, subscription) -> dict:
         # 3-D Secure challenge completes), promote the account to its target
         # tier. This is the authoritative counterpart to sync_subscription_status.
         if user_sub.status in ACTIVE_STATUSES and user_sub.tier and user_sub.tier != "free":
-            user_sub.user.subscription_tier = user_sub.tier
+            _grant_tier(user_sub.user, user_sub.tier)
             _persist_default_card(db, user_sub.user, subscription)
         db.commit()
         return {"status": "updated"}
@@ -395,7 +408,7 @@ def _handle_subscription_deleted(db: Session, subscription) -> dict:
         user_sub.tier = "free"
         user_sub.status = "cancelled"
         user = user_sub.user
-        user.subscription_tier = "free"
+        _grant_tier(user, "free")
         db.commit()
         return {"status": "downgraded_to_free"}
 
