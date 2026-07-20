@@ -1402,6 +1402,25 @@ body:not(.view-library) .library-view {
     cursor: not-allowed;
 }
 
+/* Inline spinner shown inside a button while an action is processing
+   (subscribe / upgrade / downgrade / add-card). Reuses the cm-spin keyframe. */
+.btn-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    vertical-align: -2px;
+    margin-right: 8px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+    animation: cm-spin 0.7s linear infinite;
+}
+.btn-secondary .btn-spinner {
+    border-color: rgba(var(--fg-rgb), 0.25);
+    border-top-color: var(--text-primary);
+}
+button[aria-busy="true"] { cursor: progress; }
+
 .btn-demo {
     width: 100%;
     margin-top: 16px;

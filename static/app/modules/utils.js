@@ -4,6 +4,39 @@ export function getAuthHeaders() {
     return state.authToken ? { 'Authorization': `Bearer ${state.authToken}` } : {};
 }
 
+// Put a button into a disabled "processing" state (inline spinner + optional
+// label) and return a restore() that puts back the exact original content.
+// Freezes the button width so the layout doesn't jump. Guard against
+// double-clicks. Safe with a missing element (returns a no-op).
+export function setButtonLoading(btn, label = 'Processing…') {
+    if (!btn || btn.dataset.loading === '1') return () => {};
+    const original = btn.innerHTML;
+    const width = btn.offsetWidth;
+    btn.dataset.loading = '1';
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    if (width) btn.style.minWidth = `${width}px`;
+    btn.innerHTML = `<span class="btn-spinner" aria-hidden="true"></span>${label ? `<span>${label}</span>` : ''}`;
+    return () => {
+        btn.innerHTML = original;
+        btn.disabled = false;
+        btn.removeAttribute('aria-busy');
+        btn.style.minWidth = '';
+        delete btn.dataset.loading;
+    };
+}
+
+// Wrap an async action so `btn` shows the loading state for its whole duration
+// and is always restored afterwards (even if it throws).
+export async function withButtonLoading(btn, label, fn) {
+    const restore = setButtonLoading(btn, label);
+    try {
+        return await fn();
+    } finally {
+        restore();
+    }
+}
+
 export async function downloadFile(url, filename) {
     try {
         const response = await fetch(url, {
