@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { getAuthHeaders } from './utils.js';
+import { getAuthHeaders, setButtonLoading } from './utils.js';
 import { showToast } from './toast.js';
 import { refreshLogList } from './sidebar.js';
 
@@ -94,8 +94,15 @@ export function openConfirmDeleteModal({ title = 'Confirm Delete', subtitle = ''
     btn.textContent = confirmText;
 
     btn.onclick = async () => {
-        closeDeleteModal();
-        if (onConfirm) await onConfirm();
+        // Keep the modal open with a spinner on the confirm button while the
+        // deletion runs, so there's clear feedback instead of an instant close.
+        const restore = setButtonLoading(btn, 'Deleting…');
+        try {
+            if (onConfirm) await onConfirm();
+        } finally {
+            restore();
+            closeDeleteModal();
+        }
     };
 
     modal.style.display = 'flex';
