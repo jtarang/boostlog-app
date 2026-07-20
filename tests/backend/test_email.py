@@ -35,3 +35,16 @@ def test_mailer_noop_when_unconfigured(monkeypatch):
     monkeypatch.setattr(config, "RESEND_API_KEY", None)
     # Must return quietly (no network) rather than raise.
     mailer.send_email("x@example.com", "Subject", "<p>hi</p>")
+
+
+def test_invoice_paid_triggers_stripe_send(monkeypatch):
+    sent = []
+    monkeypatch.setattr(stripe_service.stripe.Invoice, "send_invoice", lambda iid: sent.append(iid))
+    res = stripe_service._handle_invoice_paid(None, {"id": "in_123", "amount_paid": 1499})
+    assert res["status"] == "invoice_sent"
+    assert sent == ["in_123"]
+
+
+def test_invoice_paid_zero_amount_ignored():
+    res = stripe_service._handle_invoice_paid(None, {"id": "in_1", "amount_paid": 0})
+    assert res["status"] == "ignored_zero_amount"
