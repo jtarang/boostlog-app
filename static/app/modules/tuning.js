@@ -130,7 +130,9 @@ export function swapTuningLogs() {
 
 async function loadComparison() {
     const content = document.getElementById('tuningContent');
+    const loading = document.getElementById('tuningLoading');
     if (content) content.classList.add('is-loading');
+    if (loading) loading.style.display = 'flex';
 
     try {
         const res = await fetch('/api/tuning/compare', {
@@ -148,6 +150,7 @@ async function loadComparison() {
         showToast(`Comparison failed: ${err.message}`, 'error');
     } finally {
         if (content) content.classList.remove('is-loading');
+        if (loading) loading.style.display = 'none';
     }
 }
 

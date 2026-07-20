@@ -1,6 +1,6 @@
 // boostLog service worker — app-shell caching for the installable PWA.
 // Bump CACHE to invalidate old caches on deploy.
-const CACHE = 'boostlog-v16';
+const CACHE = 'boostlog-v17';
 const APP_SHELL = '/app';
 
 self.addEventListener('install', (event) => {

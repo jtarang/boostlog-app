@@ -22,7 +22,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="boostLog">
-    <link rel="stylesheet" href="/static/app/styles.css?v=9.2">
+    <link rel="stylesheet" href="/static/app/styles.css?v=9.3">
     <!-- Chart.js for beautiful graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
@@ -616,6 +616,12 @@
                         <button class="btn-primary" data-scramble="true" data-action="openUploadModal" style="width:auto; padding: 10px 20px;">Upload a Boostlog</button>
                     </div>
 
+                    <!-- Spinner shown while a comparison is being computed -->
+                    <div class="tuning-loading" id="tuningLoading" style="display: none;">
+                        <div class="tuning-spinner"></div>
+                        <p>Comparing runs…</p>
+                    </div>
+
                     <div class="tuning-content" id="tuningContent">
                     <!-- KPI strip -->
                     <div class="tuning-kpis-section">
@@ -1180,7 +1186,7 @@
         </div>
     </div>
 
-    <script type="module" src="/static/app/main.js?v=8.12"></script>
+    <script type="module" src="/static/app/main.js?v=8.13"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
