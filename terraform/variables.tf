@@ -164,6 +164,19 @@ variable "apple_private_key_b64" {
   default     = ""
 }
 
+variable "resend_api_key" {
+  description = "Resend API key for transactional email — set in GitHub Secrets (RESEND_API_KEY)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "mail_from" {
+  description = "From address for transactional email (domain must be verified in Resend)"
+  type        = string
+  default     = "boostLog <noreply@boostlog.app>"
+}
+
 variable "github_client_key" {
   description = "App SECRET_KEY for JWT (deprecated/unused as it's now auto-generated)"
   type        = string

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
+from backend import mailer
 from backend.auth.core import (
     build_access_token,
     get_current_user,
@@ -57,6 +58,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     new_user = User(username=username, email=email, hashed_password=hashed_password)
     db.add(new_user)
     db.commit()
+    mailer.send_welcome(new_user.email)
     return {"message": "User registered successfully"}
 
 
@@ -89,7 +91,8 @@ def reset_password_request(payload: PasswordResetRequest, db: Session = Depends(
     db.commit()
 
     reset_url = f"{os.getenv('WP_ORIGIN', 'http://localhost:8000')}/reset-password?token={token}"
-    print(f"DEBUG: Password reset for {user.username}: {reset_url}")
+    mailer.send_password_reset(user.email, reset_url)
+    print(f"DEBUG: Password reset for {user.username}: {reset_url}")  # local convenience when email is unconfigured
 
     return {"message": "Success", "debug_info": "Reset token generated" if RP_ID == "localhost" else None}
 

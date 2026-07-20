@@ -31,7 +31,7 @@ from fastapi_sso.sso.microsoft import MicrosoftSSO
 from oauthlib.oauth2.rfc6749.errors import OAuth2Error
 from sqlalchemy.orm import Session
 
-from backend import config
+from backend import config, mailer
 from backend.auth.core import build_access_token
 from backend.db import get_db
 from backend.models import User
@@ -132,6 +132,7 @@ def _upsert_user(db: Session, provider: str, provider_id: str,
     if user:
         return user
 
+    created = False
     if email:
         user = db.query(User).filter(User.email == email).first()
     if user:
@@ -144,8 +145,11 @@ def _upsert_user(db: Session, provider: str, provider_id: str,
         )
         setattr(user, id_attr, provider_id)
         db.add(user)
+        created = True
     db.commit()
     db.refresh(user)
+    if created:
+        mailer.send_welcome(user.email)  # only on first-time account creation, not on link/login
     return user
 
 
