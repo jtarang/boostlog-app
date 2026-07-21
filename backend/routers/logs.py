@@ -1,5 +1,7 @@
 import os
+import re
 import uuid
+from typing import Optional
 from urllib.parse import urlparse
 
 import httpx
@@ -10,10 +12,41 @@ from sqlalchemy.orm import Session
 from backend import storage
 from backend.auth.core import get_current_user
 from backend.db import get_db
-from backend.models import Datalog, User
+from backend.models import Build, Datalog, User
 from backend.schemas import LogRename
 
 router = APIRouter()
+
+# Free plan can store up to this many logs; paid tiers are unlimited.
+FREE_LOG_LIMIT = 100
+
+
+def _extract_vin(data: bytes) -> Optional[str]:
+    """Pull the VIN from an MHD log's header. MHD logs carry a `#VIN,<vin>`
+    comment line in the padding above the CSV; bm3 logs have no such line, so
+    this returns None for them. Only the first few KB (the header) are scanned."""
+    head = data[:4096].decode("utf-8", errors="ignore")
+    for line in head.splitlines():
+        s = line.strip()
+        if not s.startswith("#"):
+            break  # header comments sit at the very top; stop at the real CSV
+        parts = re.split(r"[,\s;:]+", s.lstrip("#").strip())
+        if len(parts) >= 2 and parts[0].lower() == "vin":
+            candidate = parts[1].strip().upper()
+            if re.fullmatch(r"[A-Z0-9]{11,17}", candidate):
+                return candidate
+    return None
+
+
+def _build_for_vin(db: Session, user: User, vin: str) -> Build:
+    """Find this user's build for the VIN, or create one. Keeps every log for a
+    given vehicle grouped under a single build automatically."""
+    build = db.query(Build).filter(Build.user_id == user.id, Build.vin == vin).first()
+    if build is None:
+        build = Build(user_id=user.id, vin=vin, name=f"VIN …{vin[-6:]}", status="active")
+        db.add(build)
+        db.flush()  # assign build.id without ending the transaction
+    return build
 
 
 @router.post("/api/upload")
@@ -37,11 +70,31 @@ async def upload_log(file: UploadFile = File(...), current_user: User = Depends(
             "duplicate": True,
         }
 
+    # Free-plan log cap (paid tiers are unlimited). Checked after the dedup
+    # short-circuit so re-uploading an existing log never trips it.
+    tier = (current_user.subscription_tier or "free").lower()
+    if tier == "free":
+        log_count = db.query(Datalog).filter(Datalog.user_id == current_user.id).count()
+        if log_count >= FREE_LOG_LIMIT:
+            raise HTTPException(
+                status_code=402,
+                detail=f"Free plan is limited to {FREE_LOG_LIMIT} logs. Upgrade to upload more.",
+            )
+
+    data = await file.read()
+
+    # Auto-group MHD logs by vehicle: read the VIN from the header and bind the
+    # log to a per-VIN build (created on first sighting).
+    build_id = None
+    vin = _extract_vin(data)
+    if vin:
+        build_id = _build_for_vin(db, current_user, vin).id
+
     file_id = str(uuid.uuid4())
     stored_filename = f"{current_user.id}_{file_id}_{safe_filename}"
-    storage.save_fileobj(stored_filename, file.file)
+    storage.save(stored_filename, data)
 
-    datalog = Datalog(user_id=current_user.id, stored_filename=stored_filename, display_name=safe_filename, source_filename=safe_filename)
+    datalog = Datalog(user_id=current_user.id, stored_filename=stored_filename, display_name=safe_filename, source_filename=safe_filename, build_id=build_id)
     db.add(datalog)
     db.commit()
     db.refresh(datalog)
@@ -52,6 +105,7 @@ async def upload_log(file: UploadFile = File(...), current_user: User = Depends(
         "id": datalog.id,
         "filename": safe_filename,
         "url": f"/api/logs/{stored_filename}",
+        "build_id": datalog.build_id,
         "duplicate": False,
     }
 
