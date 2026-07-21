@@ -46,7 +46,11 @@ export function uploadToBackend(file) {
         headers: getAuthHeaders(),
         body: formData
     })
-        .then(r => r.json())
+        .then(async r => {
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.detail || `Upload failed (${r.status})`);
+            return data;
+        })
         .then(data => {
             setDownloadLink(data.url, data.filename);
             refreshLogList(data.id);
@@ -54,7 +58,11 @@ export function uploadToBackend(file) {
                 setTimeout(() => showToast('Log already exists — loaded from your library.', 'info'), 300);
             }
         })
-        .catch(err => console.error('Upload to backend failed:', err));
+        .catch(err => {
+            // e.g. the free-plan 100-log cap (402) — tell the user why nothing saved.
+            showToast(err.message, 'error');
+            console.error('Upload to backend failed:', err);
+        });
 }
 
 export function setDownloadLink(url, filename) {

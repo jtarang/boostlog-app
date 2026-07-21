@@ -201,3 +201,156 @@ def test_tuning_compare_unauthorized_log(client):
     base = _upload(client, headers, "mine.csv", _BASE_CSV)
     res = client.post("/api/tuning/compare", json={"baseline": base, "optimized": "99_not_mine.csv"}, headers=headers)
     assert res.status_code == 403
+
+
+# ── Free-plan log cap ────────────────────────────────────────────────────────
+
+def test_free_tier_log_cap(client, db_session):
+    from backend.models import User, Datalog
+    from backend.routers.logs import FREE_LOG_LIMIT
+    headers = get_auth_headers(client)
+    user = db_session.query(User).filter(User.email == "testuser@example.com").first()
+
+    # Seed the account right up to the cap, then the next upload must be blocked.
+    for i in range(FREE_LOG_LIMIT):
+        db_session.add(Datalog(user_id=user.id, stored_filename=f"s{i}",
+                               display_name=f"d{i}.csv", source_filename=f"src{i}.csv"))
+    db_session.commit()
+
+    res = client.post("/api/upload",
+                      files={"file": ("new.csv", io.BytesIO(b"Time,RPM\n0,1000"), "text/csv")},
+                      headers=headers)
+    assert res.status_code == 402
+    assert str(FREE_LOG_LIMIT) in res.json()["detail"]
+
+
+def test_free_tier_cap_ignores_duplicate_reupload(client, db_session):
+    from backend.models import User, Datalog
+    from backend.routers.logs import FREE_LOG_LIMIT
+    headers = get_auth_headers(client)
+    user = db_session.query(User).filter(User.email == "testuser@example.com").first()
+
+    # At the cap, but one row shares the filename we re-upload → dedup path, no 402.
+    for i in range(FREE_LOG_LIMIT - 1):
+        db_session.add(Datalog(user_id=user.id, stored_filename=f"s{i}",
+                               display_name=f"d{i}.csv", source_filename=f"src{i}.csv"))
+    db_session.add(Datalog(user_id=user.id, stored_filename="dup_stored",
+                           display_name="dup.csv", source_filename="dup.csv"))
+    db_session.commit()
+
+    res = client.post("/api/upload",
+                      files={"file": ("dup.csv", io.BytesIO(b"Time,RPM\n0,1000"), "text/csv")},
+                      headers=headers)
+    assert res.status_code == 200
+    assert res.json()["duplicate"] is True
+
+
+# ── MHD VIN → auto build ─────────────────────────────────────────────────────
+
+_MHD_VIN = "WBS8M9C50J5K12345"
+_MHD_CSV = (
+    b"#Encoding,UTF-8\n#VIN," + _MHD_VIN.encode() + b"\n#Ecu,DME\n"
+    b"Time,RPM,Boost\n0,1000,5\n1,2000,10\n"
+)
+
+
+def test_mhd_vin_creates_and_binds_build(client, db_session):
+    from backend.models import Build
+    headers = get_auth_headers(client)
+
+    res = client.post("/api/upload",
+                      files={"file": ("mhd1.csv", io.BytesIO(_MHD_CSV), "text/csv")},
+                      headers=headers)
+    assert res.status_code == 200
+    build_id = res.json()["build_id"]
+    assert build_id is not None
+    build = db_session.get(Build, build_id)
+    assert build.vin == _MHD_VIN
+
+    # A second MHD log with the same VIN reuses the build (no duplicate vehicle).
+    mhd2 = b"#VIN," + _MHD_VIN.encode() + b"\nTime,RPM,Boost\n0,2200,7\n"
+    res2 = client.post("/api/upload",
+                       files={"file": ("mhd2.csv", io.BytesIO(mhd2), "text/csv")},
+                       headers=headers)
+    assert res2.json()["build_id"] == build_id
+    assert db_session.query(Build).filter(Build.vin == _MHD_VIN).count() == 1
+
+
+def test_mhd_vin_real_export_format_with_bom(client, db_session):
+    # Real MHD Wizard exports open with a UTF-8 BOM on the `#Encoding` line and
+    # use `#VIN: <vin>` (colon+space), not the `#VIN,<vin>` shape used above.
+    from backend.models import Build
+    headers = get_auth_headers(client)
+    real_mhd = (
+        "#Encoding: UTF-8\n#Ecu CALID: 00008318145047\n"
+        f"#VIN: {_MHD_VIN}\n"
+        "Time,RPM,Boost\n0,1000,5\n1,2000,10\n"
+    ).encode("utf-8-sig")
+
+    res = client.post("/api/upload",
+                      files={"file": ("real_mhd.csv", io.BytesIO(real_mhd), "text/csv")},
+                      headers=headers)
+    assert res.status_code == 200
+    build_id = res.json()["build_id"]
+    assert build_id is not None
+    assert db_session.get(Build, build_id).vin == _MHD_VIN
+
+
+def test_mhd_vin_decode_sets_vehicle_model_and_name(client, db_session, monkeypatch):
+    # A successful vPIC decode should label the auto-created build with the
+    # vehicle instead of the bare VIN suffix.
+    from backend.models import Build
+
+    async def fake_decode(vin):
+        assert vin == _MHD_VIN
+        return "2022 BMW M3"
+    monkeypatch.setattr("backend.routers.logs._decode_vin", fake_decode)
+
+    headers = get_auth_headers(client)
+    res = client.post("/api/upload",
+                      files={"file": ("mhd1.csv", io.BytesIO(_MHD_CSV), "text/csv")},
+                      headers=headers)
+    build = db_session.get(Build, res.json()["build_id"])
+    assert build.vehicle_model == "2022 BMW M3"
+    assert build.name == f"2022 BMW M3 …{_MHD_VIN[-6:]}"
+
+
+def test_mhd_vin_decode_failure_falls_back_to_vin_and_retries_later(client, db_session, monkeypatch):
+    # Decode fails (network/unrecognized) on first sighting: build still gets
+    # created with the plain VIN fallback name. A later upload for the same VIN
+    # retries the decode and backfills the name once it succeeds.
+    from backend.models import Build
+    headers = get_auth_headers(client)
+
+    res = client.post("/api/upload",
+                      files={"file": ("mhd1.csv", io.BytesIO(_MHD_CSV), "text/csv")},
+                      headers=headers)
+    build_id = res.json()["build_id"]
+    build = db_session.get(Build, build_id)
+    assert build.vehicle_model is None
+    assert build.name == f"VIN …{_MHD_VIN[-6:]}"
+
+    async def fake_decode(vin):
+        return "2022 BMW M3"
+    monkeypatch.setattr("backend.routers.logs._decode_vin", fake_decode)
+
+    mhd2 = b"#VIN," + _MHD_VIN.encode() + b"\nTime,RPM,Boost\n0,2200,7\n"
+    res2 = client.post("/api/upload",
+                       files={"file": ("mhd2.csv", io.BytesIO(mhd2), "text/csv")},
+                       headers=headers)
+    assert res2.json()["build_id"] == build_id
+    db_session.refresh(build)
+    assert build.vehicle_model == "2022 BMW M3"
+    assert build.name == f"2022 BMW M3 …{_MHD_VIN[-6:]}"
+
+
+def test_bm3_log_has_no_vin_and_no_build(client, db_session):
+    from backend.models import Build
+    headers = get_auth_headers(client)
+    bm3 = b"Time,RPM,Boost,Timing Corr 1\n0,1000,0,0\n1,2000,10,-1.5\n"
+    res = client.post("/api/upload",
+                      files={"file": ("bm3.csv", io.BytesIO(bm3), "text/csv")},
+                      headers=headers)
+    assert res.status_code == 200
+    assert res.json()["build_id"] is None
+    assert db_session.query(Build).count() == 0

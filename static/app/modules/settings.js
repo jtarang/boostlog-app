@@ -77,6 +77,7 @@ export async function loadUserSettings() {
                 }
             }
             console.log('Calling loadSubscriptionInfo with tier:', data.subscription_tier);
+            state.subscriptionTier = data.subscription_tier || 'free';
             loadSubscriptionInfo(data.subscription_tier);
 
             // Initialize Stripe.js with the publishable key so card fields can mount.
