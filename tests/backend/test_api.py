@@ -276,6 +276,74 @@ def test_mhd_vin_creates_and_binds_build(client, db_session):
     assert db_session.query(Build).filter(Build.vin == _MHD_VIN).count() == 1
 
 
+def test_mhd_vin_real_export_format_with_bom(client, db_session):
+    # Real MHD Wizard exports open with a UTF-8 BOM on the `#Encoding` line and
+    # use `#VIN: <vin>` (colon+space), not the `#VIN,<vin>` shape used above.
+    from backend.models import Build
+    headers = get_auth_headers(client)
+    real_mhd = (
+        "#Encoding: UTF-8\n#Ecu CALID: 00008318145047\n"
+        f"#VIN: {_MHD_VIN}\n"
+        "Time,RPM,Boost\n0,1000,5\n1,2000,10\n"
+    ).encode("utf-8-sig")
+
+    res = client.post("/api/upload",
+                      files={"file": ("real_mhd.csv", io.BytesIO(real_mhd), "text/csv")},
+                      headers=headers)
+    assert res.status_code == 200
+    build_id = res.json()["build_id"]
+    assert build_id is not None
+    assert db_session.get(Build, build_id).vin == _MHD_VIN
+
+
+def test_mhd_vin_decode_sets_vehicle_model_and_name(client, db_session, monkeypatch):
+    # A successful vPIC decode should label the auto-created build with the
+    # vehicle instead of the bare VIN suffix.
+    from backend.models import Build
+
+    async def fake_decode(vin):
+        assert vin == _MHD_VIN
+        return "2022 BMW M3"
+    monkeypatch.setattr("backend.routers.logs._decode_vin", fake_decode)
+
+    headers = get_auth_headers(client)
+    res = client.post("/api/upload",
+                      files={"file": ("mhd1.csv", io.BytesIO(_MHD_CSV), "text/csv")},
+                      headers=headers)
+    build = db_session.get(Build, res.json()["build_id"])
+    assert build.vehicle_model == "2022 BMW M3"
+    assert build.name == f"2022 BMW M3 …{_MHD_VIN[-6:]}"
+
+
+def test_mhd_vin_decode_failure_falls_back_to_vin_and_retries_later(client, db_session, monkeypatch):
+    # Decode fails (network/unrecognized) on first sighting: build still gets
+    # created with the plain VIN fallback name. A later upload for the same VIN
+    # retries the decode and backfills the name once it succeeds.
+    from backend.models import Build
+    headers = get_auth_headers(client)
+
+    res = client.post("/api/upload",
+                      files={"file": ("mhd1.csv", io.BytesIO(_MHD_CSV), "text/csv")},
+                      headers=headers)
+    build_id = res.json()["build_id"]
+    build = db_session.get(Build, build_id)
+    assert build.vehicle_model is None
+    assert build.name == f"VIN …{_MHD_VIN[-6:]}"
+
+    async def fake_decode(vin):
+        return "2022 BMW M3"
+    monkeypatch.setattr("backend.routers.logs._decode_vin", fake_decode)
+
+    mhd2 = b"#VIN," + _MHD_VIN.encode() + b"\nTime,RPM,Boost\n0,2200,7\n"
+    res2 = client.post("/api/upload",
+                       files={"file": ("mhd2.csv", io.BytesIO(mhd2), "text/csv")},
+                       headers=headers)
+    assert res2.json()["build_id"] == build_id
+    db_session.refresh(build)
+    assert build.vehicle_model == "2022 BMW M3"
+    assert build.name == f"2022 BMW M3 …{_MHD_VIN[-6:]}"
+
+
 def test_bm3_log_has_no_vin_and_no_build(client, db_session):
     from backend.models import Build
     headers = get_auth_headers(client)

@@ -42,6 +42,14 @@ def mock_litellm(monkeypatch):
     monkeypatch.setattr("litellm.completion", lambda **kwargs: mock_res)
     return mock_res
 
+@pytest.fixture(scope="function", autouse=True)
+def mock_vin_decode(monkeypatch):
+    # Default: simulate an unrecognized/undecoded VIN (no real network calls in
+    # tests). Individual tests can monkeypatch this again for a specific label.
+    async def _no_decode(vin):
+        return None
+    monkeypatch.setattr("backend.routers.logs._decode_vin", _no_decode)
+
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
 engine = create_engine(

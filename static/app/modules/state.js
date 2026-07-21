@@ -19,9 +19,13 @@ export const state = {
     pendingBuildCallback: null,
     renameOnSave: null,
     autofillStarted: false,
+    subscriptionTier: 'free',
 };
 
 export const SIDEBAR_LOG_LIMIT = 5;
+
+// Keep in sync with backend/routers/logs.py FREE_LOG_LIMIT.
+export const FREE_LOG_LIMIT = 100;
 
 export const lineColors = [
     '#3A86FF', '#FF006E', '#8338EC', '#FFBE0B', '#FB5607',

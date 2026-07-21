@@ -1,4 +1,4 @@
-import { state } from './state.js';
+import { state, FREE_LOG_LIMIT } from './state.js';
 import { showToast } from './toast.js';
 import { getAuthHeaders, escapeHtml } from './utils.js';
 import { renameLog, openConfirmDeleteModal } from './modals.js';
@@ -90,15 +90,22 @@ function buildRailItem(key, name, count, withActions) {
                 refreshLogList();
             } catch (err) { showToast(err.message, 'error'); }
         });
-        li.querySelector('.rail-delete').addEventListener('click', async (e) => {
+        li.querySelector('.rail-delete').addEventListener('click', (e) => {
             e.stopPropagation();
-            if (!confirm(`Delete build "${name}"? Logs will move back to Unassigned.`)) return;
-            try {
-                await deleteBuild(key);
-                if (state.libraryFilter === key) state.libraryFilter = 'all';
-                showToast('Build deleted');
-                refreshLogList();
-            } catch (err) { showToast(err.message, 'error'); }
+            openConfirmDeleteModal({
+                title: 'Delete Build',
+                subtitle: 'Datalogs will be unassigned but NOT deleted.',
+                body: `Delete the build <strong>"${escapeHtml(name)}"</strong>? All related logs will be safely preserved in the <strong>Unassigned</strong> category.`,
+                confirmText: 'Delete Build',
+                onConfirm: async () => {
+                    try {
+                        await deleteBuild(key);
+                        if (state.libraryFilter === key) state.libraryFilter = 'all';
+                        showToast('Build deleted');
+                        await refreshLogList();
+                    } catch (err) { showToast(err.message, 'error'); }
+                }
+            });
         });
     }
     return li;
@@ -150,7 +157,11 @@ export function renderLibraryLogs() {
     }
 
     const logs = getFilteredLibraryLogs();
-    countPill.textContent = logs.length;
+    // Cap only applies account-wide (free tier), so only show it against the
+    // unfiltered "All Logs" total, not per-build/unassigned counts.
+    countPill.textContent = (state.libraryFilter === 'all' && state.subscriptionTier === 'free')
+        ? `${state.currentLogs.length} / ${FREE_LOG_LIMIT}`
+        : logs.length;
 
     const btnDetails = document.getElementById('btnBuildDetails');
     if (btnDetails) {
