@@ -226,8 +226,9 @@ function buildLogCard(log) {
     const build = log.build_id != null ? state.currentBuilds.find(b => b.id === log.build_id) : null;
     const hasAi = state.hasAnalysisById.get(log.id);
     let timeLabel = '';
-    if (log.uploaded_at) {
-        const d = new Date(log.uploaded_at);
+    const when = log.recorded_at || log.uploaded_at;
+    if (when) {
+        const d = new Date(when);
         timeLabel = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
             + ' — ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
     }
