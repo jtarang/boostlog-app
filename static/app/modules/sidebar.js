@@ -85,8 +85,9 @@ export function renderSidebarLogs(selectId = null) {
 function renderLogItem(log, hasAnalysis, selectId) {
     const logItems = document.getElementById('logItems');
     let timeLabel = '';
-    if (log.uploaded_at) {
-        const d = new Date(log.uploaded_at);
+    const when = log.recorded_at || log.uploaded_at;
+    if (when) {
+        const d = new Date(when);
         timeLabel = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
             + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
     }

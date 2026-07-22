@@ -80,6 +80,10 @@ class Datalog(Base):
     display_name = Column(String, nullable=False)
     source_filename = Column(String, nullable=False)
     uploaded_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    # When the log was actually recorded on the car, as reported by the source
+    # (e.g. bootmod3's /getlogs metadata) -- distinct from uploaded_at, which is
+    # always when it landed in boostLog. Null when the source gives no date.
+    recorded_at = Column(DateTime(timezone=True), nullable=True)
     owner = relationship("User", back_populates="datalogs")
     build = relationship("Build", back_populates="datalogs")
     analyses = relationship("Analysis", back_populates="datalog", cascade="all, delete-orphan")
