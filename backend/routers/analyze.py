@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend import storage
+from backend import db as db_module
 from backend.analysis_core import aggregate_wot_summary, resolve_llm_model
 from backend.auth.core import get_current_user
 from backend.db import get_db
@@ -122,6 +123,15 @@ Provide a **prioritized checklist** of specific actions the tuner or owner must 
         # Check usage limit before calling LLM (always, even for mocked runs)
         check_usage_limit(db, current_user)
 
+        # Everything needing the request-scoped session/ORM objects is done
+        # above this point — capture the plain values the post-LLM write
+        # needs, then release the pooled connection before the (possibly
+        # many-second) LLM call so it doesn't sit idle-but-checked-out and
+        # starve the pool under concurrent AI requests.
+        datalog_id = datalog.id
+        user_id = current_user.id
+        db.close()
+
         mock_response = os.getenv("MOCK_AI_RESPONSE")
         if mock_response:
             result_text = "## AI Analysis\n\n**Verdict**: ✅ Tuning looks good.\n\nEverything is within safe limits."
@@ -140,14 +150,19 @@ Provide a **prioritized checklist** of specific actions the tuner or owner must 
             try:
                 response = await asyncio.to_thread(_run_llm)
                 result_text = response.choices[0].message.content
-                # Record usage after successful call
-                record_usage(db, current_user.id, response)
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")
 
-        analysis = Analysis(datalog_id=datalog.id, model_used=model_name, result_markdown=result_text)
-        db.add(analysis)
-        db.commit()
+        # Fresh, short-lived session for the post-LLM writes only.
+        write_db = db_module.SessionLocal()
+        try:
+            if not mock_response:
+                record_usage(write_db, user_id, response)
+            analysis = Analysis(datalog_id=datalog_id, model_used=model_name, result_markdown=result_text)
+            write_db.add(analysis)
+            write_db.commit()
+        finally:
+            write_db.close()
 
         return {"analysis": result_text}
     finally:

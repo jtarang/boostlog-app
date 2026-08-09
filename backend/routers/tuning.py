@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend import storage
+from backend import db as db_module
 from backend.analysis_core import aggregate_wot_summary, resolve_llm_model, rpm_power_curve
 from backend.auth.core import get_current_user
 from backend.db import get_db
@@ -131,6 +132,13 @@ Be direct and professional. Bold all severity labels and key values. Do not use 
 
     check_usage_limit(db, current_user)
 
+    # Everything needing the request-scoped session is done above this point
+    # — release the pooled connection before the (possibly many-second) LLM
+    # call so it doesn't sit idle-but-checked-out and starve the pool under
+    # concurrent AI requests.
+    user_id = current_user.id
+    db.close()
+
     mock_response = os.getenv("MOCK_AI_RESPONSE")
     if mock_response:
         model_name = "mock/turbo-tuner"
@@ -152,8 +160,14 @@ Be direct and professional. Bold all severity labels and key values. Do not use 
         try:
             response = await asyncio.to_thread(_run_llm)
             result_text = response.choices[0].message.content
-            record_usage(db, current_user.id, response)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")
+
+        # Fresh, short-lived session for the post-LLM usage-tracking write only.
+        write_db = db_module.SessionLocal()
+        try:
+            record_usage(write_db, user_id, response)
+        finally:
+            write_db.close()
 
     return {"recommendations": result_text, "model": model_name}

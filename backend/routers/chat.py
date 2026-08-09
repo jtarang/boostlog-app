@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from backend import db as db_module
 from backend.auth.core import get_current_user
 from backend.db import get_db
 from backend.models import Analysis, Datalog, User, ChatHistory
@@ -127,12 +128,22 @@ Format your response using Markdown where appropriate.
         model_name = f"ollama/{ollama_model}"
         api_base = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
 
+    # Everything needing the request-scoped session/ORM objects is done above
+    # this point — capture the plain values the post-LLM write needs, then
+    # release the pooled connection before the (possibly many-second) LLM
+    # call so it doesn't sit idle-but-checked-out and starve the pool under
+    # concurrent AI requests.
+    datalog_id = datalog.id
+    user_id = current_user.id
+
     mock_response = os.getenv("MOCK_AI_RESPONSE")
     if mock_response:
         result_text = "This is a mock response from Moose. Your tuning looks acceptable based on the previous summary."
+        db.close()
     else:
         # Check usage limit before calling LLM
         check_usage_limit(db, current_user)
+        db.close()
 
         def _run_llm():
             return completion(
@@ -147,18 +158,22 @@ Format your response using Markdown where appropriate.
         try:
             response = await asyncio.to_thread(_run_llm)
             result_text = response.choices[0].message.content
-            # Record usage after successful call
-            record_usage(db, current_user.id, response)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")
 
-    # Save to database
-    if request.messages:
-        last_user_msg = request.messages[-1].content
-        user_history = ChatHistory(datalog_id=datalog.id, role="user", content=last_user_msg)
-        ai_history = ChatHistory(datalog_id=datalog.id, role="assistant", content=result_text)
-        db.add(user_history)
-        db.add(ai_history)
-        db.commit()
+    # Fresh, short-lived session for the post-LLM writes only.
+    write_db = db_module.SessionLocal()
+    try:
+        if not mock_response:
+            record_usage(write_db, user_id, response)
+        if request.messages:
+            last_user_msg = request.messages[-1].content
+            user_history = ChatHistory(datalog_id=datalog_id, role="user", content=last_user_msg)
+            ai_history = ChatHistory(datalog_id=datalog_id, role="assistant", content=result_text)
+            write_db.add(user_history)
+            write_db.add(ai_history)
+            write_db.commit()
+    finally:
+        write_db.close()
 
     return {"response": result_text}
