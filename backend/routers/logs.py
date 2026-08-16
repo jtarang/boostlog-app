@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from backend import storage
 from backend.auth.core import get_current_user
 from backend.db import get_db
-from backend.models import Build, Datalog, User
+from backend.models import Analysis, Build, Datalog, User
 from backend.schemas import LogRename
 
 router = APIRouter()
@@ -222,6 +222,12 @@ async def list_logs(current_user: User = Depends(get_current_user), db: Session 
         Datalog.user_id == current_user.id
     ).order_by(Datalog.uploaded_at.desc()).all()
 
+    analyzed_ids = {
+        row[0] for row in db.query(Analysis.datalog_id).filter(
+            Analysis.datalog_id.in_([d.id for d in datalogs])
+        ).distinct()
+    }
+
     return {"logs": [
         {
             "id": d.id,
@@ -230,6 +236,7 @@ async def list_logs(current_user: User = Depends(get_current_user), db: Session 
             "uploaded_at": d.uploaded_at.isoformat(),
             "recorded_at": d.recorded_at.isoformat() if d.recorded_at else None,
             "build_id": d.build_id,
+            "has_analysis": d.id in analyzed_ids,
         }
         for d in datalogs
     ]}

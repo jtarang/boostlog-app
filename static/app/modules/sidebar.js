@@ -39,15 +39,7 @@ export async function refreshLogList(selectId = null, initialLoad = false) {
         ]);
         state.currentLogs = (await logsRes.json()).logs || [];
         state.currentBuilds = (await buildsRes.json()).builds || [];
-
-        const analyses = await Promise.all(state.currentLogs.map(async (log) => {
-            try {
-                const stored = log.url.split('/').pop();
-                const r = await fetch(`/api/analyze/${stored}`, { headers: getAuthHeaders() });
-                return [log.id, Boolean((await r.json()).analysis)];
-            } catch { return [log.id, false]; }
-        }));
-        state.hasAnalysisById = new Map(analyses);
+        state.hasAnalysisById = new Map(state.currentLogs.map(log => [log.id, Boolean(log.has_analysis)]));
 
         renderSidebarLogs(selectId);
         if (state.currentView === 'library') renderLibrary();
